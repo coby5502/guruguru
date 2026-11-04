@@ -11,7 +11,7 @@ const must = f => { if (!fs.existsSync(path.join(dist, f))) errs.push(`missing: 
 ['index.html', 'sw.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/icon-maskable-192.png', 'icons/favicon.svg', 'icons/favicon-32.png'].forEach(must);
 
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-if (/\/\*__(LESSONS|PRINT|MASCOT|APP|AUDIO)__\*\//.test(html)) errs.push('unreplaced placeholder in index.html');
+if (/\/\*__(LESSONS|SYLLABUS|PRINT|MASCOT|APP|AUDIO)__\*\//.test(html)) errs.push('unreplaced placeholder in index.html');
 const js = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 try { new vm.Script(js); } catch (e) { errs.push(`index.html script syntax: ${e.message}`); }
 try { new vm.Script(fs.readFileSync(path.join(dist, 'sw.js'), 'utf8')); } catch (e) { errs.push(`sw.js syntax: ${e.message}`); }
@@ -29,6 +29,11 @@ for (const l of L) {
   if (!l.quiz?.length) errs.push(`lesson ${l.no}: no quiz`);
   l.quiz?.forEach((q, i) => { if (!(q.a >= 0 && q.a < q.o.length)) errs.push(`lesson ${l.no} Q${i + 1}: answer index out of range`); });
 }
+
+// syllabus continuity
+{ const sctx = {}; vm.runInNewContext(fs.readFileSync(path.join(root, 'src', 'syllabus.js'), 'utf8').replace('const SYL=', 'globalThis.SYL='), sctx);
+  let next = 9; for (let n = 1; n <= 6; n++) { const s = sctx.SYL[n]; if (s.from !== next) errs.push(`syllabus step ${n} starts at ${s.from}, expected ${next}`); next = s.from + s.items.length; s.items.forEach((x, i) => { if (x.length !== 3 || x.some(v => !v)) errs.push(`syllabus ${s.from + i}: incomplete`); }); }
+  if (next !== 291) errs.push(`syllabus ends at ${next - 1}, expected 290`); }
 
 if (errs.length) { console.error('✗ check failed\n' + errs.map(e => '  - ' + e).join('\n')); process.exit(1); }
 console.log(`✓ check passed · ${L.length} lessons · ${new Set(Object.values(audioMap)).size} audio · ${L.length * 4} pdf`);
