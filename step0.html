@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ステップ0 教案｜ハングルと発音（第1〜8回）</title>
+<meta name="description" content="韓国語カリキュラム ステップ0：ハングルと発音。第1〜8回の教案・練習・小テスト。">
+<meta name="theme-color" content="#faf6ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161c" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23d4473d'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E%ED%95%9C%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6ef;--bg2:#f3ede2;--card:#fff;--ink:#1b1d24;--ink2:#5a5d68;--ink3:#8b8d96;--line:#e7e0d3;
+  --red:#d4473d;--red-soft:#fbe7e3;--jade:#2f8f7f;--jade-soft:#dff1ec;--indigo:#3b4fa0;--indigo-soft:#e4e8f7;--gold:#c8952e;--gold-soft:#f8eed8;
+  --ok:#2f8f5f;--ok-soft:#e1f3e8;--ng:#c8413a;--ng-soft:#fbe5e2;
+  --shadow:0 1px 2px rgba(27,29,36,.04),0 8px 24px -8px rgba(27,29,36,.10);
+  --shadow-lg:0 2px 4px rgba(27,29,36,.04),0 24px 48px -16px rgba(27,29,36,.18);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14161c;--bg2:#1a1d25;--card:#1f232c;--ink:#f1efe9;--ink2:#b3b5bd;--ink3:#80838d;--line:#2d313c;
+  --red:#ef6a5f;--red-soft:#3a2224;--jade:#4fbfaa;--jade-soft:#1b332f;--indigo:#8a9cf0;--indigo-soft:#232a45;--gold:#e2b55a;--gold-soft:#372e1c;
+  --ok:#5fcf8f;--ok-soft:#1b3326;--ng:#f07a70;--ng-soft:#3a2224;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5);--shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#14161c;--bg2:#1a1d25;--card:#1f232c;--ink:#f1efe9;--ink2:#b3b5bd;--ink3:#80838d;--line:#2d313c;
+  --red:#ef6a5f;--red-soft:#3a2224;--jade:#4fbfaa;--jade-soft:#1b332f;--indigo:#8a9cf0;--indigo-soft:#232a45;--gold:#e2b55a;--gold-soft:#372e1c;
+  --ok:#5fcf8f;--ok-soft:#1b3326;--ng:#f07a70;--ng-soft:#3a2224;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5);--shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans KR",system-ui,sans-serif;line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+[lang="ko"]{font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+@media(min-width:768px){.wrap{padding:0 32px}}
+
+header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:12px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap;min-width:0}
+.logo span:last-child{overflow:hidden;text-overflow:ellipsis}
+.logo-mark{flex-shrink:0}
+@media(max-width:420px){.nav{gap:8px}.back{padding:7px 10px;font-size:12px}}
+.logo-mark{width:32px;height:32px;border-radius:10px;background:var(--red);color:#fff;display:grid;place-items:center;font-family:"Noto Serif KR",serif;font-weight:900;font-size:17px}
+.back{margin-left:auto;font-size:13px;color:var(--ink2);padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);white-space:nowrap}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+.lnav{display:flex;gap:6px;overflow-x:auto;padding:0 20px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;max-width:1120px;margin:0 auto}
+@media(min-width:768px){.lnav{padding:0 32px 12px}}
+.lnav::-webkit-scrollbar{display:none}
+.lnav button{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;transition:.2s}
+.lnav button i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--bg2);font-size:11px}
+.lnav button.done i{background:var(--ok);color:#fff}
+.lnav button[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lnav button[aria-current="true"] i{background:var(--red);color:#fff}
+
+.hero{padding-top:40px;padding-bottom:8px}
+@media(min-width:768px){.hero{padding-top:64px;padding-bottom:16px}}
+.crumb{font-size:13px;color:var(--red);font-weight:700;letter-spacing:.06em}
+.hero h1{font-size:clamp(28px,5.6vw,46px);font-weight:900;line-height:1.3;letter-spacing:-.015em;margin:8px 0 12px}
+.hero p{color:var(--ink2);max-width:640px}
+.overview{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:24px}
+@media(min-width:768px){.overview{grid-template-columns:repeat(4,1fr);gap:12px}}
+.ov{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;cursor:pointer;text-align:left;transition:.2s;box-shadow:var(--shadow)}
+.ov:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.ov small{font-size:11px;color:var(--ink3);font-weight:700}
+.ov b{display:block;font-size:14px;line-height:1.45}
+.ov.cur{border-color:var(--red);box-shadow:0 0 0 2px var(--red-soft)}
+
+main{padding:24px 0 80px}
+.lesson{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow-lg);overflow:hidden}
+.lhead{padding:28px 22px 24px;background:linear-gradient(135deg,var(--red-soft),transparent 65%);border-bottom:1px solid var(--line);position:relative}
+@media(min-width:768px){.lhead{padding:40px 44px 32px}}
+.lhead .no{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--red)}
+.lhead h2{font-size:clamp(24px,4.4vw,36px);font-weight:900;line-height:1.35;margin:6px 0 4px}
+.lhead .sub{color:var(--ink2)}
+.lhead .big{position:absolute;right:20px;top:10px;font-family:"Noto Serif KR",serif;font-weight:900;font-size:clamp(64px,14vw,120px);line-height:1;color:var(--red);opacity:.12;pointer-events:none}
+.goals{display:grid;gap:8px;margin-top:18px}
+.goal{display:flex;gap:10px;align-items:flex-start;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.goal::before{content:"🎯";font-size:14px;line-height:1.75}
+.lbody{padding:8px 22px 28px}
+@media(min-width:768px){.lbody{padding:12px 44px 40px}}
+.sec{padding:26px 0;border-bottom:1px dashed var(--line)}
+.sec:last-child{border-bottom:0}
+.sec h3{font-size:18px;font-weight:900;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec h3 .n{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--ink);color:var(--bg);font-size:13px}
+.sec .desc{color:var(--ink2);font-size:14px;margin:-6px 0 14px}
+
+/* flow */
+.timebar{display:flex;height:40px;border-radius:12px;overflow:hidden;gap:3px;margin-bottom:12px}
+.timebar div{display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;min-width:0}
+.flow{display:grid;gap:8px}
+.fi{display:grid;grid-template-columns:76px 1fr;gap:12px;padding:12px 14px;border-radius:14px;background:var(--bg2);align-items:start}
+.fi .t{font-size:12px;font-weight:700;color:var(--ink3);padding-top:3px;display:flex;align-items:center;gap:6px}
+.fi .t i{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.fi b{display:block;font-size:15px}
+.fi p{font-size:14px;color:var(--ink2)}
+
+/* letters */
+.letters{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.lt{position:relative;background:var(--bg2);border-radius:16px;padding:14px 8px 12px;text-align:center;border:1px solid transparent;cursor:pointer;transition:.2s}
+.lt:hover{border-color:var(--red);transform:translateY(-2px)}
+.lt:active{transform:scale(.97)}
+.lt .k{font-family:"Noto Serif KR",serif;font-size:36px;font-weight:700;line-height:1.15;color:var(--ink)}
+.lt .s{font-size:14px;font-weight:700;margin-top:2px}
+.lt .r{font-size:12px;color:var(--ink3);line-height:1.4;margin-top:2px}
+.lt .sp{position:absolute;right:8px;top:8px;font-size:11px;opacity:.45}
+.grp-label{font-size:12px;font-weight:700;color:var(--ink3);letter-spacing:.06em;margin:18px 0 10px}
+.grp-label:first-child{margin-top:0}
+
+/* table */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:max-content;font-size:15px}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--bg2);font-size:12px;color:var(--ink3);font-weight:700}
+tr:last-child td{border-bottom:0}
+td.ko{font-family:"Noto Sans KR",sans-serif;font-size:18px;font-weight:500;cursor:pointer}
+td.ko:hover{color:var(--red)}
+td.lab{font-weight:700;background:var(--bg2);font-size:13px;color:var(--ink2)}
+td.l{text-align:left;white-space:normal}
+
+/* points */
+.points{display:grid;gap:10px}
+@media(min-width:768px){.points{grid-template-columns:repeat(2,1fr)}}
+.pt{padding:14px 16px;border-radius:14px;background:var(--gold-soft);font-size:14px;display:flex;gap:10px}
+.pt b{display:block;font-size:15px;margin-bottom:2px}
+.pt::before{content:"💡"}
+
+/* words */
+.words{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.w{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);cursor:pointer;transition:.2s;text-align:left;width:100%}
+.w:hover{border-color:var(--jade);background:var(--jade-soft)}
+.w .k{font-family:"Noto Sans KR",sans-serif;font-weight:700;font-size:19px;white-space:nowrap}
+.w .m{font-size:13px;color:var(--ink2);line-height:1.4}
+.w .p{font-family:"Noto Sans KR",sans-serif;font-size:12px;color:var(--jade);display:block}
+.w .sp{margin-left:auto;font-size:13px;opacity:.5;flex-shrink:0}
+.list{list-style:none;display:grid;gap:8px}
+.list li{position:relative;padding-left:24px;font-size:15px}
+.list li::before{content:"";position:absolute;left:4px;top:.65em;width:8px;height:8px;border-radius:50%;border:2px solid var(--indigo)}
+.list.hw li::before{border-radius:3px;border-color:var(--gold)}
+.memo{margin-top:16px;padding:14px 16px;border-radius:14px;border:1px dashed var(--indigo);background:var(--indigo-soft);font-size:14px}
+.memo b{color:var(--indigo);display:block;font-size:12px;letter-spacing:.06em;margin-bottom:2px}
+
+/* quiz */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:18px;padding:18px;background:var(--card)}
+.q .qt{font-weight:700;font-size:16px;margin-bottom:12px;display:flex;gap:10px}
+.q .qt span{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:var(--red-soft);color:var(--red);display:grid;place-items:center;font-size:13px}
+.opts{display:grid;gap:8px}
+@media(min-width:600px){.opts{grid-template-columns:repeat(3,1fr)}}
+.opt{padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);cursor:pointer;text-align:left;font-size:15px;transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--ink3)}
+.opt:disabled{cursor:default}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:700}
+.opt.ng{border-color:var(--ng);background:var(--ng-soft);color:var(--ng)}
+.ex{display:none;margin-top:12px;font-size:14px;color:var(--ink2);padding:10px 14px;border-radius:10px;background:var(--bg2)}
+.q.answered .ex{display:block}
+.score{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-radius:16px;background:var(--ink);color:var(--bg)}
+.score b{font-size:20px}
+.score button{background:var(--bg);color:var(--ink);border:0;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:13px}
+
+/* test sheet */
+.sheet{display:grid;gap:12px}
+@media(min-width:768px){.sheet{grid-template-columns:repeat(3,1fr)}}
+.sh{border:1px solid var(--line);border-radius:18px;padding:18px;background:var(--bg2)}
+.sh h4{font-size:15px;margin-bottom:4px}
+.sh small{font-size:12px;color:var(--ink3);display:block;margin-bottom:12px}
+.sh ol{padding-left:22px;display:grid;gap:4px;font-size:15px}
+.sh ol li span{font-family:"Noto Sans KR",sans-serif;font-weight:500}
+.ans{color:var(--jade);font-size:13px;margin-left:6px;opacity:0;transition:.2s}
+.show-ans .ans{opacity:1}
+.toggle{margin-top:12px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer}
+
+.lfoot{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:20px 22px;border-top:1px solid var(--line);background:var(--bg2)}
+@media(min-width:768px){.lfoot{padding:20px 44px}}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;border:1px solid var(--line);background:var(--card);transition:.2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+.btn:disabled{opacity:.35;cursor:default}
+.fgrp{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.fade{animation:fade .4s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+footer{padding:32px 0 calc(32px + env(safe-area-inset-bottom));text-align:center;color:var(--ink3);font-size:13px;border-top:1px solid var(--line)}
+@media print{
+  header,.lfoot,.overview,footer,.toggle,.score button{display:none!important}
+  body{background:#fff}.lesson{box-shadow:none;border:0}.ans{opacity:1}.ex{display:block}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav wrap">
+    <a href="./" class="logo"><span class="logo-mark">한</span><span>ステップ0 教案</span></a>
+    <a href="./#steps" class="back">← カリキュラム</a>
+    <button class="icon-btn" id="printBtn" aria-label="印刷">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+    </button>
+    <button class="icon-btn" id="themeBtn" aria-label="テーマ切替">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+  <nav class="lnav" id="lnav" aria-label="授業回"></nav>
+</header>
+
+<div class="wrap hero">
+  <div class="crumb">STEP 0 · 第1〜8回 · 約2ヶ月</div>
+  <h1>ハングルと発音</h1>
+  <p>8回でハングルを読み書きでき、聞いた単語を書き取れるようになるのがゴールです。文字や単語をタップすると韓国語の音声が流れます。</p>
+  <div class="overview" id="overview"></div>
+</div>
+
+<main class="wrap">
+  <article class="lesson" id="lesson"></article>
+</main>
+
+<footer><span lang="ko">한 걸음씩!</span> — 一歩ずつ。韓国語カリキュラム ステップ0</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const FLOWC=['var(--gold)','var(--jade)','var(--red)','var(--indigo)','#2b9bb5','#7a5bb5'];
+const L=[
+{no:1,title:'基本母音',sub:'ハングルのしくみと10の母音',big:'아',
+ goals:['基本母音10個を読み、書き順どおりに書ける','「子音＋母音」で1文字になるしくみを説明できる'],
+ flow:[[5,'あいさつ・導入','韓国語でできること、学習の目標を共有'],[10,'ハングルのしくみ','子音＋母音（＋パッチム）でブロックを作る。ㅇは母音だけの文字の「席」'],[20,'基本母音10個','口の形を見せながら発音→書き順。ㅓ／ㅗ、ㅜ／ㅡの違いに時間をかける'],[15,'練習','先生が読んだ文字を指さす／単語を読む'],[7,'聞き取り','10個の母音をランダムに聞いて書く'],[3,'まとめ・宿題','書き順と口の形を確認']],
+ letters:[{g:'縦棒（ㅇの右につく）',items:[['아','ㅏ','ア'],['야','ㅑ','ヤ'],['어','ㅓ','オ（口を大きく開ける）'],['여','ㅕ','ヨ（口を大きく）'],['이','ㅣ','イ']]},
+          {g:'横棒（ㅇの下につく）',items:[['오','ㅗ','オ（唇を丸める）'],['요','ㅛ','ヨ（唇を丸める）'],['우','ㅜ','ウ（唇を丸めて突き出す）'],['유','ㅠ','ユ'],['으','ㅡ','ウ（唇を横に引く）']]}],
+ points:[['ㅓ と ㅗ','どちらも「オ」。ㅓは口を縦に大きく開け、ㅗは唇を丸めて小さく。'],['ㅜ と ㅡ','ㅜは唇を丸めて前に。ㅡは「イ」の口のまま「ウ」と言う。'],['ㅇ の役割','母音で始まる文字では、子音の席にㅇを置く（音はない）。'],['書き順','上から下、左から右。短い線を1画ずつ。']],
+ words:[['아이','子ども'],['오이','きゅうり'],['우유','牛乳'],['여우','きつね'],['이유','理由'],['여유','余裕']],
+ practice:['先生が読んだ母音カードを指さす（10回×2セット）','鏡を見ながら ㅓ／ㅗ、ㅜ／ㅡ を交互に発音','単語6つを読み、漢字語（理由・余裕）を当てる'],
+ homework:['母音10個を各10回、書き順どおりに書く','単語6つを音読して録音し、提出する'],
+ memo:'日本語話者は ㅓ を ㅗ に、ㅡ を ㅜ に寄せがち。口の形を大げさにして違いを体で覚えさせる。',
+ quiz:[{q:'「우유」の意味は？',o:['牛乳','きつね','理由'],a:0,e:'우유（ウユ）＝牛乳。漢字語です。'},
+       {q:'唇を横に引いて「ウ」と言う母音は？',o:['ㅜ','ㅡ','ㅗ'],a:1,e:'ㅡ は「イ」の口のまま「ウ」。ㅜ は唇を丸めます。'},
+       {q:'縦棒の母音（ㅏ・ㅓ など）は、ㅇのどこにつく？',o:['右','下','左'],a:0,e:'縦棒は右（아）、横棒は下（오）につきます。'},
+       {q:'「여우」の意味は？',o:['子ども','きつね','余裕'],a:1,e:'여우＝きつね。여유（余裕）と1文字違いなので注意。'}]},
+
+{no:2,title:'基本子音（平音）',sub:'ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ',big:'가',
+ goals:['基本子音9個を読み書きできる','母音と組み合わせて「가나다」表を読める','語中で濁る（有声化）ことを理解する'],
+ flow:[[5,'復習','母音10個の読み上げ・書き取り'],[10,'子音の形','発音するときの口や舌の形から字ができていることを説明'],[20,'基本子音9個','ㄱ〜ㅈ。가나다表を一緒に読む'],[15,'練習','単語の読み、有声化（고기・바다）の確認'],[7,'聞き取り','가・나・다…をランダムに書き取り'],[3,'まとめ・宿題','가나다表を宿題に']],
+ letters:[{g:'基本子音（平音）',items:[['가','ㄱ','k / g'],['나','ㄴ','n'],['다','ㄷ','t / d'],['라','ㄹ','r / l'],['마','ㅁ','m'],['바','ㅂ','p / b'],['사','ㅅ','s'],['아','ㅇ','無音（母音の席）'],['자','ㅈ','ch / j']]}],
+ table:{cols:['','ㅏ','ㅓ','ㅗ','ㅜ','ㅡ','ㅣ'],rows:[['ㄱ','가','거','고','구','그','기'],['ㄴ','나','너','노','누','느','니'],['ㄷ','다','더','도','두','드','디'],['ㄹ','라','러','로','루','르','리'],['ㅁ','마','머','모','무','므','미'],['ㅂ','바','버','보','부','브','비'],['ㅅ','사','서','소','수','스','시'],['ㅈ','자','저','조','주','즈','지']]},
+ points:[['語中で濁る','ㄱㄷㅂㅈ は母音にはさまれると濁る：고기［コギ］、바다［パダ］。'],['語頭は濁らない','語頭の 가 は「カ」と「ガ」の中間。息は弱めに。'],['ㄹ は「ラ行」','舌先を軽くはじく。英語のRのように巻かない。'],['시 は「シ」','사 서 소 수 스 시 —「スィ」ではなく「シ」。']],
+ words:[['나라','国'],['어머니','母'],['바다','海'],['고기','肉'],['모자','帽子'],['지도','地図'],['가수','歌手'],['도시','都市'],['우리','私たち'],['나비','蝶']],
+ practice:['가나다表を縦・横に読む','単語10個を読み、漢字語（帽子・地図・歌手・都市）を当てる','고기・바다・지도 で語中の濁りを確認'],
+ homework:['가나다表（ㄱ〜ㅈ × ㅏㅓㅗㅜㅡㅣ）を書いて埋める','単語10個を各3回書く'],
+ memo:'語頭の平音を「ガ」「ダ」と濁らせても通じるが、第3回の激音・濃音との対比のために「息を弱く」を意識させておく。',
+ quiz:[{q:'「바다」の意味は？',o:['海','国','母'],a:0,e:'바다［パダ］＝海。ㄷ が語中で濁ります。'},
+       {q:'「고기」の2文字目 ㄱ はどう聞こえる？',o:['k（濁らない）','g（濁る）','音がない'],a:1,e:'母音にはさまれた ㄱ は濁って g の音になります。'},
+       {q:'「지도」を漢字で書くと？',o:['地図','時代','指導'],a:0,e:'지도＝地図。漢字語は音の対応で覚えると楽です。'},
+       {q:'音がなく、母音の「席」になる子音は？',o:['ㄴ','ㅇ','ㅎ'],a:1,e:'ㅇ は文字の最初では音がありません。'}]},
+
+{no:3,title:'激音・濃音',sub:'가・카・까 の聞き分け',big:'까',
+ goals:['激音（ㅋㅌㅍㅊㅎ）と濃音（ㄲㄸㅃㅆㅉ）を読み書きできる','平音・激音・濃音の3つを聞き分けて発音できる'],
+ flow:[[5,'復習','가나다表の読み上げ'],[10,'激音','息を強く出す音。ティッシュを口の前に置いて揺れるか確認'],[15,'濃音','息を止めてのどを詰める音。「っか」の「か」'],[15,'3段比較','가／카／까 などを並べて発音・聞き分け'],[12,'聞き取りゲーム','先生が1つ読み、どれか当てる'],[3,'まとめ・宿題','単語の音読録音']],
+ letters:[{g:'激音（息を強く）',items:[['카','ㅋ','kʰ'],['타','ㅌ','tʰ'],['파','ㅍ','pʰ'],['차','ㅊ','chʰ'],['하','ㅎ','h']]},
+          {g:'濃音（のどを詰める）',items:[['까','ㄲ','っk'],['따','ㄸ','っt'],['빠','ㅃ','っp'],['싸','ㅆ','っs'],['짜','ㅉ','っch']]}],
+ table:{cols:['','平音','激音','濃音'],rows:[['k','가','카','까'],['t','다','타','따'],['p','바','파','빠'],['ch','자','차','짜'],['s','사','—','싸']]},
+ points:[['激音はティッシュが揺れる','口の前にティッシュを垂らし、카 で大きく揺れればOK。'],['濃音は揺れない','「まっか」の「っか」のように、息を止めてから出す。'],['濃音は語中でも濁らない','아빠 は［アッパ］。平音のように濁らない。'],['ㅎ は激音の仲間','하나（1つ）。語中では弱くなることがある（第6回）。']],
+ words:[['코','鼻'],['토마토','トマト'],['포도','ぶどう'],['차','お茶・車'],['하나','1つ'],['아빠','パパ'],['오빠','お兄さん（女性から）'],['토끼','うさぎ'],['아저씨','おじさん'],['싸다','安い'],['비싸다','高い'],['짜다','しょっぱい']],
+ practice:['ティッシュテストで 가／카 を交互に','3段比較表を先生→学習者の順で発音','聞き取りゲーム：先生が読んだ音を表から指さす（15問）'],
+ homework:['3段比較表を3回音読して録音','単語12個を書き、意味を覚える'],
+ memo:'日本語話者には濃音が最難関。最初から完璧を求めず、聞き分けができればOKとする。싸다／비싸다 は対で覚えさせると印象に残る。',
+ quiz:[{q:'息を強く出す音（激音）はどれ？',o:['가','카','까'],a:1,e:'카 が激音。까 は濃音、가 は平音です。'},
+       {q:'「아빠」の意味は？',o:['パパ','お兄さん','おじさん'],a:0,e:'아빠＝パパ。오빠 は女性から見たお兄さん。'},
+       {q:'「싸다」の意味は？',o:['高い','安い','しょっぱい'],a:1,e:'싸다＝安い、비싸다＝高い、짜다＝しょっぱい。'},
+       {q:'濃音を発音するときのコツは？',o:['息を強く出す','のどを詰めて息を出さない','鼻から息を出す'],a:1,e:'「っか」の「か」のように、のどを詰めて出します。'}]},
+
+{no:4,title:'合成母音',sub:'ㅐ ㅔ ㅘ ㅝ ㅢ など11個',big:'왜',
+ goals:['合成母音11個を読み書きできる','発音が同じになる母音（ㅐ／ㅔ など）を区別して書ける'],
+ flow:[[5,'復習','激音・濃音の聞き分け'],[10,'ㅐ ㅔ ㅒ ㅖ','ㅐ と ㅔ は今はほぼ同じ音'],[15,'ㅘ ㅙ ㅚ ㅝ ㅞ ㅟ ㅢ','「ㅗ＋ㅏ＝ㅘ」のように足し算で作る'],[15,'練習','単語の読み。ㅢ の3つの読み方'],[12,'書き取り','似た音の単語を書き分け'],[3,'まとめ・宿題','単語の書き取り']],
+ letters:[{g:'ㅐ・ㅔ の仲間',items:[['애','ㅐ','エ（口を広め）'],['에','ㅔ','エ'],['얘','ㅒ','イェ'],['예','ㅖ','イェ']]},
+          {g:'ㅗ・ㅜ ＋ 母音',items:[['와','ㅘ','ワ（ㅗ＋ㅏ）'],['왜','ㅙ','ウェ（ㅗ＋ㅐ）'],['외','ㅚ','ウェ（ㅗ＋ㅣ）'],['워','ㅝ','ウォ（ㅜ＋ㅓ）'],['웨','ㅞ','ウェ（ㅜ＋ㅔ）'],['위','ㅟ','ウィ（ㅜ＋ㅣ）'],['의','ㅢ','ウイ（ㅡ＋ㅣ）']]}],
+ points:[['ㅐ ＝ ㅔ','今の韓国語ではほぼ同じ「エ」。개（犬）と 게（カニ）はつづりで覚える。'],['ㅙ ＝ ㅚ ＝ ㅞ','3つとも「ウェ」。これもつづりで区別。'],['ㅢ は3通り','語頭は［의］、語中は［이］、助詞「の」は［에］。'],['足し算で覚える','ㅗ＋ㅏ＝ㅘ、ㅜ＋ㅓ＝ㅝ。組み合わせる母音は「明るい同士・暗い同士」。']],
+ words:[['개','犬'],['게','カニ'],['사과','りんご'],['회사','会社'],['뭐','何'],['귀','耳'],['의사','医者'],['의자','椅子'],['시계','時計'],['돼지','豚'],['위','上'],['왜','なぜ']],
+ practice:['足し算カード：ㅗ＋ㅏ→？ をすばやく答える','개／게、의사／의자 を読み比べ','単語12個を読み、漢字語（会社・医者・時計）を当てる'],
+ homework:['合成母音11個を各5回書く','単語12個を書き取り（音声を聞いて）'],
+ memo:'発音の区別より「つづりの区別」が大事な回。音が同じものはまとめて見せ、負担を減らす。',
+ quiz:[{q:'「개」と「게」の発音は？',o:['まったく違う','ほぼ同じ','게 は音がない'],a:1,e:'ㅐ と ㅔ は今はほぼ同じ音。意味は 개＝犬、게＝カニ。'},
+       {q:'ㅗ ＋ ㅏ ＝ ？',o:['ㅘ','ㅝ','ㅚ'],a:0,e:'ㅗ＋ㅏ＝ㅘ（ワ）。'},
+       {q:'「회사」を漢字で書くと？',o:['会社','回数','会話'],a:0,e:'회사＝会社。'},
+       {q:'「의사」の意味は？',o:['椅子','医者','意志'],a:1,e:'의사＝医者（意思も同じつづり）。의자＝椅子。'}]},
+
+{no:5,title:'パッチム（終声）',sub:'7つの代表音',big:'밥',
+ goals:['パッチムの7つの代表音を発音できる','ㄴ・ㅁ・ㅇ、ㄱ・ㄷ・ㅂ を区別して発音できる'],
+ flow:[[5,'復習','合成母音の読み上げ'],[10,'パッチムとは','文字の下につく子音。音は7つだけ'],[20,'鼻音 ㄴ ㅁ ㅇ と ㄹ','日本語の「ん」の3つの音で説明'],[15,'つまる音 ㄱ ㄷ ㅂ','日本語の「っ」で説明。書くと違うが音は同じになるもの'],[7,'聞き取り','안／암／앙 の聞き分け'],[3,'まとめ・宿題','代表音の表を宿題に']],
+ table:{cols:['代表音','パッチムの文字','例','日本語でいうと'],rows:[['［ㄱ］','ㄱ ㅋ ㄲ','책（本）・부엌［부억］','がっこう の「っ」'],['［ㄴ］','ㄴ','산（山）','あんない の「ん」'],['［ㄷ］','ㄷ ㅌ ㅅ ㅆ ㅈ ㅊ ㅎ','옷［옫］・꽃［꼳］','いった の「っ」'],['［ㄹ］','ㄹ','물（水）','舌先を上につけたまま'],['［ㅁ］','ㅁ','밤（夜・栗）','さんま の「ん」'],['［ㅂ］','ㅂ ㅍ','밥（ご飯）・앞［압］','いっぱい の「っ」'],['［ㅇ］','ㅇ','방（部屋）','りんご の「ん」']],left:[2,3]},
+ points:[['「ん」は3種類','안（舌先が上）、암（口を閉じる）、앙（口を開けたまま）。'],['「っ」も3種類','악（のどで止める）、앋（舌で止める）、압（唇で止める）。'],['ㄹ は「ル」と言わない','물 を「ムル」と言わず、舌を上につけたまま止める。'],['書き方は多い、音は7つ','옷・꽃・낮 はどれも［ㄷ］の音で終わる。']],
+ words:[['산','山'],['밤','夜・栗'],['방','部屋'],['물','水'],['책','本'],['밥','ご飯'],['옷','服','옫'],['꽃','花','꼳'],['부엌','台所','부억'],['앞','前','압'],['한국','韓国'],['일본','日本'],['사람','人'],['선생님','先生']],
+ practice:['안／암／앙、악／앋／압 を口の形を確認しながら発音','聞き取り：先生が読んだのはどれ？（10問）','単語14個を読み、옷・꽃・부엌・앞 の発音を確認'],
+ homework:['代表音の表を見ずに書けるようにする','単語14個を音読して録音'],
+ memo:'日本語の「ん」「っ」は無意識に3種類を使い分けているので、日本語の単語で口の形を確認させると一気に理解が進む。',
+ quiz:[{q:'「옷」の発音は？',o:['［오스］','［옫］','［옥］'],a:1,e:'パッチム ㅅ は［ㄷ］の音。옷＝［옫］。'},
+       {q:'「さんま」の「ん」に近いパッチムは？',o:['ㄴ','ㅁ','ㅇ'],a:1,e:'唇を閉じる「ん」なので ㅁ。'},
+       {q:'「밥」の意味は？',o:['ご飯','夜','部屋'],a:0,e:'밥＝ご飯。밤＝夜・栗、방＝部屋。'},
+       {q:'「앞」の発音は？',o:['［압］','［아프］','［앋］'],a:0,e:'パッチム ㅍ は［ㅂ］の音。앞＝［압］。'}]},
+
+{no:6,title:'音の変化①',sub:'連音化・ㅎの弱化・二重パッチム',big:'어',
+ goals:['連音化のルールで単語を正しく読める','二重パッチムの基本的な読み方がわかる'],
+ flow:[[5,'復習','パッチム7代表音'],[15,'連音化','パッチム＋ㅇ → パッチムが次に移る'],[10,'ㅎ の弱化','좋아요［조아요］など、ㅎ が消える場合'],[10,'二重パッチム','값・닭・여덟 など。どちらか1つを読む'],[15,'練習','フレーズを読む・書き取り'],[5,'まとめ・宿題','発音どおりにふりがなを書く宿題']],
+ table:{cols:['つづり','発音','意味'],rows:[['한국어','한구거','韓国語'],['일본어','일보너','日本語'],['음악','으막','音楽'],['단어','다너','単語'],['옷이','오시','服が'],['좋아요','조아요','いいです'],['값','갑','値段'],['닭','닥','鶏'],['여덟','여덜','8つ']]},
+ points:[['パッチム＋ㅇ＝移動','한국어 → 한/구/거。ㅇ の席にパッチムが入る。'],['ㅇ パッチムは移らない','고양이（猫）は［고양이］のまま。'],['ㅎ は消えやすい','좋아요［조아요］、괜찮아요［괜차나요］。'],['二重パッチム','基本は左を読む（값［갑］・여덟［여덜］）。ㄺ は右（닭［닥］）。']],
+ words:[['한국어','韓国語','한구거'],['일본어','日本語','일보너'],['음악','音楽','으막'],['단어','単語','다너'],['고양이','猫'],['좋아요','いいです','조아요'],['괜찮아요','大丈夫です','괜차나요'],['값','値段','갑']],
+ practice:['単語を見て、発音どおりにハングルで書き直す（한국어→한구거）','先生が読んだフレーズを書き取る（つづりで）','저는 한국어를 공부해요（私は韓国語を勉強します）を読む'],
+ homework:['単語8個の「発音」と「つづり」を両方書く','例文を音読して録音'],
+ memo:'連音化は今後すべての読みに関わる最重要ルール。二重パッチムは「こういうものがある」程度でOK、ステップ1以降で繰り返す。',
+ quiz:[{q:'「음악」の発音は？',o:['［음악］','［으막］','［음막］'],a:1,e:'ㅁ が次の ㅇ の席に移り［으막］。'},
+       {q:'「한국어」の発音は？',o:['［한구거］','［한국어］','［하눅어］'],a:0,e:'ㄱ が移って［한구거］。'},
+       {q:'「값」の発音は？',o:['［갑］','［갓］','［가프］'],a:0,e:'ㅄ は左の ㅂ を読み［갑］。'},
+       {q:'「고양이」の発音は？',o:['［고야이］','［고양이］','［고얀이］'],a:1,e:'ㅇ パッチムは移らないので、そのまま［고양이］。'}]},
+
+{no:7,title:'あいさつと名前',sub:'基本表現と日本語のハングル表記',big:'안',
+ goals:['基本のあいさつ10個が言える','自分や家族の名前をハングルで書ける','ハングルで簡単な自己紹介ができる'],
+ flow:[[5,'復習','連音化の単語を読む'],[15,'あいさつ','場面ごとの表現と発音（감사합니다［감사함니다］など）'],[15,'名前の書き方','日本語をハングルで書くルール'],[15,'自己紹介','ロールプレイ：初対面のあいさつ'],[7,'聞き取り','あいさつを聞いて場面を選ぶ'],[3,'まとめ・宿題','自己紹介文を書く']],
+ table:{cols:['韓国語','発音','意味・場面'],rows:[['안녕하세요','안녕하세요','こんにちは（朝・昼・夜）'],['처음 뵙겠습니다','처음 뵙껟씀니다','はじめまして'],['저는 ○○입니다','저는 ○○임니다','私は○○です'],['만나서 반갑습니다','만나서 반갑씀니다','お会いできてうれしいです'],['잘 부탁합니다','잘 부타캄니다','よろしくお願いします'],['감사합니다','감사함니다','ありがとうございます'],['죄송합니다','죄송함니다','申し訳ありません'],['네 / 아니요','네 / 아니요','はい／いいえ'],['안녕히 가세요','안녕히 가세요','さようなら（去る人へ）'],['안녕히 계세요','안녕히 게세요','さようなら（残る人へ）']],left:[2]},
+ points:[['語頭は平音、語中は激音','か・た行は語頭で 가・다、語中で 카・타：たなか→다나카。'],['「つ」は 쓰','まつもと→마쓰모토、つばさ→쓰바사。'],['「ん」は ㄴ、「っ」は ㅅ','けんた→겐타、はっとり→핫토리。'],['長音は書かない','とうきょう→도쿄、おおさか→오사카、さとう→사토。']],
+ words:[['다나카','田中'],['스즈키','鈴木'],['사토','佐藤'],['마쓰모토','松本'],['겐타','健太'],['후쿠오카','福岡'],['도쿄','東京'],['오사카','大阪']],
+ practice:['自分・家族・友達の名前をハングルで書く','ロールプレイ：안녕하세요 → 처음 뵙겠습니다 → 저는 ○○입니다 → 잘 부탁합니다','안녕히 가세요／계세요 の使い分けクイズ'],
+ homework:['自己紹介文（3文）をハングルで書く','あいさつ10個を音読して録音'],
+ memo:'합니다 の［함니다］（鼻音化）はステップ2で詳しく扱う。ここでは「そう読む」と丸ごと覚えさせる。',
+ quiz:[{q:'「ふくおか」をハングルで書くと？',o:['후쿠오카','후구오가','후쿠오까'],a:0,e:'語頭のふ→후、語中のく・か→쿠・카。'},
+       {q:'あなたが帰るとき、残る人に言うのは？',o:['안녕히 가세요','안녕히 계세요','안녕하세요'],a:1,e:'계세요 は「いてください」＝残る人へ。가세요 は「行ってください」＝去る人へ。'},
+       {q:'「감사합니다」の発音は？',o:['［감사합니다］','［감사함니다］','［감사하니다］'],a:1,e:'ㅂ が ㄴ の前で［ㅁ］になります（鼻音化）。'},
+       {q:'「とうきょう」をハングルで書くと？',o:['토우쿄우','도쿄','도우쿄'],a:1,e:'語頭は平音、長音は書かないので 도쿄。'}]},
+
+{no:8,title:'総復習と小テスト',sub:'ステップ0の仕上げ',big:'끝',
+ goals:['ステップ0の内容を総復習する','小テストで8割以上をとり、ステップ1に進む'],
+ flow:[[5,'ウォームアップ','あいさつと自己紹介'],[15,'総復習','母音・子音・パッチム・音の変化を一覧で確認'],[25,'小テスト','読み10問・書き取り10問・聞き分け5問'],[10,'答え合わせ','間違えたところをその場で練習'],[5,'ステップ1の予告','-입니다、은/는 など次に学ぶこと']],
+ sheet:[{t:'読み',d:'声に出して読み、意味を言う',items:[['우유','牛乳'],['바다','海'],['토끼','うさぎ'],['사과','りんご'],['의사','医者'],['책','本'],['한국어','［한구거］韓国語'],['음악','［으막］音楽'],['선생님','先生'],['감사합니다','［감사함니다］ありがとうございます']]},
+        {t:'書き取り',d:'先生が読む単語をハングルで書く',items:[['아이','子ども'],['나라','国'],['포도','ぶどう'],['시계','時計'],['밥','ご飯'],['꽃','花'],['일본어','日本語'],['고양이','猫'],['안녕하세요','こんにちは'],['自分の名前','例：다나카']]},
+        {t:'聞き分け',d:'先生が1つ読み、学習者が○をつける',items:[['가 ／ 카 ／ 까','平音・激音・濃音'],['다 ／ 타 ／ 따','平音・激音・濃音'],['어 ／ 오','口を開く／丸める'],['안 ／ 암 ／ 앙','3つの「ん」'],['개 ／ 귀','犬／耳']]}],
+ points:[['合格ライン','25問中20問（8割）以上でステップ1へ。'],['間違いが多いところ','ㅓ／ㅗ、濃音、パッチム ㅁ／ㅇ は特に重点的に復習。']],
+ practice:['間違えた問題を5回ずつ発音・書き直し','ステップ1で使う単語（학생・회사원・선생님）を先取りで読む'],
+ homework:['小テストの間違い直し','教科書『できる韓国語 初級Ⅰ』の第1課を読んでおく'],
+ memo:'8割に届かなくても、聞き分け以外が取れていれば進んでよい。濃音の聞き分けはステップ1でも毎回の発音コーナーで続ける。',
+ quiz:[{q:'「선생님」の意味は？',o:['先生','学生','会社員'],a:0,e:'선생님＝先生。'},
+       {q:'「꽃」の発音は？',o:['［꼳］','［꼬츠］','［꼭］'],a:0,e:'パッチム ㅊ は［ㄷ］の音。'},
+       {q:'「일본어」の発音は？',o:['［일본어］','［일보너］','［이본어］'],a:1,e:'ㄴ が移って［일보너］。'},
+       {q:'のどを詰めて出す音（濃音）はどれ？',o:['타','따','다'],a:1,e:'따 が濃音、타 が激音、다 が平音。'},
+       {q:'「まつもと」をハングルで書くと？',o:['마츠모토','마쓰모토','마쓰모도'],a:1,e:'「つ」は 쓰、語中の「と」は 토。'}]}
+];
+
+/* ---------- speech ---------- */
+let koVoice=null,warned=false;
+function loadVoice(){try{const vs=speechSynthesis.getVoices();koVoice=vs.find(v=>/^ko/i.test(v.lang))||null}catch(e){}}
+if('speechSynthesis' in window){loadVoice();speechSynthesis.onvoiceschanged=loadVoice}
+function say(t){
+  if(!('speechSynthesis' in window)){toast('このブラウザは音声読み上げに対応していません');return}
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/[［］\[\]○]/g,''));u.lang='ko-KR';u.rate=.8;if(koVoice)u.voice=koVoice;speechSynthesis.speak(u);
+    if(!koVoice&&!warned)setTimeout(()=>{loadVoice();if(!koVoice){warned=true;toast('韓国語の音声がない場合は、端末の設定で韓国語の音声を追加してください')}},300)}catch(e){}
+}
+const tEl=document.getElementById('toast');let tT;
+function toast(m){tEl.textContent=m;tEl.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>tEl.classList.remove('show'),2600)}
+
+/* ---------- progress ---------- */
+let done=[];try{done=JSON.parse(localStorage.getItem('step0-done')||'[]')}catch(e){}
+function saveDone(){try{localStorage.setItem('step0-done',JSON.stringify(done))}catch(e){}}
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isKo=s=>/[가-힣ㄱ-ㆎ]/.test(s);
+
+/* ---------- nav ---------- */
+const lnav=document.getElementById('lnav'),ov=document.getElementById('overview');
+function renderNav(cur){
+  lnav.innerHTML=L.map((l,i)=>`<button data-i="${i}" class="${done.includes(l.no)?'done':''}" aria-current="${i===cur}"><i>${done.includes(l.no)?'✓':l.no}</i>${l.title}</button>`).join('');
+  ov.innerHTML=L.map((l,i)=>`<button class="ov${i===cur?' cur':''}" data-i="${i}"><small>第${l.no}回${done.includes(l.no)?' ✓':''}</small><b>${l.title}</b></button>`).join('');
+  [...lnav.children,...ov.children].forEach(b=>b.onclick=()=>go(+b.dataset.i,true));
+  const c=lnav.children[cur];if(c)lnav.scrollTo({left:c.offsetLeft-(lnav.clientWidth-c.offsetWidth)/2,behavior:'smooth'});
+}
+
+/* ---------- lesson ---------- */
+const art=document.getElementById('lesson');
+function render(i){
+  const l=L[i];let n=0;const sec=(t,body,desc='')=>`<section class="sec"><h3><span class="n">${++n}</span>${t}</h3>${desc?`<p class="desc">${desc}</p>`:''}${body}</section>`;
+  let h=`<div class="lhead"><span class="big" lang="ko">${l.big}</span><div class="no">第${l.no}回 / 全8回</div><h2>${l.title}</h2><div class="sub">${l.sub}</div><div class="goals">${l.goals.map(g=>`<div class="goal">${esc(g)}</div>`).join('')}</div></div><div class="lbody">`;
+  const tot=l.flow.reduce((a,f)=>a+f[0],0);let acc=0;
+  h+=sec('60分の流れ',`<div class="timebar">${l.flow.map((f,k)=>`<div style="flex:${f[0]};background:${FLOWC[k%6]}">${f[0]>=7?f[0]+'分':''}</div>`).join('')}</div><div class="flow">${l.flow.map((f,k)=>{const s=acc;acc+=f[0];return `<div class="fi"><div class="t"><i style="background:${FLOWC[k%6]}"></i>${s}〜${acc}分</div><div><b>${esc(f[1])}</b><p>${esc(f[2])}</p></div></div>`}).join('')}</div>`);
+  if(l.letters)h+=sec('文字',l.letters.map(g=>`<div class="grp-label">${g.g}</div><div class="letters">${g.items.map(x=>`<button class="lt" data-say="${x[0]}"><span class="sp">🔊</span><div class="k" lang="ko">${x[1]}</div><div class="s" lang="ko">${x[0]}</div><div class="r">${x[2]}</div></button>`).join('')}</div>`).join(''),'タップすると音声が流れます');
+  if(l.table){const lf=l.table.left||[];h+=sec(l.no===2?'가나다表':l.no===3?'3段比較表':l.no===5?'7つの代表音':l.no===6?'発音の変化':'あいさつ表現',
+    `<div class="tbl-wrap"><table><thead><tr>${l.table.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,k)=>{
+      if(l.no===2&&k===0)return `<td class="lab" lang="ko">${c}</td>`;
+      if(l.no===3&&k===0)return `<td class="lab">${c}</td>`;
+      if(lf.includes(k))return `<td class="l">${esc(c)}</td>`;
+      if(c!=='—'&&isKo(c)&&!/^［/.test(c)&&!/ㄱ ㅋ|ㄷ ㅌ|ㅂ ㅍ/.test(c))return `<td class="ko" lang="ko" data-say="${esc(c.replace(/［.*$/,'').replace(/（.*$/,''))}">${esc(c)}</td>`;
+      return `<td>${esc(c)}</td>`}).join('')}</tr>`).join('')}</tbody></table></div>`,'韓国語のセルをタップすると音声が流れます')}
+  h+=sec('ポイント',`<div class="points">${l.points.map(p=>`<div class="pt"><div><b>${esc(p[0])}</b>${esc(p[1])}</div></div>`).join('')}</div>`);
+  if(l.words)h+=sec('単語',`<div class="words">${l.words.map(w=>`<button class="w" data-say="${w[0]}"><span class="k" lang="ko">${w[0]}</span><span class="m">${w[2]?`<span class="p" lang="ko">［${w[2]}］</span>`:''}${esc(w[1])}</span><span class="sp">🔊</span></button>`).join('')}</div>`);
+  if(l.sheet)h+=sec('小テスト（プリント）',`<div class="sheet" id="sheet">${l.sheet.map(s=>`<div class="sh"><h4>${s.t}</h4><small>${s.d}</small><ol>${s.items.map(x=>`<li><span lang="ko">${esc(x[0])}</span><span class="ans">${esc(x[1])}</span></li>`).join('')}</ol></div>`).join('')}</div><button class="toggle" id="ansBtn">答えを表示</button>`,'印刷して使えます（右上のプリンターボタン）。書き取りの単語は先生が読み上げます');
+  h+=sec('練習',`<ul class="list">${l.practice.map(p=>`<li>${esc(p)}</li>`).join('')}</ul><div class="memo"><b>教師メモ</b>${esc(l.memo)}</div>`);
+  h+=sec('宿題',`<ul class="list hw">${l.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>`);
+  h+=sec('確認クイズ',`<div class="quiz" id="quiz">${l.quiz.map((q,k)=>`<div class="q" data-k="${k}"><div class="qt"><span>Q${k+1}</span>${esc(q.q)}</div><div class="opts">${q.o.map((o,j)=>`<button class="opt" data-j="${j}"${isKo(o)?' lang="ko"':''}>${esc(o)}</button>`).join('')}</div><div class="ex">${esc(q.e)}</div></div>`).join('')}<div class="score" id="score" hidden><b id="scoreTxt"></b><button id="retry">もう一度</button></div></div>`,'答えを選ぶとすぐに正誤と解説が出ます');
+  h+=`</div><div class="lfoot"><button class="btn ${done.includes(l.no)?'done':''}" id="doneBtn">${done.includes(l.no)?'✓ 完了済み':'この回を完了にする'}</button><div class="fgrp"><button class="btn" id="prevBtn" ${i===0?'disabled':''}>← 前の回</button><button class="btn primary" id="nextBtn" ${i===L.length-1?'disabled':''}>次の回 →</button></div></div>`;
+  art.innerHTML=h;art.classList.remove('fade');void art.offsetWidth;art.classList.add('fade');
+  bind(i);
+}
+function bind(i){
+  const l=L[i];
+  art.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>say(b.dataset.say));
+  let score=0,ans=0;
+  art.querySelectorAll('.q').forEach(qe=>{const q=l.quiz[+qe.dataset.k];
+    qe.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{
+      const j=+o.dataset.j;qe.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.j===q.a)x.classList.add('ok')});
+      if(j!==q.a)o.classList.add('ng');else score++;
+      qe.classList.add('answered');ans++;
+      if(isKo(q.o[q.a]))say(q.o[q.a].replace(/［|］/g,''));
+      if(ans===l.quiz.length){const s=document.getElementById('score');s.hidden=false;document.getElementById('scoreTxt').textContent=`${l.quiz.length}問中 ${score}問 正解${score===l.quiz.length?' 🎉':''}`}
+    })});
+  document.getElementById('retry').onclick=()=>{render(i);document.getElementById('quiz').scrollIntoView({behavior:'smooth',block:'start'})};
+  const ab=document.getElementById('ansBtn');if(ab)ab.onclick=()=>{const s=document.getElementById('sheet');s.classList.toggle('show-ans');ab.textContent=s.classList.contains('show-ans')?'答えを隠す':'答えを表示'};
+  document.getElementById('prevBtn').onclick=()=>go(i-1,true);
+  document.getElementById('nextBtn').onclick=()=>go(i+1,true);
+  document.getElementById('doneBtn').onclick=()=>{
+    if(done.includes(l.no))done=done.filter(x=>x!==l.no);else{done.push(l.no);toast(`第${l.no}回を完了にしました`)}
+    saveDone();render(i);renderNav(i)};
+}
+function go(i,scroll){
+  if(i<0||i>=L.length)return;
+  render(i);renderNav(i);
+  if(location.hash!=='#l'+(i+1))history.replaceState(null,'','#l'+(i+1));
+  if(scroll)document.querySelector('.hero').scrollIntoView({behavior:'smooth'});
+}
+const m=location.hash.match(/^#l([1-8])$/);
+go(m?+m[1]-1:0,false);
+addEventListener('hashchange',()=>{const m=location.hash.match(/^#l([1-8])$/);if(m)go(+m[1]-1,true)});
+
+document.getElementById('printBtn').onclick=()=>print();
+const root=document.documentElement;
+try{const t=localStorage.getItem('theme');if(t)root.dataset.theme=t}catch(e){}
+document.getElementById('themeBtn').onclick=()=>{
+  const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+  root.dataset.theme=dark?'light':'dark';try{localStorage.setItem('theme',root.dataset.theme)}catch(e){}
+};
+</script>
+</body>
+</html>
