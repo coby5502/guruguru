@@ -8,7 +8,7 @@ const dist = path.join(root, 'dist');
 const errs = [];
 const must = f => { if (!fs.existsSync(path.join(dist, f))) errs.push(`missing: ${f}`); };
 
-['index.html', 'sw.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'].forEach(must);
+['index.html', 'sw.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/icon-maskable-192.png', 'icons/favicon.svg', 'icons/favicon-32.png'].forEach(must);
 
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 if (/\/\*__(LESSONS|PRINT|MASCOT|APP|AUDIO)__\*\//.test(html)) errs.push('unreplaced placeholder in index.html');
