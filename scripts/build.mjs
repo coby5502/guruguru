@@ -20,6 +20,7 @@ const audioMap = JSON.parse(src('audio-map.json'));
 let app = src('app.js').replace('/*__AUDIO__*/{}', JSON.stringify(audioMap));
 let html = src('template.html')
   .replace('/*__LESSONS__*/', () => src('lessons.js'))
+  .replace('/*__SYLLABUS__*/', () => src('syllabus.js'))
   .replace('/*__PRINT__*/', () => src('print.js'))
   .replace('/*__MASCOT__*/', () => src('mascot.js'))
   .replace('/*__APP__*/', () => app);
