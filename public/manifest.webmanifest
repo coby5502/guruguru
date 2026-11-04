@@ -1,7 +1,7 @@
 {
- "name": "かんこくご教室",
- "short_name": "かんこくご",
- "description": "ハングルゼロからTOPIK 6級まで",
+ "name": "ぐるぐる guruguru",
+ "short_name": "ぐるぐる",
+ "description": "ハングルゼロからTOPIK 6級まで。進化するぐるぐると一緒に学ぶ韓国語。",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

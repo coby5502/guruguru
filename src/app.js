@@ -16,7 +16,7 @@ const SHEETKO=[['읽기','소리 내어 읽고 뜻 말하기'],['받아쓰기','
 const STEPS_KO=[['입문','한글과 발음','1~8회','약 2개월','한글 읽기','모음·자음·받침·연음화'],['초급 전반','자기소개와 일상 기초','9~32회','약 8개월','TOPIK 1급','-입니다·은/는·해요체·과거형·수사'],['초급 후반','생활 속 대화','33~72회','약 1년 반','TOPIK 2급','합니다체·관형형·-(으)면·불규칙 활용'],['중급 전반','이유와 경험 말하기','73~120회','약 2년 반','TOPIK 3급','인용문·-는데·반말·작문 200~300자'],['중급 후반','사회 주제와 논리','121~170회','약 3년 반','TOPIK 4급','한다체·사회 주제·논술 600~700자'],['고급 전반','전문적인 글','171~230회','약 4년 반','TOPIK 5급','논설·강연·속담·사자성어'],['고급 후반','원어민에 가까운 운용','231회~','약 6년','TOPIK 6급','전문적인 글·230점 이상 안정']];
 
 const I={
-ja:{brand:'かんこくご教室',home:'ホーム',words:'単語帳',guide:'ガイド',lang:'한국어',langAria:'한국어로 바꾸기',theme:'テーマ切替',back:'ホームへ',
+ja:{brand:'ぐるぐる',dex:'ぐるぐる ずかん',dexSub:'授業を完了すると しんか！',evoLeft:n=>`あと${n}回で しんか！`,evoMax:'ステップ0 マスター！',dexReq:n=>n?`${n}回 完了`:'スタート',evoWhat:n=>`${n}が ひかりはじめた…！`,evoDone:n=>`じゃーん！ ${n} とうじょう！`,evoOk:'やったー！',home:'ホーム',words:'単語帳',guide:'ガイド',lang:'한국어',langAria:'한국어로 바꾸기',theme:'テーマ切替',back:'ホームへ',
  heroP:'ハングルゼロからTOPIK 6級まで。<br>タップで聞いて、カードで覚えて、クイズで確認！',prog:'ステップ0 ハングルと発音',unit:'回',
  again:'もう一度ふりかえる',cont:'つづきから',start:'さっそくはじめる',lessonQ:(n,t)=>`第${n}回「${t}」`,
  instT:'アプリみたいに使える！',instA:'ホーム画面に追加すると、オフラインでも開けます',instI:'共有ボタン →「ホーム画面に追加」で、アプリのように使えます',instB:'追加',close:'閉じる',
@@ -28,7 +28,7 @@ ja:{brand:'かんこくご教室',home:'ホーム',words:'単語帳',guide:'ガ�
  ok:'せいかい！',ng:'ざんねん…',nextQ:'次の問題 →',result:'結果を見る →',search:'韓国語・日本語で検索',all:'すべて',none:'見つかりませんでした',
  noVoice:'このブラウザは音声に対応していません',addVoice:'音が出ないときは端末の設定で韓国語の音声を追加してください',pBack:'← 戻る',pPrint:'🖨 印刷',view:'👀 見る・印刷',
  docs:{text:['学習テキスト','学生用 · 日本語'],guide:['교사용 지도안','先生用 · 韓国語'],work:['ワークシート','授業中の練習'],hw:['宿題プリント','復習＋音読チェック']}},
-ko:{brand:'한국어 교실',home:'홈',words:'단어장',guide:'가이드',lang:'日本語',langAria:'日本語に切り替え',theme:'테마 변경',back:'홈으로',
+ko:{brand:'ぐるぐる',dex:'구루구루 도감',dexSub:'수업을 완료하면 진화!',evoLeft:n=>`${n}회 더 하면 진화!`,evoMax:'스텝0 마스터!',dexReq:n=>n?`${n}회 완료`:'시작',evoWhat:n=>`${n}가 빛나기 시작했어…!`,evoDone:n=>`짜잔! ${n} 등장!`,evoOk:'야호!',home:'홈',words:'단어장',guide:'가이드',lang:'日本語',langAria:'日本語に切り替え',theme:'테마 변경',back:'홈으로',
  heroP:'한글 기초부터 TOPIK 6급까지.<br>눌러서 듣고, 카드로 외우고, 퀴즈로 확인!',prog:'스텝0 한글과 발음',unit:'회',
  again:'다시 복습하기',cont:'이어서 하기',start:'바로 시작하기',lessonQ:(n,t)=>`제${n}회 "${t}"`,
  instT:'앱처럼 쓸 수 있어요!',instA:'홈 화면에 추가하면 오프라인에서도 열 수 있어요',instI:'공유 버튼 → "홈 화면에 추가"로 앱처럼 쓸 수 있어요',instB:'추가',close:'닫기',
@@ -133,7 +133,7 @@ function topbar(mode,l){
   const t=T();
   $('#topbar').innerHTML=mode==='lesson'
     ?`<a href="#/" class="ibtn" aria-label="${t.back}">${icon.back}</a><div class="ttl">${t.no(l.no)} ${esc(V(l).title)}</div>${langBtn()}`
-    :`<a href="#/" class="brand"><span class="brand-mark">한</span><span>${t.brand}</span></a><div class="tr">${langBtn()}<button class="ibtn" id="themeBtn" aria-label="${t.theme}">${icon.moon}</button></div>`;
+    :`<a href="#/" class="brand"><span class="brand-mark">${mascotSVG(3,'mini')}</span><span class="bt">${t.brand}<small>guruguru</small></span></a><div class="tr">${langBtn()}<button class="ibtn" id="themeBtn" aria-label="${t.theme}">${icon.moon}</button></div>`;
   $('#langBtn').onclick=()=>{LANG=LANG==='ja'?'ko':'ja';store.set('lang',LANG);applyLang();render(true)};
   const tb=$('#themeBtn');if(tb)tb.onclick=toggleTheme;
 }
@@ -141,7 +141,7 @@ function tabbar(active){
   const t=T();document.body.classList.toggle('hide-tab',!active);
   $('#tabs').innerHTML=[['home','#/'],['words','#/words'],['guide','#/guide']].map(([k,h])=>`<a href="${h}" class="${k===active?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${t[k]}</span></a>`).join('');
 }
-function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='ko'?'한국어 교실｜한글부터 TOPIK 6급까지':'かんこくご教室｜ハングルからTOPIK 6級まで'}
+function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='ko'?'ぐるぐる guruguru｜한글부터 TOPIK 6급까지':'ぐるぐる guruguru｜ハングルからTOPIK 6級まで'}
 
 /* ======================= HOME ======================= */
 let deferredPrompt=null;
@@ -153,9 +153,8 @@ function vHome(){
   const day=Math.floor(Date.now()/864e5),w=ALLW[day%ALLW.length];
   const inst=!standalone()&&!store.get('hideInstall',false)&&(deferredPrompt||isIOS);
   return `<section class="card hero">
-    <span class="sticker s1">★</span><span class="sticker s2">♥</span><span class="sticker s3">✿</span>
-    <div class="hi jua" lang="ko">안녕하세요!</div>
-    <p>${t.heroP}</p>
+    <span class="sticker s1">★</span>
+    ${evoCard()}
     <div class="prog"><div class="prog-top"><span>${t.prog}</span><span>${cnt} / ${L.length}${t.unit}</span></div><div class="bar"><i style="width:${cnt/L.length*100}%"></i></div></div>
     <a href="#/l/${nl.no}" class="btn pink block cta"><span class="play">▶</span><span class="ctat">${all?t.again:cnt?t.cont:t.start}<small>${esc(t.lessonQ(nl.no,nl.title))}</small></span></a>
   </section>
@@ -164,6 +163,8 @@ function vHome(){
   <div class="lgrid">${L.map((l0,i)=>{const l=V(l0),d=done.includes(l.no);return `<a href="#/l/${l.no}" class="lc" style="--c:${cv(COL[i])}">
     ${d?`<span class="st done">${t.done}</span>`:i===ni?`<span class="st next">${t.next}</span>`:''}
     <span class="num">${t.no(l.no)}</span><div class="g" lang="ko">${l.big}</div><b>${esc(l.title)}</b></a>`}).join('')}</div>
+  <div class="h2"><span>${t.dex}</span><small>${t.dexSub}</small></div>
+  ${dexHTML()}
   <div class="h2"><span>${t.wod}</span><small>${t.tapPlay}</small></div>
   <button class="card wod" id="wod"><div class="wodt"><div class="k" lang="ko">${esc(w.k)}</div><div class="m">${w.p?`<span lang="ko">［${esc(w.p)}］</span> `:''}${esc(w.m)}</div></div><span class="btn sm yellow sp">${t.listen}</span></button>
   <div class="h2"><span>${t.future}</span><small>${t.soon}</small></div>
@@ -269,7 +270,7 @@ function bindLesson(no,tab){
       if(isKo(it.o[it.a]))say(it.o[it.a]);
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);const nb=$('#qNext');if(nb)nb.scrollIntoView({block:'nearest',behavior:'smooth'})});
     const nb=$('#qNext');if(nb)nb.onclick=()=>{q.i++;q.ans=null;
-      if(q.i>=l.quiz.length&&!done.includes(no)){done.push(no);store.set('done',done)}
+      if(q.i>=l.quiz.length&&!done.includes(no)){const s0=evoStage(done.length);done.push(no);store.set('done',done);const s1=evoStage(done.length);if(s1>s0)setTimeout(()=>showEvolution(s0,s1),1400)}
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);
       const seg=$('.seg');if(seg)window.scrollTo({top:Math.max(0,seg.getBoundingClientRect().top+scrollY-70),behavior:'smooth'});
       if(q.i>=l.quiz.length){setTimeout(()=>{const r=$('.result');if(r){const b=r.getBoundingClientRect();confetti(b.left+b.width/2,b.top+80,24)}},250);

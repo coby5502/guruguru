@@ -74,7 +74,7 @@ function traceItems(l){
 function pageHead(l,badge,cls,title,sub,name=true){
   return `<div class="ph"><span class="badge ${cls}">${badge}</span><h1>第${l.no}回 ${esc(l.title)}<small>${title}${sub?' · '+esc(sub):''}</small></h1>${name?'<div class="nm">日付<span></span><br>名前<span></span></div>':''}</div>`;
 }
-const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>かんこくご教室 · 스텝0 한글과 발음</span><span>제${l.no}회 ${t} ${p}</span></div>`:`<div class="pf"><span>かんこくご教室 · ステップ0 ハングルと発音</span><span>第${l.no}回 ${t} ${p}</span></div>`;
+const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>ぐるぐる guruguru · 스텝0 한글과 발음</span><span>제${l.no}회 ${t} ${p}</span></div>`:`<div class="pf"><span>ぐるぐる guruguru · ステップ0 ハングルと発音</span><span>第${l.no}回 ${t} ${p}</span></div>`;
 function sec(i,t,body,em=''){return `<div class="ps"><h2><i>${i}</i>${t}${em?`<em>${em}</em>`:''}</h2>${body}</div>`}
 function koHead(l,sub){const k=KO[l.no];return `<div class="ph"><span class="badge y">지도안</span><h1>제${l.no}회 ${esc(k.title)}<small>교사용 · ${esc(sub||k.sub)}</small></h1><div class="nm">수업일<span></span><br>학생<span></span></div></div>`}
 function docGuide(l){
@@ -128,7 +128,7 @@ function docWork(l){
 }
 function docHw(l){
   const ws=words(l),tr=traceItems(l),h=Math.ceil(ws.length/2);let p1=pageHead(l,'宿題','','宿題プリント',l.sub),p2=pageHead(l,'宿題','','宿題プリント（つづき）','',false),key=[];
-  p1+=sec('1','書いて覚えよう',`<div class="boxes">${tr.slice(0,10).map(t=>`<div>${esc(t.lb.split(' ')[0].length<6?t.lb:'')}</div>`).join('')}</div><p style="font-size:8.5pt;color:#575270;margin-top:4px">${tr.slice(0,10).map((t,i)=>`${i+1}. <b class="ko2">${esc(t.k)}</b>`).join('　')}</p>`,'左上のヒントを見て、ハングルを書こう（下の一覧が答え）');
+  p1+=sec('1','書いて覚えよう',`<div class="boxes">${tr.slice(0,10).map((t,i)=>`<div>${i+1}. ${esc(t.lb)}</div>`).join('')}</div>`,'左上のヒントを見て、ハングルを書こう（答えは最後のページ）');
   if(ws.length){
     p1+=sec('2','意味を書こう',`<div class="lines">${ws.slice(0,h).map((w,i)=>`<div class="ln"><span class="n">${i+1}</span><span class="q">${esc(w.k)}</span><span class="a">意味：＿＿＿＿＿＿＿＿</span></div>`).join('')}</div>`);
     ws.slice(0,h).forEach((w,i)=>key.push(['2-'+(i+1),w.k+' ＝ '+w.m]));
