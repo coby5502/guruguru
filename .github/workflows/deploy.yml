@@ -1,0 +1,56 @@
+# main に push → cobyserver の ~/sites/guruguru へ rsync デプロイ（guruguru.app）
+# 서버 쪽: NPM proxy host guruguru.app → cobyhub-web-gateway:8083 (/srv/guruguru)
+# Secrets: GURUGURU_SSH_KEY (rrsync 로 ~/sites/guruguru 에만 쓰기 가능한 전용 키), GURUGURU_HOST, GURUGURU_USER, GURUGURU_KNOWN_HOSTS
+name: Deploy to guruguru.app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-guruguru
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check build output
+        run: |
+          test -f index.html && test -f sw.js && test -f manifest.webmanifest
+          echo "audio: $(ls audio | wc -l) files, pdf: $(ls pdf | wc -l) files"
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.GURUGURU_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.GURUGURU_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy (rsync)
+        env:
+          HOST: ${{ secrets.GURUGURU_HOST }}
+          DEPLOY_USER: ${{ secrets.GURUGURU_USER }}
+        run: |
+          rsync -rlptz --delete --omit-dir-times \
+            --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '.nojekyll' \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes" \
+            ./ "$DEPLOY_USER@$HOST:/"
+
+      - name: Smoke test
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://guruguru.app/ || true)
+            [ "$code" = "200" ] && { echo "guruguru.app → 200"; exit 0; }
+            sleep 5
+          done
+          echo "::warning::guruguru.app did not return 200 (last: $code) — DNS/SSL may not be ready yet"
