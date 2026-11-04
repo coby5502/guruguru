@@ -11,7 +11,7 @@ const must = f => { if (!fs.existsSync(path.join(dist, f))) errs.push(`missing: 
 ['index.html', 'sw.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'].forEach(must);
 
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-if (/\/\*__(LESSONS|PRINT|APP|AUDIO)__\*\//.test(html)) errs.push('unreplaced placeholder in index.html');
+if (/\/\*__(LESSONS|PRINT|MASCOT|APP|AUDIO)__\*\//.test(html)) errs.push('unreplaced placeholder in index.html');
 const js = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 try { new vm.Script(js); } catch (e) { errs.push(`index.html script syntax: ${e.message}`); }
 try { new vm.Script(fs.readFileSync(path.join(dist, 'sw.js'), 'utf8')); } catch (e) { errs.push(`sw.js syntax: ${e.message}`); }
