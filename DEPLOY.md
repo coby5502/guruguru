@@ -32,6 +32,13 @@ npm run pdf          # PDF 재생성 (playwright 필요)
 python3 scripts/gen-audio.py "새 단어"   # 음성 추가 (Supertonic-3)
 ```
 
+## 교안 추가하기
+
+1. `src/lessons-ext/stepN-*.js` 에 `L.push({...})` 로 회차 추가 + 같은 파일에 `KO_EXT`(교사용 한국어), `KOQ_EXT`(퀴즈 한국어), `TBL_EXT`, `TCOLS_EXT`
+2. 새 단어·문장 음성: `python3 scripts/gen-audio.py "문장" ...`
+3. PDF: `npm run build && npm run pdf -- 17 18 19`
+4. `npm run check` 가 KO/퀴즈 누락, 60분 합계, 음성·PDF 파일 유무를 검사
+
 ## 구조
 
 - `src/` — 앱 소스 (template.html, app.js, print.js, lessons.js, audio-map.json, sw.js)
