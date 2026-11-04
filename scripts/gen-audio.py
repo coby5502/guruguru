@@ -32,7 +32,7 @@ for t in u:
     # trim silence
     thr=0.01*np.max(np.abs(a));idx=np.where(np.abs(a)>thr)[0]
     if len(idx):a=a[max(0,idx[0]-int(.04*44100)):min(len(a),idx[-1]+int(.12*44100))]
-    raw=f'/tmp/{h}.f32';a.tofile(raw)
+    raw=f'/tmp/claude-0/{h}.f32';a.tofile(raw)
     subprocess.run(['ffmpeg','-y','-loglevel','error','-f','f32le','-ar','44100','-ac','1','-i',raw,'-af','loudnorm=I=-16:TP=-1.5','-ar','24000','-ac','1','-b:a','48k',f'public/audio/{h}.mp3'],check=True)
     os.remove(raw)
     man[t]={'f':h,'cer':round(c,2),'hyp':hyp}

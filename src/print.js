@@ -57,6 +57,7 @@ const KO={
  homework:['소테스트 오답 정리','교재 『できる韓国語 初級Ⅰ』 제1과 미리 읽기'],
  memo:'80%에 못 미쳐도 듣고 구별하기 외에는 맞혔다면 진행해도 좋다. 경음 구별은 스텝1에서도 매회 발음 코너에서 계속한다.'}
 };
+if(typeof KO_EXT!=='undefined')Object.assign(KO,KO_EXT);
 
 /* ---------- PRINT DOCUMENTS ---------- */
 const DOCS=[['text','学習テキスト','学生用 · 日本語','📗','mint'],['guide','교사용 지도안','선생님용 · 한국어','📋','yellow'],['work','ワークシート','授業中の練習プリント','✏️','sky'],['hw','宿題プリント','復習＋音読チェック','🏠','pink']];
@@ -74,7 +75,7 @@ function traceItems(l){
 function pageHead(l,badge,cls,title,sub,name=true){
   return `<div class="ph"><span class="badge ${cls}">${badge}</span><h1>第${l.no}回 ${esc(l.title)}<small>${title}${sub?' · '+esc(sub):''}</small></h1>${name?'<div class="nm">日付<span></span><br>名前<span></span></div>':''}</div>`;
 }
-const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>ぐるぐる guruguru · 스텝0 한글과 발음</span><span>제${l.no}회 ${t} ${p}</span></div>`:`<div class="pf"><span>ぐるぐる guruguru · ステップ0 ハングルと発音</span><span>第${l.no}回 ${t} ${p}</span></div>`;
+const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>ぐるぐる guruguru · 스텝${stepOfLesson(l.no)} ${esc(STEPS_KO[stepOfLesson(l.no)][0])}</span><span>제${l.no}회 ${t} ${p}</span></div>`:`<div class="pf"><span>ぐるぐる guruguru · ステップ${stepOfLesson(l.no)} ${esc(STEPS[stepOfLesson(l.no)].name)}</span><span>第${l.no}回 ${t} ${p}</span></div>`;
 function sec(i,t,body,em=''){return `<div class="ps"><h2><i>${i}</i>${t}${em?`<em>${em}</em>`:''}</h2>${body}</div>`}
 function koHead(l,sub){const k=KO[l.no];return `<div class="ph"><span class="badge y">지도안</span><h1>제${l.no}회 ${esc(k.title)}<small>교사용 · ${esc(sub||k.sub)}</small></h1><div class="nm">수업일<span></span><br>학생<span></span></div></div>`}
 function docGuide(l){
@@ -82,7 +83,7 @@ function docGuide(l){
   p1+=`<div class="cols"><div>${sec('목','수업 목표',`<ul class="chk">${k.goals.map(g=>`<li>${esc(g)}</li>`).join('')}</ul>`)}</div><div>${sec('준','준비물',`<ul class="chk"><li>학습 텍스트·워크시트·숙제 프린트(제${l.no}회)</li><li>${l.letters?'글자 카드':'단어 카드'}·음성(이 앱)</li>${l.no===3?'<li>휴지(격음 확인용)</li>':''}${l.no===1?'<li>손거울(입 모양 확인용)</li>':''}</ul>`)}</div></div>`;
   p1+=sec('흐','60분 수업 흐름',`<table class="pt2"><thead><tr><th>시간</th><th>활동</th><th>내용</th><th style="width:18mm">체크</th></tr></thead><tbody>${l.flow.map((f,i)=>{const s=acc;acc+=f[0];return `<tr><td class="c">${s}~${acc}분</td><td><b>${esc(k.flow[i][0])}</b></td><td>${esc(k.flow[i][1])}</td><td></td></tr>`}).join('')}</tbody></table>`);
   if(l.letters)p1+=sec('자','이번 회차의 글자',l.letters.map(g=>`<div style="margin-bottom:4px"><div class="tts">${g.items.map(x=>`<span>${x[1]} ${x[0]}</span><small style="color:#575270">${esc(x[2])}</small>`).join('')}</div></div>`).join('')+'<p style="font-size:8.5pt;color:#575270">※ 오른쪽 설명은 학생용 텍스트의 일본어 표기 그대로입니다.</p>');
-  if(l.table)p1+=sec('판','판서·제시용 표',`<table class="pt2"><thead><tr>${l.table.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,j)=>`<td class="${tableKo(l,r,c,j)?'c ko':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+  if(l.table)p1+=sec('판','판서·제시용 표',`<table class="pt2"><thead><tr>${(TCOLS[l.no]||l.table.cols).map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,j)=>`<td class="${tableKo(l,r,c,j)?'c ko':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
   p2+=sec('점','지도 포인트',`<table class="pt2"><tbody>${k.points.map(p=>`<tr><th style="width:38mm">${esc(p[0])}</th><td>${esc(p[1])}</td></tr>`).join('')}</tbody></table>`);
   const ws=words(l);if(ws.length)p2+=sec('어','단어（일본어 뜻）',`<table class="pt2"><tbody>${ws.reduce((a,w,i)=>{if(i%2===0)a.push([]);a.at(-1).push(w);return a},[]).map(r=>`<tr>${r.map(w=>`<td class="ko" style="width:28mm">${esc(w.k)}</td><td>${w.p?`[<span class="ko2">${esc(w.p)}</span>] `:''}${esc(w.m)}</td>`).join('')}${r.length<2?'<td></td><td></td>':''}</tr>`).join('')}</tbody></table>`);
   p2+=`<div class="cols">${sec('연','연습 활동',`<ul class="chk">${k.practice.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`)}${sec('숙','숙제',`<ul class="chk">${k.homework.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`)}</div>`;
@@ -95,7 +96,7 @@ function docText(l){
   let p1=pageHead(l,'テキスト','m','学習テキスト',l.sub),p2=pageHead(l,'テキスト','m','学習テキスト（つづき）','',false);
   p1+=sec('目','今日の目標',`<ul class="chk">${l.goals.map(g=>`<li>${esc(g)}</li>`).join('')}</ul>`);
   if(l.letters)p1+=l.letters.map(g=>sec('字',esc(g.g),`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">${g.items.map(x=>`<div style="border:2px solid #1d1a2e;border-radius:10px;text-align:center;padding:5px 3px"><div class="ko2" style="font-size:24pt;line-height:1.15">${x[1]}</div><div class="ko2" style="font-size:12pt;color:#ff6fa8">${x[0]}</div><div style="font-size:8pt;color:#575270;line-height:1.3">${esc(x[2])}</div></div>`).join('')}</div>`)).join('');
-  if(l.table)p1+=sec('表',{2:'가나다表',3:'3段比較表',5:'7つの代表音',6:'発音の変化',7:'あいさつ表現'}[l.no],`<table class="pt2"><thead><tr>${l.table.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,j)=>`<td class="${tableKo(l,r,c,j)?'c ko':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+  if(l.table)p1+=sec('表',TBL.ja[l.no]||'表',`<table class="pt2"><thead><tr>${l.table.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,j)=>`<td class="${tableKo(l,r,c,j)?'c ko':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
   if(l.sheet)p1+=sec('テ','小テストのはんい',`<div class="cols">${l.sheet.slice(0,2).map(s=>`<div><b style="font-size:9.5pt">${s.t}</b><div class="tts">${s.items.map(x=>`<span>${esc(x[0])}</span>`).join('')}</div></div>`).join('')}</div>`);
   p2+=sec('点','ここがポイント',`<table class="pt2"><tbody>${l.points.map(p=>`<tr><th style="width:38mm">${esc(p[0])}</th><td>${esc(p[1])}</td></tr>`).join('')}</tbody></table>`);
   const ws=words(l);if(ws.length)p2+=sec('語','今日の単語',`<table class="pt2"><tbody>${ws.reduce((a,w,i)=>{if(i%2===0)a.push([]);a.at(-1).push(w);return a},[]).map(r=>`<tr>${r.map(w=>`<td class="ko" style="width:28mm">${esc(w.k)}</td><td>${w.p?`［<span class="ko2">${esc(w.p)}</span>］`:''}${esc(w.m)}</td>`).join('')}${r.length<2?'<td></td><td></td>':''}</tr>`).join('')}</tbody></table>`,'アプリでタップすると音声が聞けます');

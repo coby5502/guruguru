@@ -9,31 +9,34 @@ const KOQ={
 7:[{q:'"ふくおか"를 한글로 쓰면?',e:'어두의 ふ→후, 어중의 く·か→쿠·카.'},{q:'내가 떠날 때 남아 있는 사람에게 하는 말은?',e:'계세요＝남는 사람에게, 가세요＝떠나는 사람에게.'},{q:'"감사합니다"의 발음은?',e:'ㅂ이 ㄴ 앞에서 [ㅁ]이 됩니다(비음화).'},{q:'"とうきょう"를 한글로 쓰면?',e:'어두는 평음, 장음은 쓰지 않으므로 도쿄.'}],
 8:[{q:'"선생님"의 뜻은?',e:'선생님＝先生.'},{q:'"꽃"의 발음은?',e:'받침 ㅊ은 [ㄷ] 소리.'},{q:'"일본어"의 발음은?',e:'ㄴ이 넘어가 [일보너].'},{q:'목을 조여서 내는 소리(경음)는?',e:'따가 경음, 타가 격음, 다가 평음.'},{q:'"まつもと"를 한글로 쓰면?',e:'"つ"는 쓰, 어중의 "と"는 토.'}]
 };
+if(typeof KOQ_EXT!=='undefined')Object.assign(KOQ,KOQ_EXT);
 const KOG={'縦棒（ㅇの右につく）':'세로 모음 (ㅇ 오른쪽에)','横棒（ㅇの下につく）':'가로 모음 (ㅇ 아래에)','基本子音（平音）':'기본 자음 (평음)','激音（息を強く）':'격음 (숨을 세게)','濃音（のどを詰める）':'경음 (목을 조여서)','ㅐ・ㅔ の仲間':'ㅐ·ㅔ 계열','ㅗ・ㅜ ＋ 母音':'ㅗ·ㅜ ＋ 모음'};
 const TBL={ja:{2:'가나다表',3:'3段比較表',5:'7つの代表音',6:'発音の変化',7:'あいさつ表現'},ko:{2:'가나다표',3:'3단 비교표',5:'7가지 대표음',6:'발음 변화',7:'인사 표현'}};
 const TCOLS={3:['','평음','격음','경음'],5:['대표음','받침 글자','예','일본어로 치면'],6:['철자','발음','뜻(일본어)'],7:['한국어','발음','뜻·장면(일본어)']};
+if(typeof TBL_EXT!=='undefined'){Object.assign(TBL.ja,TBL_EXT.ja);Object.assign(TBL.ko,TBL_EXT.ko)}
+if(typeof TCOLS_EXT!=='undefined')Object.assign(TCOLS,TCOLS_EXT);
 const SHEETKO=[['읽기','소리 내어 읽고 뜻 말하기'],['받아쓰기','교사가 읽는 단어를 한글로 쓰기'],['듣고 구별하기','교사가 하나를 읽고 학생이 ○ 표시']];
 const STEPS_KO=[['입문','한글과 발음','1~8회','약 2개월','한글 읽기','모음·자음·받침·연음화'],['초급 전반','자기소개와 일상 기초','9~32회','약 8개월','TOPIK 1급','-입니다·은/는·해요체·과거형·수사'],['초급 후반','생활 속 대화','33~72회','약 1년 반','TOPIK 2급','합니다체·관형형·-(으)면·불규칙 활용'],['중급 전반','이유와 경험 말하기','73~120회','약 2년 반','TOPIK 3급','인용문·-는데·반말·작문 200~300자'],['중급 후반','사회 주제와 논리','121~170회','약 3년 반','TOPIK 4급','한다체·사회 주제·논술 600~700자'],['고급 전반','전문적인 글','171~230회','약 4년 반','TOPIK 5급','논설·강연·속담·사자성어'],['고급 후반','원어민에 가까운 운용','231~290회','약 6년','TOPIK 6급','전문적인 글·230점 이상 안정']];
 
 const I={
-ja:{brand:'ぐるぐる',stepsT:'ステップ',stepsSub:'7ステップ · 全290回',stepOf:n=>`ステップ${n}`,lessonsN:n=>`${n}回`,ready:'教案あり',prep:'準備中',studying:'学習中',complete:'完了',syllabus:'授業一覧',prepNote:'このステップの教案は準備中です。文法と内容の予定を確認できます。',backStep:'ステップへ',goal:'目標',dex:'ぐるぐる ずかん',dexSub:'授業を完了すると しんか！',evoLeft:n=>`あと${n}回で しんか！`,evoMax:'ステップ0 マスター！',dexReq:n=>n?`${n}回 完了`:'スタート',evoWhat:n=>`${n}が ひかりはじめた…！`,evoDone:n=>`じゃーん！ ${n} とうじょう！`,evoOk:'やったー！',home:'ホーム',words:'単語帳',guide:'ガイド',lang:'한국어',langAria:'한국어로 바꾸기',theme:'テーマ切替',back:'ホームへ',
+ja:{brand:'ぐるぐる',gotCount:(n,m)=>`覚えた ${n} / ${m}`,gotStamp:'覚えた！',stepsT:'ステップ',stepsSub:'7ステップ · 全290回',stepOf:n=>`ステップ${n}`,lessonsN:n=>`${n}回`,ready:'教案あり',prep:'準備中',studying:'学習中',complete:'完了',syllabus:'授業一覧',prepNote:'このステップの教案は準備中です。文法と内容の予定を確認できます。',backStep:'ステップへ',goal:'目標',dex:'ぐるぐる ずかん',dexSub:'授業を完了すると しんか！',evoLeft:n=>`あと${n}回で しんか！`,evoMax:'ステップ0 マスター！',dexReq:n=>n?`${n}回 完了`:'スタート',evoWhat:n=>`${n}が ひかりはじめた…！`,evoDone:n=>`じゃーん！ ${n} とうじょう！`,evoOk:'やったー！',home:'ホーム',words:'単語帳',guide:'ガイド',lang:'한국어',langAria:'한국어로 바꾸기',theme:'テーマ切替',back:'ホームへ',
  heroP:'ハングルゼロからTOPIK 6級まで。<br>タップで聞いて、カードで覚えて、クイズで確認！',prog:'ステップ0 ハングルと発音',unit:'回',
  again:'もう一度ふりかえる',cont:'つづきから',start:'さっそくはじめる',lessonQ:(n,t)=>`第${n}回「${t}」`,
  instT:'アプリみたいに使える！',instA:'ホーム画面に追加すると、オフラインでも開けます',instI:'共有ボタン →「ホーム画面に追加」で、アプリのように使えます',instB:'追加',close:'閉じる',
  classes:'ステップ0の授業',all8:'全8回',tapOpen:'タップで開く',wod:'今日のひとこと',tapPlay:'タップで再生',listen:'🔊 きく',future:'これからのステップ',soon:'準備中',done:'✓ 完了',next:'NEXT!',
- foot:'一歩ずつ、いっしょに。',no:n=>`第${n}回`,noOf:n=>`ステップ0 · 第${n}回`,tabs:['学ぶ','単語','クイズ'],toCards:'単語カードへ →',toQuiz:'クイズに挑戦 →',
+ foot:'一歩ずつ、いっしょに。',no:n=>`第${n}回`,noOf:n=>`ステップ${stepOfLesson(n)} · 第${n}回`,tabs:['学ぶ','単語','クイズ'],toCards:'単語カードへ →',toQuiz:'クイズに挑戦 →',
  scroll:'横にスクロール →',test:'小テスト',showA:'答えを表示',hideA:'答えを隠す',points:'ここがポイント',print:'📄 プリント',printSub:'PDFで保存・印刷できます',
  hwT:'今週の宿題',noCards:'この回は単語カードはありません',flip:'タップでうら返す',flipBack:'タップで表に戻る',got:'✓ 覚えた',gotBtn:'覚えた！',list:'単語リスト',cnt:n=>`${n}語`,allGot:'全部覚えた！クイズに挑戦しよう 🎉',
  perfect:'パーフェクト！すごい！',good:'よくできました！',retryMsg:'もう一度チャレンジしよう！',toNext:n=>`第${n}回へすすむ →`,fin:'ステップ0 修了！ホームへ',retry:'もう一度',review:'単語カードで復習',
  ok:'せいかい！',ng:'ざんねん…',nextQ:'次の問題 →',result:'結果を見る →',search:'韓国語・日本語で検索',all:'すべて',none:'見つかりませんでした',
  noVoice:'このブラウザは音声に対応していません',addVoice:'音が出ないときは端末の設定で韓国語の音声を追加してください',pBack:'← 戻る',pPrint:'🖨 印刷',view:'👀 見る・印刷',
  docs:{text:['学習テキスト','学生用 · 日本語'],guide:['교사용 지도안','先生用 · 韓国語'],work:['ワークシート','授業中の練習'],hw:['宿題プリント','復習＋音読チェック']}},
-ko:{brand:'ぐるぐる',stepsT:'스텝',stepsSub:'7스텝 · 전 290회',stepOf:n=>`스텝${n}`,lessonsN:n=>`${n}회`,ready:'교안 있음',prep:'준비 중',studying:'학습 중',complete:'완료',syllabus:'수업 목록',prepNote:'이 스텝의 교안은 준비 중입니다. 문법과 내용 계획을 확인할 수 있어요.',backStep:'스텝으로',goal:'목표',dex:'구루구루 도감',dexSub:'수업을 완료하면 진화!',evoLeft:n=>`${n}회 더 하면 진화!`,evoMax:'스텝0 마스터!',dexReq:n=>n?`${n}회 완료`:'시작',evoWhat:n=>`${n}가 빛나기 시작했어…!`,evoDone:n=>`짜잔! ${n} 등장!`,evoOk:'야호!',home:'홈',words:'단어장',guide:'가이드',lang:'日本語',langAria:'日本語に切り替え',theme:'테마 변경',back:'홈으로',
+ko:{brand:'ぐるぐる',gotCount:(n,m)=>`외운 단어 ${n} / ${m}`,gotStamp:'외웠어요!',stepsT:'스텝',stepsSub:'7스텝 · 전 290회',stepOf:n=>`스텝${n}`,lessonsN:n=>`${n}회`,ready:'교안 있음',prep:'준비 중',studying:'학습 중',complete:'완료',syllabus:'수업 목록',prepNote:'이 스텝의 교안은 준비 중입니다. 문법과 내용 계획을 확인할 수 있어요.',backStep:'스텝으로',goal:'목표',dex:'구루구루 도감',dexSub:'수업을 완료하면 진화!',evoLeft:n=>`${n}회 더 하면 진화!`,evoMax:'스텝0 마스터!',dexReq:n=>n?`${n}회 완료`:'시작',evoWhat:n=>`${n}가 빛나기 시작했어…!`,evoDone:n=>`짜잔! ${n} 등장!`,evoOk:'야호!',home:'홈',words:'단어장',guide:'가이드',lang:'日本語',langAria:'日本語に切り替え',theme:'테마 변경',back:'홈으로',
  heroP:'한글 기초부터 TOPIK 6급까지.<br>눌러서 듣고, 카드로 외우고, 퀴즈로 확인!',prog:'스텝0 한글과 발음',unit:'회',
  again:'다시 복습하기',cont:'이어서 하기',start:'바로 시작하기',lessonQ:(n,t)=>`제${n}회 "${t}"`,
  instT:'앱처럼 쓸 수 있어요!',instA:'홈 화면에 추가하면 오프라인에서도 열 수 있어요',instI:'공유 버튼 → "홈 화면에 추가"로 앱처럼 쓸 수 있어요',instB:'추가',close:'닫기',
  classes:'스텝0 수업',all8:'전 8회',tapOpen:'눌러서 열기',wod:'오늘의 한마디',tapPlay:'눌러서 재생',listen:'🔊 듣기',future:'앞으로의 스텝',soon:'준비 중',done:'✓ 완료',next:'NEXT!',
- foot:'한 걸음씩, 함께.',no:n=>`제${n}회`,noOf:n=>`스텝0 · 제${n}회`,tabs:['배우기','단어','퀴즈'],toCards:'단어 카드로 →',toQuiz:'퀴즈 도전 →',
+ foot:'한 걸음씩, 함께.',no:n=>`제${n}회`,noOf:n=>`스텝${stepOfLesson(n)} · 제${n}회`,tabs:['배우기','단어','퀴즈'],toCards:'단어 카드로 →',toQuiz:'퀴즈 도전 →',
  scroll:'옆으로 스크롤 →',test:'소테스트',showA:'정답 보기',hideA:'정답 숨기기',points:'지도 포인트',print:'📄 프린트',printSub:'PDF로 저장·인쇄할 수 있어요',
  hwT:'숙제',noCards:'이번 회차는 단어 카드가 없어요',flip:'눌러서 뒤집기',flipBack:'눌러서 앞면으로',got:'✓ 외웠어요',gotBtn:'외웠어요!',list:'단어 목록',cnt:n=>`${n}개`,allGot:'전부 외웠어요! 퀴즈에 도전해 봐요 🎉',
  perfect:'만점! 대단해요!',good:'잘했어요!',retryMsg:'한 번 더 도전해 봐요!',toNext:n=>`제${n}회로 →`,fin:'스텝0 수료! 홈으로',retry:'다시 풀기',review:'단어 카드로 복습',
@@ -146,7 +149,7 @@ function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='k
 
 /* ======================= STEPS (uniform) ======================= */
 function stepLessons(n){
-  if(n===0)return L.map(l=>({no:l.no,ja:l.title,ko:KO[l.no].title,g:LANG==='ko'?KO[l.no].sub:l.sub,ready:true}));
+  if(n===0)return L.filter(l=>l.no<=8).map(l=>({no:l.no,ja:l.title,ko:KO[l.no].title,g:LANG==='ko'?KO[l.no].sub:l.sub,ready:true}));
   const s=SYL[n];return s.items.map((x,i)=>{const no=s.from+i;return {no,ja:x[0],ko:x[1],g:x[2],ready:L.some(l=>l.no===no)}});
 }
 const stepOfLesson=no=>{for(let n=6;n>=0;n--){if(n===0||no>=SYL[n].from)return n}return 0};
@@ -207,7 +210,7 @@ function bindHome(){
 const TABK=['learn','cards','quiz'];
 let fcState={i:0,flip:false,got:new Set()},qState=null;
 function vLesson(no,tab){
-  const i=L.findIndex(x=>x.no===no);const l=V(L[i]),c=COL[i],t=T();
+  const i=L.findIndex(x=>x.no===no);const l=V(L[i]),c=COL[i%COL.length],t=T();
   visited[no]=visited[no]||{};visited[no][tab]=1;store.set('visited',visited);
   const v=visited[no],ok=k=>k==='quiz'?done.includes(no):!!v[k];
   let h=`<section class="card lhero" style="--c:${cv(c)}"><span class="g" lang="ko">${l.big}</span><span class="no">${t.noOf(l.no)}</span><h1>${esc(l.title)}</h1><div class="sub">${esc(l.sub)}</div>
@@ -244,10 +247,11 @@ function pCards(l){
   const t=T(),ws=words(l);if(!ws.length)return `<p class="empty">${t.noCards}</p>`;
   const f=fcState;if(f.i>=ws.length)f.i=0;const w=ws[f.i];
   return `<div class="deck"><div class="fc ${f.flip?'flip':''}" id="fc" role="button" tabindex="0" aria-label="${t.flip}">
-    <div class="face front"><span class="cnt">${f.i+1} / ${ws.length}</span>${f.got.has(w.k)?`<span class="lk">${t.got}</span>`:''}<div class="big" lang="ko">${esc(w.k)}</div><span class="hint">${t.flip}</span></div>
+    <div class="face front"><span class="cnt">${f.i+1} / ${ws.length}</span><span class="stamp${f.got.has(w.k)?' on':''}">${t.gotStamp}</span><div class="big" lang="ko">${esc(w.k)}</div><span class="hint">${t.flip}</span></div>
     <div class="face back"><span class="cnt">${f.i+1} / ${ws.length}</span><div class="mean" lang="ja">${esc(w.m)}</div>${w.p?`<div class="pr" lang="ko">［${esc(w.p)}］</div>`:''}<div class="pr" lang="ko">${esc(w.k)}</div><span class="hint">${t.flipBack}</span></div>
   </div></div>
   <div class="fctrl"><button class="ibtn big" id="fPrev" aria-label="prev">◀</button><div class="fmid"><button class="btn sky" id="fSay">${t.listen}</button><button class="btn ${f.got.has(w.k)?'mint':''}" id="fGot">${f.got.has(w.k)?t.got:t.gotBtn}</button></div><button class="ibtn big" id="fNext" aria-label="next">▶</button></div>
+  <div class="gotc"><span>${t.gotCount(f.got.size,ws.length)}</span>${f.got.size===ws.length?`<a href="#/l/${l.no}/quiz" class="btn sm pink">${t.toQuiz}</a>`:''}</div>
   <div class="dots">${ws.map((x,j)=>`<i class="${j===f.i?'on':''} ${f.got.has(x.k)?'got':''}"></i>`).join('')}</div>
   <div class="blk"><h3>${t.list}<em>${t.cnt(ws.length)}</em></h3><div class="wlist">${ws.map(x=>wrow(x,false)).join('')}</div></div>`;
 }
@@ -257,7 +261,7 @@ function pQuiz(l){
   if(q.i>=l.quiz.length){
     const n=l.quiz.length,s=q.score,st=s===n?3:s>=n*.6?2:1;
     return `<div class="qwrap"><div class="card result"><div class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><div class="sc">${s}<span> / ${n}</span></div><p>${s===n?t.perfect:s>=n*.6?t.good:t.retryMsg}</p>
-      <div class="btns">${l.no<L.length?`<a href="#/l/${l.no+1}" class="btn pink block">${t.toNext(l.no+1)}</a>`:`<a href="#/" class="btn pink block">${t.fin}</a>`}<button class="btn block" id="qRetry">${t.retry}</button><a href="#/l/${l.no}/cards" class="btn block">${t.review}</a></div></div></div>`;
+      <div class="btns">${L.some(x=>x.no===l.no+1)?`<a href="#/l/${l.no+1}" class="btn pink block">${t.toNext(l.no+1)}</a>`:`<a href="#/s/${stepOfLesson(l.no)}" class="btn pink block">${t.backStep} →</a>`}<button class="btn block" id="qRetry">${t.retry}</button><a href="#/l/${l.no}/cards" class="btn block">${t.review}</a></div></div></div>`;
   }
   const it=l.quiz[q.i],ans=q.ans;
   return `<div class="qwrap"><div class="qhead"><div class="bar"><i style="width:${q.i/l.quiz.length*100}%"></i></div><b>${q.i+1} / ${l.quiz.length}</b></div>
@@ -269,6 +273,7 @@ function pQuiz(l){
 function bindSay(root=document){root.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>say(b.dataset.say,b))}
 function bindLesson(no,tab){
   const l=V(L.find(x=>x.no===no)),t=T(),panel=$('#panel');
+  if(!panel)return;
   bindSay(panel);preload([...panel.querySelectorAll('[data-say]')].slice(0,40).map(e=>e.dataset.say));
   const ab=$('#ansBtn');if(ab)ab.onclick=()=>{const s=$('#sheet');s.classList.toggle('show-ans');ab.textContent=s.classList.contains('show-ans')?t.hideA:t.showA};
   if(tab==='cards'&&$('#fc')){
@@ -284,9 +289,18 @@ function bindLesson(no,tab){
     fc.onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();flip()}if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1)};
     $('#fPrev').onclick=()=>go(-1);$('#fNext').onclick=()=>go(1);
     $('#fSay').onclick=e=>say(ws[f.i].k,e.currentTarget);
-    $('#fGot').onclick=e=>{const k=ws[f.i].k;if(f.got.has(k)){f.got.delete(k);store.set('got-'+no,[...f.got]);re();return}
-      f.got.add(k);store.set('got-'+no,[...f.got]);buzz(15);const r=e.currentTarget.getBoundingClientRect();confetti(r.left+r.width/2,r.top,8);
-      if(f.got.size===ws.length)toast(t.allGot);setTimeout(()=>go(1),220)};
+    let busy=false;
+    $('#fGot').onclick=e=>{if(busy)return;const k=ws[f.i].k,btn=e.currentTarget;
+      if(f.got.has(k)){f.got.delete(k);store.set('got-'+no,[...f.got]);re();return}
+      busy=true;f.got.add(k);store.set('got-'+no,[...f.got]);buzz(15);
+      btn.classList.add('mint');btn.textContent=t.got;
+      const sp=$('#fc .stamp');if(sp)sp.classList.add('on','pop');
+      const di=$$('.dots i')[f.i];if(di)di.classList.add('got');
+      const gc=$('.gotc span');if(gc)gc.textContent=t.gotCount(f.got.size,ws.length);
+      const r=btn.getBoundingClientRect();confetti(r.left+r.width/2,r.top,8);
+      setTimeout(()=>{busy=false;if(!panel.isConnected)return;if(f.got.size===ws.length){toast(t.allGot);re();return}
+        let j=f.i;for(let s=1;s<=ws.length;s++){const c=(f.i+s)%ws.length;if(!f.got.has(ws[c].k)){j=c;break}}
+        f.i=j;f.flip=false;re();say(ws[f.i].k)},650)};
   }
   if(tab==='quiz'){
     const q=qState;
@@ -402,6 +416,11 @@ const root=document.documentElement;
 {const th=store.get('theme',null);if(th)root.dataset.theme=th}
 function toggleTheme(){const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;root.dataset.theme=dark?'light':'dark';store.set('theme',root.dataset.theme);
   $$('meta[name="theme-color"]').forEach(m=>m.content=dark?'#faf6f0':'#1f1c2b')}
+
+/* no zoom (pinch / double-tap) */
+['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 
 /* PWA */
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));

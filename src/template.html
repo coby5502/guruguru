@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>ぐるぐる guruguru｜ハングルからTOPIK 6級まで</title>
 <meta name="description" content="日本語話者のための韓国語学習アプリ。ハングルゼロからTOPIK 6級まで、タップで音声・単語カード・クイズで学べます。">
 <meta name="theme-color" content="#faf6f0" media="(prefers-color-scheme: light)">
@@ -560,6 +560,16 @@ a.lrow:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--shc)}
 .ls.next{background:var(--pink);color:var(--on);animation:wig 1.6s ease-in-out infinite}
 .ls.soon{color:var(--ink3);border-style:dashed}
 .stnav{display:flex;justify-content:space-between;margin-top:18px}
+
+/* no double-tap zoom anywhere */
+html,body{touch-action:manipulation}
+.fc,.face{touch-action:pan-y}
+.stamp{position:absolute;top:12px;right:14px;font-family:"Dela Gothic One","Jua",sans-serif;font-size:13px;color:var(--accent);border:2.5px solid var(--accent);border-radius:10px;padding:2px 8px;transform:rotate(8deg) scale(.6);opacity:0;transition:.25s}
+.stamp.on{opacity:1;transform:rotate(8deg) scale(1)}
+.stamp.pop{animation:stamp .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes stamp{0%{transform:rotate(8deg) scale(2);opacity:0}100%{transform:rotate(8deg) scale(1);opacity:1}}
+.gotc{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-size:13px;font-weight:900;color:var(--ink2);min-height:36px}
+#fGot{transition:background .2s}
 </style>
 </head>
 <body>
