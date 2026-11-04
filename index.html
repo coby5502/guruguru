@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>韓国語カリキュラム｜入門からTOPIK 6級まで</title>
+<meta name="description" content="ハングルゼロからTOPIK 6級まで。日本語話者のための7ステップ韓国語カリキュラム（1対1・週1回60分）。">
+<meta name="theme-color" content="#faf6ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161c" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="韓国語カリキュラム｜入門からTOPIK 6級まで">
+<meta property="og:description" content="日本語話者のための7ステップ韓国語カリキュラム">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23d4473d'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='700'%3E%ED%95%9C%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6ef; --bg2:#f3ede2; --card:#ffffff; --ink:#1b1d24; --ink2:#5a5d68; --ink3:#8b8d96;
+  --line:#e7e0d3; --red:#d4473d; --red-soft:#fbe7e3; --jade:#2f8f7f; --jade-soft:#dff1ec;
+  --indigo:#3b4fa0; --indigo-soft:#e4e8f7; --gold:#c8952e; --gold-soft:#f8eed8;
+  --shadow:0 1px 2px rgba(27,29,36,.04),0 8px 24px -8px rgba(27,29,36,.10);
+  --shadow-lg:0 2px 4px rgba(27,29,36,.04),0 24px 48px -16px rgba(27,29,36,.18);
+  --r:20px; --max:1120px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14161c; --bg2:#1a1d25; --card:#1f232c; --ink:#f1efe9; --ink2:#b3b5bd; --ink3:#80838d;
+    --line:#2d313c; --red:#ef6a5f; --red-soft:#3a2224; --jade:#4fbfaa; --jade-soft:#1b332f;
+    --indigo:#8a9cf0; --indigo-soft:#232a45; --gold:#e2b55a; --gold-soft:#372e1c;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5);
+    --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14161c; --bg2:#1a1d25; --card:#1f232c; --ink:#f1efe9; --ink2:#b3b5bd; --ink3:#80838d;
+  --line:#2d313c; --red:#ef6a5f; --red-soft:#3a2224; --jade:#4fbfaa; --jade-soft:#1b332f;
+  --indigo:#8a9cf0; --indigo-soft:#232a45; --gold:#e2b55a; --gold-soft:#372e1c;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5);
+  --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans KR",system-ui,sans-serif;line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+[lang="ko"],.ko{font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif}
+.serif{font-family:"Noto Serif KR",serif}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+@media(min-width:768px){.wrap{padding:0 32px}}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+header.scrolled{border-bottom-color:var(--line)}
+.nav{display:flex;align-items:center;gap:16px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap}
+.logo-mark{width:34px;height:34px;border-radius:10px;background:var(--red);color:#fff;display:grid;place-items:center;font-family:"Noto Serif KR",serif;font-weight:900;font-size:18px}
+.nav-links{display:none;gap:4px;margin-left:auto}
+.nav-links a{padding:8px 14px;border-radius:999px;font-size:14px;color:var(--ink2);font-weight:500;transition:.2s}
+.nav-links a:hover,.nav-links a.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.theme-btn{margin-left:auto;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+@media(min-width:900px){.nav-links{display:flex}.theme-btn{margin-left:8px}}
+.mnav{display:flex;gap:6px;overflow-x:auto;padding:0 20px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mnav::-webkit-scrollbar{display:none}
+.mnav a{flex-shrink:0;padding:6px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--ink2);font-weight:500}
+.mnav a.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media(min-width:900px){.mnav{display:none}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;padding:56px 0 72px;overflow:hidden}
+@media(min-width:768px){.hero{padding:96px 0 112px}}
+.hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hero-bg span{position:absolute;font-family:"Noto Serif KR",serif;font-weight:900;color:var(--ink);opacity:.035;line-height:1;user-select:none}
+.hero-grid{position:relative;display:grid;gap:40px;align-items:center}
+@media(min-width:900px){.hero-grid{grid-template-columns:1.15fr .85fr;gap:56px}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--ink2);box-shadow:var(--shadow)}
+.eyebrow b{background:var(--red);color:#fff;padding:2px 8px;border-radius:999px;font-size:11px;letter-spacing:.04em}
+h1{font-size:clamp(34px,7.4vw,64px);line-height:1.22;font-weight:900;letter-spacing:-.02em;margin:22px 0 20px}
+h1 .accent{color:var(--red);position:relative;white-space:nowrap}
+h1 .accent::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.22em;background:var(--red);opacity:.16;border-radius:4px;z-index:-1}
+.lead{font-size:clamp(15px,2.2vw,18px);color:var(--ink2);max-width:540px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:32px;max-width:520px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
+.stat strong{display:block;font-size:22px;font-weight:900;line-height:1.2}
+.stat span{font-size:12px;color:var(--ink3)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:14px;font-weight:700;font-size:15px;transition:transform .2s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--ink);color:var(--bg);box-shadow:var(--shadow-lg)}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-ghost{background:var(--card);border:1px solid var(--line)}
+
+/* hangul card */
+.hcard{position:relative;background:var(--card);border-radius:28px;padding:28px;box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.hcard-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;font-size:13px;color:var(--ink3)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.dots i:nth-child(1){background:var(--red)}.dots i:nth-child(2){background:var(--gold)}.dots i:nth-child(3){background:var(--jade)}
+.syll{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1.3fr;align-items:center;gap:8px;text-align:center}
+.jamo{background:var(--bg2);border-radius:16px;padding:14px 4px}
+.jamo b{display:block;font-family:"Noto Serif KR",serif;font-size:clamp(28px,6vw,38px);font-weight:700;line-height:1.1}
+.jamo small{font-size:11px;color:var(--ink3)}
+.jamo.c b{color:var(--red)}.jamo.v b{color:var(--indigo)}.jamo.f b{color:var(--jade)}
+.op{color:var(--ink3);font-weight:700}
+.result{background:var(--ink);color:var(--bg);border-radius:16px;padding:14px 4px}
+.result b{display:block;font-family:"Noto Serif KR",serif;font-size:clamp(32px,7vw,44px);font-weight:900;line-height:1.05}
+.result small{font-size:11px;opacity:.6}
+.hcard-words{margin-top:20px;display:grid;gap:8px}
+.word{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:14px;background:var(--bg2);font-size:14px}
+.word .ko{font-weight:700;font-size:17px}
+.word em{font-style:normal;color:var(--ink3);font-size:13px}
+.float-tag{position:absolute;padding:8px 14px;border-radius:12px;background:var(--card);box-shadow:var(--shadow-lg);font-size:12px;font-weight:700;border:1px solid var(--line);display:none}
+@media(min-width:900px){.float-tag{display:block}}
+.ft1{top:-16px;right:24px;color:var(--jade)}
+.ft2{bottom:-18px;left:-20px;color:var(--red)}
+
+/* ---------- sections ---------- */
+section{padding:72px 0;scroll-margin-top:72px}
+@media(min-width:768px){section{padding:104px 0}}
+.sec-head{margin-bottom:40px;max-width:680px}
+.sec-label{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--red);margin-bottom:12px}
+.sec-label::before{content:"";width:20px;height:2px;background:currentColor;border-radius:2px}
+h2{font-size:clamp(26px,4.6vw,40px);line-height:1.35;font-weight:900;letter-spacing:-.015em}
+.sec-head p{margin-top:14px;color:var(--ink2);font-size:clamp(15px,2vw,17px)}
+.alt{background:var(--bg2)}
+
+/* principles */
+.grid4{display:grid;gap:14px}
+@media(min-width:640px){.grid4{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.grid4{grid-template-columns:repeat(4,1fr)}}
+.pcard{background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--line);box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s}
+.pcard:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.picon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-family:"Noto Serif KR",serif;font-weight:900;font-size:20px;margin-bottom:16px}
+.pcard h3{font-size:17px;font-weight:700;margin-bottom:8px;line-height:1.5}
+.pcard p{font-size:14px;color:var(--ink2)}
+.pcard .ex{margin-top:12px;font-size:13px;padding:8px 12px;border-radius:10px;background:var(--bg2);color:var(--ink2)}
+
+/* roadmap */
+.road{position:relative;display:grid;gap:14px}
+.road::before{content:"";position:absolute;left:23px;top:24px;bottom:24px;width:2px;background:linear-gradient(var(--red),var(--gold),var(--jade),var(--indigo));border-radius:2px;opacity:.5}
+.rstep{position:relative;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:start;cursor:pointer}
+.rnum{position:relative;z-index:1;width:48px;height:48px;border-radius:50%;background:var(--card);border:2px solid var(--c);color:var(--c);display:grid;place-items:center;font-weight:900;font-size:18px;box-shadow:0 0 0 6px var(--bg);transition:.25s}
+.rstep:hover .rnum,.rstep.final .rnum{background:var(--c);color:#fff}
+.rbody{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);display:grid;gap:10px;transition:.25s}
+.rstep:hover .rbody{transform:translateX(4px);border-color:var(--c)}
+@media(min-width:720px){.rbody{grid-template-columns:1fr auto;align-items:center;gap:20px}}
+.rbody h3{font-size:17px;font-weight:700;line-height:1.45}
+.rbody h3 small{display:block;font-size:13px;font-weight:500;color:var(--ink3);margin-top:2px}
+.rgoal{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:var(--cs);color:var(--c);font-weight:700;font-size:13px;white-space:nowrap;justify-self:start}
+.rbar{grid-column:1/-1;height:6px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.rbar i{display:block;height:100%;background:var(--c);border-radius:6px;width:0;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.rstep.final .rbody{border-color:var(--c);background:linear-gradient(135deg,var(--card),var(--cs))}
+.road-note{margin-top:20px;font-size:13px;color:var(--ink3);padding-left:64px}
+
+/* step detail tabs */
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;margin:0 -20px;padding-left:20px;padding-right:20px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
+.tabs::-webkit-scrollbar{display:none}
+@media(min-width:768px){.tabs{margin:0;padding-left:2px;padding-right:2px;flex-wrap:wrap}}
+.tab{flex-shrink:0;scroll-snap-align:start;border:1px solid var(--line);background:var(--card);color:var(--ink2);padding:10px 16px;border-radius:14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:8px}
+.tab i{font-style:normal;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--bg2);font-size:12px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);box-shadow:var(--shadow-lg)}
+.tab[aria-selected="true"] i{background:var(--c);color:#fff}
+.panel{background:var(--card);border-radius:26px;border:1px solid var(--line);box-shadow:var(--shadow-lg);overflow:hidden;margin-top:6px}
+.phead{padding:28px 24px;background:linear-gradient(135deg,var(--cs),transparent 70%);border-bottom:1px solid var(--line);display:grid;gap:16px}
+@media(min-width:768px){.phead{padding:36px 40px;grid-template-columns:1fr auto;align-items:end}}
+.phead .tag{font-size:12px;font-weight:700;color:var(--c);letter-spacing:.06em}
+.phead h3{font-size:clamp(22px,3.6vw,30px);font-weight:900;line-height:1.35;margin:6px 0 10px}
+.phead p{color:var(--ink2);font-size:15px}
+.pmeta{display:flex;gap:10px;flex-wrap:wrap}
+.pmeta div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 16px;min-width:110px}
+.pmeta small{display:block;font-size:11px;color:var(--ink3)}
+.pmeta b{font-size:16px}
+.pbody{padding:24px;display:grid;gap:24px}
+@media(min-width:768px){.pbody{padding:36px 40px;grid-template-columns:repeat(2,1fr);gap:32px 40px}}
+.block h4{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.block h4::before{content:"";width:8px;height:8px;border-radius:3px;background:var(--c)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:7px 12px;border-radius:10px;background:var(--bg2);font-size:14px;line-height:1.4;border:1px solid transparent}
+.chip.ko{font-weight:500}
+.chip.hl{background:var(--cs);color:var(--c);font-weight:700}
+.list{list-style:none;display:grid;gap:8px}
+.list li{position:relative;padding-left:22px;font-size:15px;color:var(--ink)}
+.list li::before{content:"";position:absolute;left:4px;top:.72em;width:7px;height:7px;border-radius:50%;border:2px solid var(--c)}
+.block.full{grid-column:1/-1}
+.fade{animation:fade .45s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* topik */
+.tgrid{display:grid;gap:16px}
+@media(min-width:860px){.tgrid{grid-template-columns:1fr 1.35fr}}
+.tcard{background:var(--card);border-radius:24px;border:1px solid var(--line);padding:24px;box-shadow:var(--shadow)}
+@media(min-width:768px){.tcard{padding:32px}}
+.tcard-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:12px}
+.tcard-h h3{font-size:22px;font-weight:900}
+.pill{padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700}
+.tcard>p{font-size:14px;color:var(--ink2);margin-bottom:20px}
+.sects{display:grid;gap:10px}
+.sect{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--bg2)}
+.sect .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:18px;background:var(--card)}
+.sect b{display:block;font-size:15px}
+.sect small{font-size:12px;color:var(--ink3)}
+.sect .pts{font-weight:900;font-size:15px;white-space:nowrap}
+.levels{margin-top:28px}
+.levels h4,.writing h4{font-size:13px;font-weight:700;color:var(--ink3);letter-spacing:.06em;margin-bottom:14px}
+.lv{display:grid;grid-template-columns:52px 1fr 64px;gap:10px;align-items:center;margin-bottom:10px;font-size:13px}
+.lv span:first-child{font-weight:700}
+.lv .track{height:28px;border-radius:9px;background:var(--bg2);position:relative;overflow:hidden}
+.lv .fill{position:absolute;inset:0 auto 0 0;border-radius:9px;width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:10px;color:#fff;font-weight:700;font-size:12px}
+.lv .pt{text-align:right;color:var(--ink2);font-weight:500}
+.writing{margin-top:28px;display:grid;gap:10px}
+.wq{display:grid;grid-template-columns:64px 1fr;gap:14px;padding:14px 16px;border:1px dashed var(--line);border-radius:14px;align-items:center}
+.wq b{font-size:13px;color:var(--indigo);background:var(--indigo-soft);border-radius:8px;padding:6px 0;text-align:center}
+.wq p{font-size:14px}
+.wq small{display:block;color:var(--ink3);font-size:12px}
+.tips{margin-top:16px;display:grid;gap:12px}
+@media(min-width:640px){.tips{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.tips{grid-template-columns:repeat(4,1fr)}}
+.tip{padding:18px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.tip b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* lesson model */
+.lesson{background:var(--card);border-radius:26px;border:1px solid var(--line);padding:24px;box-shadow:var(--shadow-lg)}
+@media(min-width:768px){.lesson{padding:36px}}
+.timebar{display:flex;height:56px;border-radius:14px;overflow:hidden;gap:3px}
+.timebar div{display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;transition:filter .2s;cursor:default;min-width:0}
+.timebar div:hover{filter:brightness(1.1)}
+.timescale{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin:8px 2px 24px}
+.tlist{display:grid;gap:10px}
+@media(min-width:768px){.tlist{grid-template-columns:repeat(3,1fr)}}
+.titem{padding:16px;border-radius:16px;background:var(--bg2);display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.titem i{grid-row:span 2;width:10px;height:10px;border-radius:4px;margin-top:8px}
+.titem b{font-size:15px}
+.titem b small{font-weight:500;color:var(--ink3);font-size:12px;margin-left:6px}
+.titem p{font-size:13px;color:var(--ink2);grid-column:2}
+.hw{display:grid;gap:14px;margin-top:20px}
+@media(min-width:768px){.hw{grid-template-columns:repeat(3,1fr)}}
+.hwc{border-radius:22px;padding:24px;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow)}
+.hwc .lvl{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;margin-bottom:14px}
+.hwc h3{font-size:18px;margin-bottom:12px}
+
+/* materials */
+.mats{display:grid;gap:12px}
+@media(min-width:768px){.mats{grid-template-columns:repeat(2,1fr)}}
+.mat{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:18px 20px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);transition:.25s}
+.mat:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.book{width:46px;height:60px;border-radius:4px 8px 8px 4px;position:relative;box-shadow:inset 4px 0 0 rgba(0,0,0,.15),var(--shadow);display:grid;place-items:center;color:#fff;font-family:"Noto Serif KR",serif;font-weight:900;font-size:16px}
+.mat b{display:block;font-size:15px;line-height:1.5}
+.mat small{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:4px}
+.mat small span{padding:2px 8px;border-radius:6px;background:var(--bg2)}
+.note{margin-top:20px;padding:16px 20px;border-radius:16px;background:var(--gold-soft);color:var(--ink);font-size:14px;display:flex;gap:12px;align-items:flex-start}
+
+/* next */
+.next{display:grid;gap:10px}
+.nitem{display:flex;gap:14px;align-items:center;padding:16px 20px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.nitem .ck{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex-shrink:0}
+.nitem span{font-size:15px}
+.nitem em{margin-left:auto;font-style:normal;font-size:12px;color:var(--ink3);white-space:nowrap;padding:4px 10px;border-radius:999px;background:var(--bg2)}
+
+footer{padding:48px 0 calc(48px + env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--ink3);font-size:13px;text-align:center}
+footer .big{font-family:"Noto Serif KR",serif;font-weight:900;font-size:28px;color:var(--ink);margin-bottom:8px}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}html{scroll-behavior:auto}}
+.totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));width:48px;height:48px;border-radius:16px;background:var(--ink);color:var(--bg);border:0;box-shadow:var(--shadow-lg);cursor:pointer;opacity:0;pointer-events:none;transition:.3s;font-size:18px;z-index:40}
+.totop.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a href="#top" class="logo"><span class="logo-mark">한</span>韓国語カリキュラム</a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#roadmap">ロードマップ</a>
+      <a href="#steps">ステップ詳細</a>
+      <a href="#topik">TOPIK</a>
+      <a href="#lesson">授業の流れ</a>
+      <a href="#materials">教材</a>
+    </nav>
+    <button class="theme-btn" id="themeBtn" aria-label="テーマ切替">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+  <nav class="mnav" id="mnav">
+    <a href="#roadmap">ロードマップ</a>
+    <a href="#steps">ステップ詳細</a>
+    <a href="#topik">TOPIK</a>
+    <a href="#lesson">授業の流れ</a>
+    <a href="#materials">教材</a>
+  </nav>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <span style="font-size:42vw;top:-8vw;right:-8vw">한</span>
+    <span style="font-size:22vw;bottom:-4vw;left:-3vw">글</span>
+  </div>
+  <div class="wrap hero-grid">
+    <div class="rv">
+      <span class="eyebrow"><b>1対1</b>日本語話者のための韓国語レッスン</span>
+      <h1>ハングルゼロから<br><span class="accent">TOPIK 6級</span>まで</h1>
+      <p class="lead">日本語と韓国語の「似ているところ」を最大限に活かし、7つのステップで最上級まで進むカリキュラムです。</p>
+      <div class="stats">
+        <div class="stat"><strong>7</strong><span>ステップ</span></div>
+        <div class="stat"><strong>約6年</strong><span>6級までの目安</span></div>
+        <div class="stat"><strong>60分</strong><span>週1回</span></div>
+        <div class="stat"><strong>2〜3h</strong><span>週の自習</span></div>
+      </div>
+      <div class="cta">
+        <a href="#roadmap" class="btn btn-primary">ロードマップを見る →</a>
+        <a href="#steps" class="btn btn-ghost">ステップ詳細</a>
+      </div>
+    </div>
+    <div class="hcard rv" style="transition-delay:.15s">
+      <span class="float-tag ft1">語順は日本語とほぼ同じ</span>
+      <span class="float-tag ft2">漢字語で語彙が一気に増える</span>
+      <div class="hcard-top"><div class="dots"><i></i><i></i><i></i></div><span>ハングルのしくみ</span></div>
+      <div class="syll ko" lang="ko">
+        <div class="jamo c"><b>ㅎ</b><small>子音 h</small></div><span class="op">+</span>
+        <div class="jamo v"><b>ㅏ</b><small>母音 a</small></div><span class="op">+</span>
+        <div class="jamo f"><b>ㄴ</b><small>パッチム n</small></div><span class="op">=</span>
+        <div class="result"><b>한</b><small>han</small></div>
+      </div>
+      <div class="hcard-words">
+        <div class="word"><span class="ko" lang="ko">약속</span><em>約束 やくそく</em></div>
+        <div class="word"><span class="ko" lang="ko">준비</span><em>準備 じゅんび</em></div>
+        <div class="word"><span class="ko" lang="ko">가방</span><em>かばん</em></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINCIPLES -->
+<section class="alt" id="policy">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">APPROACH</div>
+      <h2>日本人だからこそ、<br>速く伸びる。</h2>
+      <p>語順・助詞・漢字語が共通しているのは大きな強み。つまずきやすい発音と敬語には、最初から時間をかけます。</p>
+    </div>
+    <div class="grid4">
+      <div class="pcard rv"><div class="picon" style="background:var(--indigo-soft);color:var(--indigo)">文</div><h3>文法は日本語との対応で</h3><p>語順も助詞もほぼ同じ。「は＝은/는」のように置き換えて理解します。</p><div class="ex ko" lang="ko">저<b>는</b> 학생<b>입니다</b>　＝ 私<b>は</b>学生<b>です</b></div></div>
+      <div class="pcard rv"><div class="picon" style="background:var(--jade-soft);color:var(--jade)">漢</div><h3>漢字語はルールで覚える</h3><p>漢字の音読みと韓国語の音には対応関係があり、一度覚えると語彙が連鎖的に増えます。</p><div class="ex">学＝<span lang="ko">학</span>・生＝<span lang="ko">생</span> → <span lang="ko">학생</span></div></div>
+      <div class="pcard rv"><div class="picon" style="background:var(--red-soft);color:var(--red)">音</div><h3>発音に時間をかける</h3><p>パッチムと「平音・激音・濃音」はいちばんの壁。入門期に耳と口を作ります。</p><div class="ex ko" lang="ko">가 · 카 · 까　／　안 · 암 · 앙</div></div>
+      <div class="pcard rv"><div class="picon" style="background:var(--gold-soft);color:var(--gold)">敬</div><h3>敬語は段階的に</h3><p>日本語と体系が違うので、해요体 → 합니다体 → パンマルの順に導入します。</p><div class="ex ko" lang="ko">먹어요 → 먹습니다 → 먹어</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">ROADMAP</div>
+      <h2>7ステップで最上級へ</h2>
+      <p>週1回60分のペースで、TOPIK 2級まで約1年半、4級まで約3年半、6級まで約6年が目安です。</p>
+    </div>
+    <div class="road" id="road"></div>
+    <p class="road-note">※ 期間は自習量とペースで変わります。各ステップの到達目標を満たしたら次へ進みます。</p>
+  </div>
+</section>
+
+<!-- STEPS -->
+<section class="alt" id="steps">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">CURRICULUM</div>
+      <h2>ステップ別の学習内容</h2>
+      <p>各ステップの到達目標と、扱う文法・語彙・テーマです。タブで切り替えられます。</p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="panel" id="panel" role="tabpanel"></div>
+  </div>
+</section>
+
+<!-- TOPIK -->
+<section id="topik">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">TOPIK</div>
+      <h2>TOPIKの形式と合格ライン</h2>
+      <p>TOPIK I（初級）かTOPIK II（中・上級）のどちらかを受験し、合計点で級が決まります。TOPIK IIでは「書き」が加わります。</p>
+    </div>
+    <div class="tgrid">
+      <div class="tcard rv">
+        <div class="tcard-h"><h3>TOPIK I</h3><span class="pill" style="background:var(--jade-soft);color:var(--jade)">1〜2級</span></div>
+        <p>200点満点・すべて選択式</p>
+        <div class="sects">
+          <div class="sect"><span class="ic">🎧</span><div><b>聞き取り</b><small>30問・40分</small></div><span class="pts">100点</span></div>
+          <div class="sect"><span class="ic">📖</span><div><b>読解</b><small>40問・60分</small></div><span class="pts">100点</span></div>
+        </div>
+        <div class="levels" data-max="200">
+          <h4>合格ライン</h4>
+          <div class="lv"><span>1級</span><div class="track"><div class="fill" data-v="80" style="background:var(--jade)">80</div></div><span class="pt">80点〜</span></div>
+          <div class="lv"><span>2級</span><div class="track"><div class="fill" data-v="140" style="background:var(--jade)">140</div></div><span class="pt">140点〜</span></div>
+        </div>
+      </div>
+      <div class="tcard rv">
+        <div class="tcard-h"><h3>TOPIK II</h3><span class="pill" style="background:var(--indigo-soft);color:var(--indigo)">3〜6級</span></div>
+        <p>300点満点・書きは記述式</p>
+        <div class="sects">
+          <div class="sect"><span class="ic">🎧</span><div><b>聞き取り</b><small>50問・60分</small></div><span class="pts">100点</span></div>
+          <div class="sect"><span class="ic">✍️</span><div><b>書き</b><small>4問・50分</small></div><span class="pts">100点</span></div>
+          <div class="sect"><span class="ic">📖</span><div><b>読解</b><small>50問・70分</small></div><span class="pts">100点</span></div>
+        </div>
+        <div class="levels" data-max="300">
+          <h4>合格ライン</h4>
+          <div class="lv"><span>3級</span><div class="track"><div class="fill" data-v="120" style="background:var(--indigo)">120</div></div><span class="pt">120点〜</span></div>
+          <div class="lv"><span>4級</span><div class="track"><div class="fill" data-v="150" style="background:var(--indigo)">150</div></div><span class="pt">150点〜</span></div>
+          <div class="lv"><span>5級</span><div class="track"><div class="fill" data-v="190" style="background:var(--indigo)">190</div></div><span class="pt">190点〜</span></div>
+          <div class="lv"><span>6級</span><div class="track"><div class="fill" data-v="230" style="background:var(--red)">230</div></div><span class="pt">230点〜</span></div>
+        </div>
+        <div class="writing">
+          <h4>書きの4問</h4>
+          <div class="wq"><b>51・52</b><p>文章の空欄に入る文を書く<small>案内文・説明文</small></p></div>
+          <div class="wq"><b>53</b><p>グラフ・表を説明する<small>200〜300字</small></p></div>
+          <div class="wq"><b>54</b><p>テーマについての論説文<small>600〜700字</small></p></div>
+        </div>
+      </div>
+    </div>
+    <div class="tips">
+      <div class="tip rv"><b>直前4〜6回は対策期間</b>各ステップの最後を試験形式に慣れる時間にします。</div>
+      <div class="tip rv"><b>過去問は無料</b>公式サイト topik.go.kr の過去問を時間を測って解きます。</div>
+      <div class="tip rv"><b>授業は解説中心</b>通しの模試は宿題に、授業では苦手問題を復習します。</div>
+      <div class="tip rv"><b>作文は毎回添削</b>提出 → 次の授業で添削して返却。日程・形式は申込前に公式で確認。</div>
+    </div>
+  </div>
+</section>
+
+<!-- LESSON -->
+<section class="alt" id="lesson">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">LESSON</div>
+      <h2>60分授業の流れ</h2>
+      <p>毎回同じ流れで進めるので、予習・復習がしやすくなります。初級は「話す」、中級以降は「読む・書く」を厚く。</p>
+    </div>
+    <div class="lesson rv">
+      <div class="timebar" id="timebar"></div>
+      <div class="timescale"><span>0分</span><span>15</span><span>30</span><span>45</span><span>60分</span></div>
+      <div class="tlist" id="tlist"></div>
+    </div>
+    <div class="hw">
+      <div class="hwc rv"><span class="lvl" style="background:var(--jade-soft);color:var(--jade)">初級</span><h3>ドリルと音読</h3><ul class="list" style="--c:var(--jade)"><li>文法ドリル1〜2ページ</li><li>単語20〜30語</li><li>例文の音読を録音して提出</li></ul></div>
+      <div class="hwc rv"><span class="lvl" style="background:var(--indigo-soft);color:var(--indigo)">中級</span><h3>作文とシャドーイング</h3><ul class="list" style="--c:var(--indigo)"><li>200〜300字の短い作文</li><li>ニュース・ドラマのシャドーイング</li><li>次回のフリートークで使う</li></ul></div>
+      <div class="hwc rv"><span class="lvl" style="background:var(--red-soft);color:var(--red)">上級</span><h3>論説と要約</h3><ul class="list" style="--c:var(--red)"><li>600〜700字の論説文</li><li>新聞コラムの要約</li><li>添削をもとに書き直し</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- MATERIALS -->
+<section id="materials">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-label">MATERIALS</div>
+      <h2>使用教材</h2>
+      <p>メイン教材を1冊決め、教案と例題はこのカリキュラムに沿ってオリジナルで作成します。</p>
+    </div>
+    <div class="mats">
+      <div class="mat rv"><div class="book" style="background:var(--red)">한</div><div><b>『1時間でハングルが読めるようになる本』</b><small><span>ステップ0</span>ハングルの導入</small></div></div>
+      <div class="mat rv"><div class="book" style="background:var(--jade)">初</div><div><b>『できる韓国語 初級Ⅰ・Ⅱ』</b><small><span>ステップ1・2</span>メイン教科書</small></div></div>
+      <div class="mat rv"><div class="book" style="background:var(--indigo)">文</div><div><b>『韓国語文法ドリル』</b><small><span>ステップ1・2</span>宿題用の文法練習</small></div></div>
+      <div class="mat rv"><div class="book" style="background:var(--gold)">語</div><div><b>『hanaの韓国語単語』シリーズ</b><small><span>ステップ1〜4</span>語彙</small></div></div>
+      <div class="mat rv"><div class="book" style="background:#7a5bb5">Ⅰ</div><div><b>『韓国語能力試験TOPIK I 総合対策』</b><small><span>ステップ1・2</span>TOPIK I 対策</small></div></div>
+      <div class="mat rv"><div class="book" style="background:#2c3e66">Ⅱ</div><div><b>『韓国語能力試験TOPIK II 総合対策』</b><small><span>ステップ3〜6</span>TOPIK II 対策</small></div></div>
+    </div>
+    <div class="note rv"><span>💡</span><span>TOPIK公式サイトの過去問題（無料）を全ステップの模擬試験に使います。教材は版が変わることがあるので、購入時に最新版を確認してください。</span></div>
+
+    <div class="sec-head rv" style="margin-top:72px">
+      <div class="sec-label">NEXT</div>
+      <h2>教案・例題の作成予定</h2>
+      <p>例題は過去問を写すのではなく、同じ形式のオリジナル問題として作ります。</p>
+    </div>
+    <div class="next">
+      <div class="nitem rv"><span class="ck"></span><span>ステップ0（第1〜8回）の教案と小テスト</span><em>入門</em></div>
+      <div class="nitem rv"><span class="ck"></span><span>ステップ1の教案とTOPIK I形式の例題</span><em>初級</em></div>
+      <div class="nitem rv"><span class="ck"></span><span>ステップ2の教案とTOPIK I模擬試験</span><em>初級</em></div>
+      <div class="nitem rv"><span class="ck"></span><span>ステップ3〜4の教案と書き51〜54番の例題</span><em>中級</em></div>
+      <div class="nitem rv"><span class="ck"></span><span>ステップ5〜6の教案と上級向け例題</span><em>上級</em></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="big" lang="ko">함께 시작해요!</div>
+    <p>一緒に始めましょう — 韓国語カリキュラム 入門〜TOPIK 6級</p>
+  </div>
+</footer>
+<button class="totop" id="totop" aria-label="トップへ戻る">↑</button>
+
+<script>
+const C = [
+  ['var(--red)','var(--red-soft)'],['var(--gold)','var(--gold-soft)'],['var(--jade)','var(--jade-soft)'],
+  ['#2b9bb5','color-mix(in srgb,#2b9bb5 15%,var(--card))'],['var(--indigo)','var(--indigo-soft)'],
+  ['#7a5bb5','color-mix(in srgb,#7a5bb5 15%,var(--card))'],['var(--red)','var(--red-soft)']
+];
+const STEPS = [
+  {n:0,name:'入門',sub:'ハングルと発音',range:'第1〜8回',total:'約2ヶ月',goal:'ハングルが読める',pct:4,
+   aim:'ハングルを声に出して読み、聞いた単語を書き取れる',
+   blocks:[
+    {t:'文字',ko:true,chips:['기본 모음 10','합성 모음 11','기본 자음 14','쌍자음 5']},
+    {t:'発音',ko:true,chips:['받침 7대표음','ㄴ / ㅁ / ㅇ','가 · 카 · 까','연음화: 한국어→[한구거]'],hl:[3]},
+    {t:'語彙・表現',list:['アルファベット順に基礎単語 約100語','基本のあいさつ（안녕하세요・감사합니다）','文字の組み立て（初声＋中声＋終声）']},
+    {t:'授業のポイント',list:['毎回「書く→読む→聞き取る」の順で確認','パッチムの区別を口の形で練習','第8回に読み書きの小テスト']}
+   ]},
+  {n:1,name:'初級前半',sub:'自己紹介と日常の基本',range:'第9〜32回',total:'約8ヶ月',goal:'ハン検5級・TOPIK 1級',pct:13,
+   aim:'自己紹介、買い物、食事の注文ができる',
+   blocks:[
+    {t:'文法',ko:true,chips:['-입니다/-입니까','은/는','이/가','을/를','에/에서','이다/아니다','있다/없다','-아요/-어요','-았/었어요','안 · -지 않다 · 못','-고 싶다','-(으)세요','-고','-아서/어서']},
+    {t:'数詞',ko:true,chips:['일 · 이 · 삼 (漢数詞)','하나 · 둘 · 셋 (固有数詞)','날짜 · 시간 · 가격']},
+    {t:'語彙',list:['累計 約800語','家族・食べ物・場所・曜日・職業','漢字語の対応ルール（学＝학、生＝생）を毎回少しずつ']},
+    {t:'試験',list:['ステップ修了時にハングル能力検定5級','TOPIK I で1級（80点〜）を目指す']}
+   ]},
+  {n:2,name:'初級後半',sub:'生活の中のやりとり',range:'第33〜72回',total:'約1年半',goal:'ハン検4級・TOPIK 2級',pct:24,
+   aim:'電話、お願い、道案内、銀行や郵便局での簡単なやりとりができる',
+   blocks:[
+    {t:'文法',ko:true,chips:['합니다体','-을 거예요','-겠다','-고 있다','-는 / -(으)ㄴ / -(으)ㄹ','-(으)면','-지만','-(으)니까','-(으)러','-(으)ㄹ 수 있다','-아야/어야 하다','-아도/어도 되다','-(으)시-'],hl:[4]},
+    {t:'不規則活用',ko:true,chips:['ㄷ','ㅂ','ㅅ','ㄹ','ㅡ','르','ㅎ']},
+    {t:'発音',ko:true,chips:['비음화: 감사합니다→[감사함니다]','경음화','격음화']},
+    {t:'語彙・試験',list:['累計 約1,500〜2,000語','ハングル能力検定4級','TOPIK I で2級（140点〜）']}
+   ]},
+  {n:3,name:'中級前半',sub:'理由と経験を語る',range:'第73〜120回',total:'約2年半',goal:'TOPIK 3級',pct:40,
+   aim:'日常生活に困らない。身近な話題で理由や経験を説明できる',
+   blocks:[
+    {t:'文法',ko:true,chips:['-다고 하다','-냐고 하다','-자고 하다','-(으)ㄴ 적이 있다','-기 때문에','-는데','-아도/어도','-더라','-던','보이다 · 먹이다','-게 하다']},
+    {t:'話し方',list:['パンマル（友達言葉）と敬語の使い分け','慣用表現']},
+    {t:'書く力',list:['短い日記、メール','200〜300字の作文（TOPIK II 53番の準備）']},
+    {t:'語彙',list:['累計 約3,000〜4,000語']}
+   ]},
+  {n:4,name:'中級後半',sub:'社会の話題と論理',range:'第121〜170回',total:'約3年半',goal:'TOPIK 4級',pct:57,
+   aim:'ニュースや新聞記事をある程度理解し、自分の意見を論理的に言える（韓国の大学入学の一般的な基準）',
+   blocks:[
+    {t:'文法',ko:true,chips:['한다体（書き言葉）','-(으)므로','-는 반면','-에 따르면']},
+    {t:'社会テーマ',chips:['環境','教育','働き方','文化','メディア']},
+    {t:'読解・書く',list:['要旨をつかむ／文の並べ替え／空欄補充','600〜700字の論説文（54番）の型：序論・本論・結論']},
+    {t:'語彙',list:['累計 約5,000〜6,000語','漢字語の抽象語']}
+   ]},
+  {n:5,name:'上級前半',sub:'専門的な文章へ',range:'第171〜230回',total:'約4年半',goal:'TOPIK 5級',pct:77,
+   aim:'専門分野の研究や仕事である程度使える',
+   blocks:[
+    {t:'読む・聞く',list:['論説・評論・講演の理解','筆者の態度や意図を読み取る']},
+    {t:'表現',ko:true,chips:['속담','사자성어','관용구']},
+    {t:'類似文法の使い分け',ko:true,chips:['-는데도 불구하고 / -지만']},
+    {t:'書く力',list:['グラフ説明文（53番）と論説文を制限時間内で']}
+   ]},
+  {n:6,name:'上級後半',sub:'ネイティブに近い運用',range:'第231回〜',total:'約6年',goal:'TOPIK 6級',pct:100,
+   aim:'専門分野でもネイティブに近い理解と表現ができる',
+   blocks:[
+    {t:'読む',list:['政治・経済・科学・哲学などの専門的な文章','古典文学の入口']},
+    {t:'語彙力',list:['細かいニュアンスの違いを説明できる']},
+    {t:'試験',list:['模擬試験を通しで解き、230点以上を安定させる'],full:true}
+   ]}
+];
+
+/* roadmap */
+const road=document.getElementById('road');
+STEPS.forEach((s,i)=>{
+  const el=document.createElement('div');
+  el.className='rstep rv'+(i===6?' final':'');
+  el.style.setProperty('--c',C[i][0]);el.style.setProperty('--cs',C[i][1]);
+  el.innerHTML=`<div class="rnum">${s.n}</div><div class="rbody"><h3>ステップ${s.n}　${s.name}<small>${s.range} · 累計 ${s.total}</small></h3><span class="rgoal">🎯 ${s.goal}</span><div class="rbar"><i data-w="${s.pct}"></i></div></div>`;
+  el.addEventListener('click',()=>{select(i);document.getElementById('steps').scrollIntoView({behavior:'smooth'})});
+  road.appendChild(el);
+});
+
+/* tabs */
+const tabs=document.getElementById('tabs'),panel=document.getElementById('panel');
+STEPS.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='tab';b.role='tab';b.style.setProperty('--c',C[i][0]);
+  b.innerHTML=`<i>${s.n}</i>${s.name}`;
+  b.onclick=()=>select(i);
+  tabs.appendChild(b);
+});
+function select(i){
+  const s=STEPS[i];
+  [...tabs.children].forEach((t,j)=>t.setAttribute('aria-selected',j===i));
+  const tb=tabs.children[i];tabs.scrollTo({left:tb.offsetLeft-(tabs.clientWidth-tb.offsetWidth)/2,behavior:'smooth'});
+  panel.style.setProperty('--c',C[i][0]);panel.style.setProperty('--cs',C[i][1]);
+  const blocks=s.blocks.map(b=>{
+    const inner=b.chips?`<div class="chips">${b.chips.map((c,k)=>`<span class="chip${b.ko?' ko':''}${b.hl&&b.hl.includes(k)?' hl':''}"${b.ko?' lang="ko"':''}>${c}</span>`).join('')}</div>`
+      :`<ul class="list">${b.list.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+    return `<div class="block${b.full?' full':''}"><h4>${b.t}</h4>${inner}</div>`;
+  }).join('');
+  panel.innerHTML=`<div class="phead"><div><div class="tag">STEP ${s.n} · ${s.sub}</div><h3>${s.aim}</h3></div><div class="pmeta"><div><small>授業回</small><b>${s.range}</b></div><div><small>累計期間</small><b>${s.total}</b></div><div><small>目標</small><b>${s.goal}</b></div></div></div><div class="pbody">${blocks}</div>`;
+  panel.classList.remove('fade');void panel.offsetWidth;panel.classList.add('fade');
+}
+select(0);
+
+/* lesson */
+const L=[
+  {m:5,t:'あいさつ・フリートーク',d:'前回の表現を使って近況を話す',c:'var(--gold)'},
+  {m:10,t:'宿題チェック・復習',d:'間違いが多い点をその場で直す',c:'var(--jade)'},
+  {m:20,t:'新しい文法・語彙',d:'日本語との対応で説明し、例文を音読',c:'var(--red)'},
+  {m:15,t:'練習',d:'会話・ロールプレイ・問題。学習者が話す時間を半分以上に',c:'var(--indigo)'},
+  {m:7,t:'発音・聞き取り',d:'毎回1テーマ（パッチム、鼻音化など）',c:'#2b9bb5'},
+  {m:3,t:'まとめ・宿題',d:'今日のポイント3つを確認',c:'#7a5bb5'}
+];
+document.getElementById('timebar').innerHTML=L.map(x=>`<div style="flex:${x.m};background:${x.c}" title="${x.t}">${x.m>=7?x.m+'分':''}</div>`).join('');
+let acc=0;
+document.getElementById('tlist').innerHTML=L.map(x=>{const s=acc;acc+=x.m;return `<div class="titem"><i style="background:${x.c}"></i><b>${x.t}<small>${s}〜${acc}分</small></b><p>${x.d}</p></div>`}).join('');
+
+/* reveal + bars */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');
+  e.target.querySelectorAll('[data-w]').forEach(b=>b.style.width=b.dataset.w+'%');
+  e.target.querySelectorAll('.fill').forEach(f=>{const max=+f.closest('.levels').dataset.max;f.style.width=(f.dataset.v/max*100)+'%'});
+  io.unobserve(e.target)}}),{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+/* header, nav active, totop */
+const hdr=document.getElementById('hdr'),totop=document.getElementById('totop');
+const secs=['roadmap','steps','topik','lesson','materials'].map(id=>document.getElementById(id));
+const links=[...document.querySelectorAll('.nav-links a,.mnav a')];
+function onScroll(){
+  const y=scrollY;hdr.classList.toggle('scrolled',y>8);totop.classList.toggle('show',y>800);
+  let cur='';secs.forEach(s=>{if(s.getBoundingClientRect().top<160)cur=s.id});
+  links.forEach(a=>{const on=a.getAttribute('href')==='#'+cur;a.classList.toggle('active',on);
+    if(on&&a.parentElement.id==='mnav'&&a.dataset.on!=='1'){const m=a.parentElement;m.scrollTo({left:a.offsetLeft-(m.clientWidth-a.offsetWidth)/2,behavior:'smooth'})}
+    a.dataset.on=on?'1':'0'});
+}
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+totop.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+
+/* theme */
+const root=document.documentElement;
+try{const t=localStorage.getItem('theme');if(t)root.dataset.theme=t}catch(e){}
+document.getElementById('themeBtn').onclick=()=>{
+  const dark=root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+  root.dataset.theme=dark?'light':'dark';try{localStorage.setItem('theme',root.dataset.theme)}catch(e){}
+};
+</script>
+</body>
+</html>
