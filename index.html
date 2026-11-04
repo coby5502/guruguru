@@ -181,6 +181,13 @@ h2{font-size:clamp(26px,4.6vw,40px);line-height:1.35;font-weight:900;letter-spac
 .list li{position:relative;padding-left:22px;font-size:15px;color:var(--ink)}
 .list li::before{content:"";position:absolute;left:4px;top:.72em;width:7px;height:7px;border-radius:50%;border:2px solid var(--c)}
 .block.full{grid-column:1/-1}
+.plink{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:10px 16px;border-radius:12px;background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;box-shadow:var(--shadow-lg);transition:transform .2s}
+.plink:hover{transform:translateY(-2px)}
+.psoon{display:inline-block;margin-top:14px;font-size:12px;color:var(--ink3);padding:4px 10px;border-radius:999px;border:1px dashed var(--line)}
+.nitem.done .ck{background:var(--jade);border-color:var(--jade);position:relative}
+.nitem.done .ck::after{content:"✓";color:#fff;font-size:14px;font-weight:900;position:absolute;inset:0;display:grid;place-items:center}
+.nitem.done{border-color:var(--jade)}
+.nitem.done:hover{background:var(--jade-soft)}
 .fade{animation:fade .45s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
@@ -277,6 +284,7 @@ footer .big{font-family:"Noto Serif KR",serif;font-weight:900;font-size:28px;col
       <a href="#topik">TOPIK</a>
       <a href="#lesson">授業の流れ</a>
       <a href="#materials">教材</a>
+      <a href="step0.html">📘 教案</a>
     </nav>
     <button class="theme-btn" id="themeBtn" aria-label="テーマ切替">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -288,6 +296,7 @@ footer .big{font-family:"Noto Serif KR",serif;font-weight:900;font-size:28px;col
     <a href="#topik">TOPIK</a>
     <a href="#lesson">授業の流れ</a>
     <a href="#materials">教材</a>
+    <a href="step0.html">📘 教案</a>
   </nav>
 </header>
 
@@ -311,7 +320,7 @@ footer .big{font-family:"Noto Serif KR",serif;font-weight:900;font-size:28px;col
       </div>
       <div class="cta">
         <a href="#roadmap" class="btn btn-primary">ロードマップを見る →</a>
-        <a href="#steps" class="btn btn-ghost">ステップ詳細</a>
+        <a href="step0.html" class="btn btn-ghost">📘 ステップ0の教案</a>
       </div>
     </div>
     <div class="hcard rv" style="transition-delay:.15s">
@@ -475,7 +484,7 @@ footer .big{font-family:"Noto Serif KR",serif;font-weight:900;font-size:28px;col
       <p>例題は過去問を写すのではなく、同じ形式のオリジナル問題として作ります。</p>
     </div>
     <div class="next">
-      <div class="nitem rv"><span class="ck"></span><span>ステップ0（第1〜8回）の教案と小テスト</span><em>入門</em></div>
+      <a href="step0.html" class="nitem done rv"><span class="ck"></span><span>ステップ0（第1〜8回）の教案と小テスト <b style="color:var(--jade)">→ 見る</b></span><em>公開中</em></a>
       <div class="nitem rv"><span class="ck"></span><span>ステップ1の教案とTOPIK I形式の例題</span><em>初級</em></div>
       <div class="nitem rv"><span class="ck"></span><span>ステップ2の教案とTOPIK I模擬試験</span><em>初級</em></div>
       <div class="nitem rv"><span class="ck"></span><span>ステップ3〜4の教案と書き51〜54番の例題</span><em>中級</em></div>
@@ -500,7 +509,7 @@ const C = [
   ['#7a5bb5','color-mix(in srgb,#7a5bb5 15%,var(--card))'],['var(--red)','var(--red-soft)']
 ];
 const STEPS = [
-  {n:0,name:'入門',sub:'ハングルと発音',range:'第1〜8回',total:'約2ヶ月',goal:'ハングルが読める',pct:4,
+  {n:0,name:'入門',sub:'ハングルと発音',link:'step0.html',range:'第1〜8回',total:'約2ヶ月',goal:'ハングルが読める',pct:4,
    aim:'ハングルを声に出して読み、聞いた単語を書き取れる',
    blocks:[
     {t:'文字',ko:true,chips:['기본 모음 10','합성 모음 11','기본 자음 14','쌍자음 5']},
@@ -587,7 +596,7 @@ function select(i){
       :`<ul class="list">${b.list.map(l=>`<li>${l}</li>`).join('')}</ul>`;
     return `<div class="block${b.full?' full':''}"><h4>${b.t}</h4>${inner}</div>`;
   }).join('');
-  panel.innerHTML=`<div class="phead"><div><div class="tag">STEP ${s.n} · ${s.sub}</div><h3>${s.aim}</h3></div><div class="pmeta"><div><small>授業回</small><b>${s.range}</b></div><div><small>累計期間</small><b>${s.total}</b></div><div><small>目標</small><b>${s.goal}</b></div></div></div><div class="pbody">${blocks}</div>`;
+  panel.innerHTML=`<div class="phead"><div><div class="tag">STEP ${s.n} · ${s.sub}</div><h3>${s.aim}</h3>${s.link?`<a class="plink" href="${s.link}">📘 第1〜8回の教案・クイズを見る →</a>`:`<span class="psoon">教案は準備中</span>`}</div><div class="pmeta"><div><small>授業回</small><b>${s.range}</b></div><div><small>累計期間</small><b>${s.total}</b></div><div><small>目標</small><b>${s.goal}</b></div></div></div><div class="pbody">${blocks}</div>`;
   panel.classList.remove('fade');void panel.offsetWidth;panel.classList.add('fade');
 }
 select(0);
