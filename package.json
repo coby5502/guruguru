@@ -1,0 +1,13 @@
+{
+  "name": "guruguru-korean",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --env=dev",
+    "check": "node scripts/check.mjs",
+    "pdf": "node scripts/pdf.mjs",
+    "serve": "npx --yes serve dist -l 5173"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,56 +1,97 @@
-# main に push → cobyserver の ~/sites/guruguru へ rsync デプロイ（guruguru.app）
-# 서버 쪽: NPM proxy host guruguru.app → cobyhub-web-gateway:8083 (/srv/guruguru)
-# Secrets: GURUGURU_SSH_KEY (rrsync 로 ~/sites/guruguru 에만 쓰기 가능한 전용 키), GURUGURU_HOST, GURUGURU_USER, GURUGURU_KNOWN_HOSTS
-name: Deploy to guruguru.app
+# 배포: develop → dev.guruguru.app (development) · main → guruguru.app (production)
+# Environment secrets: DEPLOY_SSH_KEY (환경별 전용 키, 서버에서 rrsync 로 해당 폴더에만 쓰기 가능)
+# Repository secrets:  DEPLOY_HOST, DEPLOY_USER, DEPLOY_KNOWN_HOSTS
+name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 배포 대상
+        type: choice
+        options: [development, production]
+        default: development
 
 concurrency:
-  group: deploy-guruguru
-  cancel-in-progress: true
+  group: deploy-${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'development') }}
+  cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    environment:
+      name: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'development') }}
+      url: ${{ (github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'development')) == 'production' && 'https://guruguru.app' || 'https://dev.guruguru.app' }}
+    env:
+      TARGET: ${{ github.event.inputs.environment || (github.ref_name == 'main' && 'production' || 'development') }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Guard (production 은 main 에서만)
+        if: env.TARGET == 'production' && github.ref_name != 'main'
+        run: echo "::error::production 은 main 브랜치에서만 배포할 수 있습니다" && exit 1
 
-      - name: Check build output
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Build & check
         run: |
-          test -f index.html && test -f sw.js && test -f manifest.webmanifest
-          echo "audio: $(ls audio | wc -l) files, pdf: $(ls pdf | wc -l) files"
+          ENV=$([ "$TARGET" = production ] && echo prod || echo dev)
+          VER=${GITHUB_SHA::8}
+          echo "BUILD_ID=$ENV-$VER" >> "$GITHUB_ENV"
+          node scripts/build.mjs --env=$ENV --version=$VER
+          node scripts/check.mjs
 
       - name: Set up SSH
         env:
-          SSH_KEY: ${{ secrets.GURUGURU_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.GURUGURU_KNOWN_HOSTS }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
-      - name: Deploy (rsync)
+      - name: Deploy (rsync → server)
         env:
-          HOST: ${{ secrets.GURUGURU_HOST }}
-          DEPLOY_USER: ${{ secrets.GURUGURU_USER }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           rsync -rlptz --delete --omit-dir-times \
-            --exclude '.git' --exclude '.github' --exclude 'README.md' --exclude '.nojekyll' \
             -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes" \
-            ./ "$DEPLOY_USER@$HOST:/"
+            dist/ "$DEPLOY_USER@$HOST:/"
 
       - name: Smoke test
         run: |
-          for i in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://guruguru.app/ || true)
-            [ "$code" = "200" ] && { echo "guruguru.app → 200"; exit 0; }
-            sleep 5
-          done
-          echo "::warning::guruguru.app did not return 200 (last: $code) — DNS/SSL may not be ready yet"
+          URL=$([ "$TARGET" = production ] && echo https://guruguru.app || echo https://dev.guruguru.app)
+          node scripts/smoke.mjs "$URL" "$BUILD_ID"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### ${TARGET} · \`${BUILD_ID:-?}\` · ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "commit: ${GITHUB_SHA::8} by ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+
+      # main 에 hotfix 가 직접 들어간 경우 등 develop 이 뒤처지면 맞춰 준다
+      - name: Sync main → develop
+        if: success() && env.TARGET == 'production' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin develop
+          if git merge-base --is-ancestor origin/develop HEAD; then
+            if [ "$(git rev-parse origin/develop)" != "$(git rev-parse HEAD)" ]; then
+              git push origin HEAD:develop && echo "develop fast-forwarded to main"
+            fi
+          elif ! git merge-base --is-ancestor HEAD origin/develop; then
+            gh pr list --base develop --head main --state open --json number --jq 'length' | grep -q '^0$' && \
+              gh pr create --base develop --head main --title "chore: sync main → develop" --body "main 에만 있는 변경(hotfix 등)을 develop 에 반영합니다." || true
+          fi
