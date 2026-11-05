@@ -23,7 +23,7 @@ let html = src('template.html')
   .replace('/*__LESSONS__*/', () => [src('lessons.js'), ...extFiles.map(f => src('lessons-ext/' + f))].join('\n'))
   .replace('/*__SYLLABUS__*/', () => src('syllabus.js'))
   .replace('/*__PRINT__*/', () => src('print.js'))
-  .replace('/*__MASCOT__*/', () => src('mascot.js'))
+  .replace('/*__MASCOT__*/', () => src('kana.js') + '\n' + src('mascot.js'))
   .replace('/*__APP__*/', () => app);
 if (ENV !== 'prod') {
   html = html

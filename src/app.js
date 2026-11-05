@@ -197,7 +197,7 @@ function vHome(){
   <div class="h2"><span>${t.dex}</span><small>${t.dexSub}</small></div>
   ${dexHTML()}
   <div class="h2"><span>${t.wod}</span><small>${t.tapPlay}</small></div>
-  <button class="card wod" id="wod"><div class="wodt"><div class="k" lang="ko">${esc(w.k)}</div><div class="m">${w.p?`<span lang="ko">［${esc(w.p)}］</span> `:''}${esc(w.m)}</div></div><span class="btn sm yellow sp">${t.listen}</span></button>
+  <button class="card wod" id="wod"><div class="wodt"><div class="k" lang="ko">${esc(w.k)}</div><div class="kn" lang="ja">${esc(kn(w))}</div><div class="m">${w.p?`<span lang="ko">［${esc(w.p)}］</span> `:''}${esc(w.m)}</div></div><span class="btn sm yellow sp">${t.listen}</span></button>
   <div class="foot"><div class="jua" lang="ko">한 걸음씩!</div>${t.foot}</div>`;
 }
 function bindHome(){
@@ -248,14 +248,15 @@ function pCards(l){
   const f=fcState;if(f.i>=ws.length)f.i=0;const w=ws[f.i];
   return `<div class="deck"><div class="fc ${f.flip?'flip':''}" id="fc" role="button" tabindex="0" aria-label="${t.flip}">
     <div class="face front"><span class="cnt">${f.i+1} / ${ws.length}</span><span class="stamp${f.got.has(w.k)?' on':''}">${t.gotStamp}</span><div class="big" lang="ko">${esc(w.k)}</div><span class="hint">${t.flip}</span></div>
-    <div class="face back"><span class="cnt">${f.i+1} / ${ws.length}</span><div class="mean" lang="ja">${esc(w.m)}</div>${w.p?`<div class="pr" lang="ko">［${esc(w.p)}］</div>`:''}<div class="pr" lang="ko">${esc(w.k)}</div><span class="hint">${t.flipBack}</span></div>
+    <div class="face back"><span class="cnt">${f.i+1} / ${ws.length}</span><div class="mean" lang="ja">${esc(w.m)}</div>${w.p?`<div class="pr" lang="ko">［${esc(w.p)}］</div>`:''}<div class="pr" lang="ko">${esc(w.k)}</div><div class="kn2" lang="ja">${esc(kn(w))}</div><span class="hint">${t.flipBack}</span></div>
   </div></div>
   <div class="fctrl"><button class="ibtn big" id="fPrev" aria-label="prev">◀</button><div class="fmid"><button class="btn sky" id="fSay">${t.listen}</button><button class="btn ${f.got.has(w.k)?'mint':''}" id="fGot">${f.got.has(w.k)?t.got:t.gotBtn}</button></div><button class="ibtn big" id="fNext" aria-label="next">▶</button></div>
   <div class="gotc"><span>${t.gotCount(f.got.size,ws.length)}</span>${f.got.size===ws.length?`<a href="#/l/${l.no}/quiz" class="btn sm pink">${t.toQuiz}</a>`:''}</div>
   <div class="dots">${ws.map((x,j)=>`<i class="${j===f.i?'on':''} ${f.got.has(x.k)?'got':''}"></i>`).join('')}</div>
   <div class="blk"><h3>${t.list}<em>${t.cnt(ws.length)}</em></h3><div class="wlist">${ws.map(x=>wrow(x,false)).join('')}</div></div>`;
 }
-const wrow=(x,lb)=>`<button class="wrow" data-say="${esc(x.k)}"><span class="k" lang="ko">${esc(x.k)}</span><span class="m" lang="ja">${x.p?`<span class="p" lang="ko">［${esc(x.p)}］</span>`:''}${esc(x.m)}</span>${lb?`<span class="lb">${x.no}</span>`:''}<span class="sp">🔊</span></button>`;
+const kn=w=>KANA(w.p||w.k);
+const wrow=(x,lb)=>`<button class="wrow" data-say="${esc(x.k)}"><span class="kw"><span class="k" lang="ko">${esc(x.k)}</span><span class="kn" lang="ja">${esc(kn(x))}</span></span><span class="m" lang="ja">${x.p?`<span class="p" lang="ko">［${esc(x.p)}］</span>`:''}${esc(x.m)}</span>${lb?`<span class="lb">${x.no}</span>`:''}<span class="sp">🔊</span></button>`;
 function pQuiz(l){
   const t=T(),q=qState;
   if(q.i>=l.quiz.length){
