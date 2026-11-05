@@ -13,7 +13,7 @@ tts=TTS(model='supertonic-3');st=tts.get_voice_style('F1')
 asr=WhisperModel('small',device='cpu',compute_type='int8')
 def norm(s):return ''.join(ch for ch in s if '가'<=ch<='힣')
 def cer(a,b):return 1-difflib.SequenceMatcher(None,norm(a),norm(b)).ratio()
-MAP='src/audio-map.json'
+MAP=os.environ.get('AMAP','src/audio-map.json')
 amap=json.load(open(MAP))
 man={k:{'f':v} for k,v in amap.items()}
 for t in u:
