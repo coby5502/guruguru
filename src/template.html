@@ -160,7 +160,9 @@ main{padding:8px 0 calc(var(--tab) + 40px + var(--sab))}
 .tile .sp{position:absolute;right:7px;top:5px;font-size:11px;opacity:.55}
 .tbl{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--card);border:var(--bw) solid var(--line);border-radius:18px;box-shadow:var(--sh-s)}
 .tbl table{border-collapse:collapse;width:100%;min-width:max-content}
-.tbl th,.tbl td{padding:10px 12px;border-bottom:2px dashed color-mix(in srgb,var(--ink) 18%,transparent);text-align:center;white-space:nowrap;font-size:14px}
+.tbl th,.tbl td{padding:10px 12px;border-bottom:2px dashed color-mix(in srgb,var(--ink) 18%,transparent);text-align:center;white-space:normal;line-break:strict;overflow-wrap:break-word;font-size:14px;line-height:1.45}
+.tbl td.ko,.tbl td.lab,.tbl th{word-break:keep-all}
+.tbl td.ko,.tbl td.lab{overflow-wrap:normal}
 .tbl tr:last-child td{border-bottom:0}
 .tbl th{background:var(--yellow-s);font-size:12px;font-weight:900}
 .tbl td.ko{font-size:19px;font-weight:700;cursor:pointer}
@@ -168,6 +170,24 @@ main{padding:8px 0 calc(var(--tab) + 40px + var(--sab))}
 .tbl td.lab{background:var(--pink-s);font-weight:900}
 .tbl td.l{text-align:left;white-space:normal;min-width:150px}
 .tbl.fit table{min-width:0}
+.tbl table{min-width:0}
+@media (max-width:600px){
+ .tbl th,.tbl td{padding:9px 8px;font-size:13.5px}
+ .tbl td.ko{font-size:17px}
+ .tbl td.l{min-width:0}
+}
+/* 그래도 넘치는 표는 카드형으로 */
+.tbl.cards{overflow:visible;background:none;border:0;box-shadow:none;border-radius:0}
+.tbl.cards table,.tbl.cards tbody{display:block}
+.tbl.cards thead{display:none}
+.tbl.cards tr{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline;background:var(--card);border:var(--bw) solid var(--line);border-radius:16px;box-shadow:var(--sh-s);padding:10px 14px;margin-bottom:10px}
+.tbl.cards td{display:contents;border:0;padding:0}
+.tbl.cards td::before{content:attr(data-th);font-size:11.5px;font-weight:900;color:var(--ink3);white-space:nowrap}
+.tbl.cards td>.v{display:block;text-align:left;padding:3px 0;border-bottom:1px dashed color-mix(in srgb,var(--ink) 12%,transparent)}
+.tbl.cards td:last-child>.v{border-bottom:0}
+.tbl.cards td:first-child::before{display:none}
+.tbl.cards td:first-child>.v{grid-column:1/-1;font-size:18px;font-weight:900;padding-bottom:6px}
+.tbl.cards td.ko>.v{font-size:17px}
 .bubbles{display:grid;gap:12px}
 @media(min-width:640px){.bubbles{grid-template-columns:repeat(2,1fr)}}
 .bub{position:relative;background:var(--card);border:var(--bw) solid var(--line);border-radius:18px 18px 18px 4px;padding:12px 14px;box-shadow:var(--sh-s);font-size:14px}
