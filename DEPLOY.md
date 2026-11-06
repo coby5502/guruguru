@@ -40,9 +40,14 @@ python3 scripts/gen-audio.py "새 단어"   # 음성 추가 (Supertonic-3)
 3-1. 스텝 묶음 PDF(`pdf/step{0-6}-{text|guide|work|hw}.pdf`) 다시 만들기: `npm run build && npm run pdf -- bundles`
 4. `npm run check` 가 KO/퀴즈 누락, 60분 합계, 음성·PDF 파일 유무를 검사
 
+## 로그인 백엔드 (API)
+
+`server/` — Google 로그인·역할(학생/선생)·관리자 승인. 설치·운영은 [server/README.md](server/README.md).
+백엔드가 없으면 앱은 로그인 없이 예전처럼 동작합니다. `node server/test.mjs` 로 API 테스트.
+
 ## 구조
 
-- `src/` — 앱 소스 (template.html, app.js, print.js, lessons.js, audio-map.json, sw.js)
+- `src/` — 앱 소스 (template.html, app.js, auth.js(로그인·역할), print.js, lessons.js, audio-map.json, sw.js)
 - `public/` — 정적 파일 (audio/, pdf/, icons/, manifest)
 - `scripts/` — build / check / smoke / pdf / gen-audio
 - 서버: cobyserver `~/sites/guruguru`(prod), `~/sites/guruguru-dev`(dev) → NPM → `cobyhub-web-gateway` :8083 / :8084
