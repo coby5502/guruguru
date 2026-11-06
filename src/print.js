@@ -64,7 +64,7 @@ const DOCS=[['text','学習テキスト','学生用 · 日本語','📗','mint']
 const pdfUrl=(no,t)=>`pdf/l${no}-${t}.pdf`;
 function printCards(no){
   const t=T();
-  return `<div class="prints">${DOCS.map(d=>`<div class="pc" style="--c:${cv(d[4])}"><div class="pt"><span class="ic">${d[3]}</span><div><b>${t.docs[d[0]][0]}</b><small>${t.docs[d[0]][1]}</small></div></div><div class="pa"><a class="btn" href="${pdfUrl(no,d[0])}" download>⬇ PDF</a><a class="btn" href="#/print/${no}/${d[0]}">${t.view}</a></div></div>`).join('')}</div>`;
+  return `<div class="prints">${DOCS.map(d=>`<div class="pc" style="--c:${cv(d[4])}"><div class="pt"><span class="ic">${d[3]}</span><div><b>${t.docs[d[0]][0]}</b><small>${t.docs[d[0]][1]}</small></div></div><div class="pa"><a class="btn" href="${pdfUrl(no,d[0])}" data-dl="${esc(lessonDl(no,d[0]))}">⬇ PDF</a><a class="btn" href="#/print/${no}/${d[0]}">${t.view}</a></div></div>`).join('')}</div><a class="btn block pall" href="${pdfUrl(no,'text')}" data-dl="${esc(lessonDlAll(no))}" data-label="${esc(t.no?t.no(no):'#'+no)} · ${DT().all}">⬇ ${DT().all}（PDF×4）</a>`;
 }
 const PAD=n=>String(n).padStart(2,'0');
 function tableKo(l,r,c,k){return c!=='—'&&isKo(c)&&!/^［/.test(c)&&!/ㄱ ㅋ|ㄷ ㅌ|ㅂ ㅍ/.test(c)&&!((l.no===2||l.no===3)&&k===0)&&!(l.table.left||[]).includes(k)}
@@ -144,9 +144,67 @@ function docHw(l){
   const p3=`<div class="ph"><span class="badge m">解答</span><h1>第${l.no}回 宿題プリント 解答<small>答え合わせ用</small></h1></div><div class="keyl">${tr.slice(0,10).map((t,i)=>`<div>1-${i+1}：<b>${esc(t.k)}</b></div>`).join('')}${key.map(k=>`<div>${esc(k[0])}：<b>${esc(k[1])}</b></div>`).join('')}</div>`;
   return [p1,p2,{key:p3}];
 }
+function vPrintStep(sn,t){
+  const d=DOCS.find(x=>x[0]===t)||DOCS[0];t=d[0];const r=STEP_RANGE[sn]||STEP_RANGE[0];
+  const fn=t==='work'?docWork:t==='hw'?docHw:t==='guide'?docGuide:docText;
+  const pages=L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l=>{const parts=fn(l);return parts.map((p,i)=>typeof p==='string'?`<section class="page">${p}${pfoot(l,d[1],(i+1)+'/'+parts.length,t==='guide')}</section>`:`<section class="page key">${p.key}${pfoot(l,d[1]+' 解答',(i+1)+'/'+parts.length)}</section>`).join('')}).join('');
+  return `<div class="ptool"><a href="#/s/${sn}" class="btn">${T().pBack}</a><b>${T().stepOf(sn)} ${d[1]}</b><a class="btn" href="${bundleUrl(sn,t)}" data-dl="${esc(bundleDl(sn,t))}">⬇ PDF</a><button class="btn pink" id="pBtn">${T().pPrint}</button></div><div class="pages">${pages}</div>`;
+}
 function vPrint(no,t){
   const l=L.find(x=>x.no===no)||L[0],d=DOCS.find(x=>x[0]===t)||DOCS[0];t=d[0];
   const parts=(t==='work'?docWork:t==='hw'?docHw:t==='guide'?docGuide:docText)(l);
   const pages=parts.map((p,i)=>typeof p==='string'?`<section class="page">${p}${pfoot(l,d[1],(i+1)+'/'+parts.length,t==='guide')}</section>`:`<section class="page key">${p.key}${pfoot(l,d[1]+' 解答',(i+1)+'/'+parts.length)}</section>`).join('');
-  return `<div class="ptool"><a href="#/l/${l.no}" class="btn">${T().pBack}</a><b>${t==='guide'?`제${l.no}회 `:`第${l.no}回 `}${d[1]}</b><a class="btn" href="${pdfUrl(l.no,t)}" download>⬇ PDF</a><button class="btn pink" id="pBtn">${T().pPrint}</button></div><div class="pages">${pages}</div>`;
+  return `<div class="ptool"><a href="#/l/${l.no}" class="btn">${T().pBack}</a><b>${t==='guide'?`제${l.no}회 `:`第${l.no}回 `}${d[1]}</b><a class="btn" href="${pdfUrl(l.no,t)}" data-dl="${esc(lessonDl(l.no,t))}">⬇ PDF</a><button class="btn pink" id="pBtn">${T().pPrint}</button></div><div class="pages">${pages}</div>`;
 }
+
+/* ---------- PDF ダウンロード（GoodNotes・ファイル保存向け） ---------- */
+const STEP_RANGE=[[1,8],[9,32],[33,72],[73,120],[121,170],[171,230],[231,290]];
+const bundleUrl=(s,t)=>`pdf/step${s}-${t}.pdf`;
+const DLT={
+ ja:{prep:'PDFを準備中…',ready:'準備できました',share:'共有・アプリで開く',shareS:'GoodNotes・ファイルに保存など',save:'ダウンロード',saveS:'ブラウザに保存',fail:'ダウンロードに失敗しました。通信環境を確認してください。',close:'閉じる',all:'4種まとめて',bundle:'ステップまとめPDF',bundleS:'ステップごと・種類ごとに1つのPDF',size:'約',files:n=>`${n}ファイル`,lessons:'回ごとのPDF',ios:'iPhone・iPadでは「共有」→ GoodNotes を選ぶと直接読み込めます。'},
+ ko:{prep:'PDF 준비 중…',ready:'준비 완료',share:'공유·앱에서 열기',shareS:'GoodNotes·파일에 저장 등',save:'다운로드',saveS:'브라우저에 저장',fail:'다운로드에 실패했습니다. 통신 환경을 확인해 주세요.',close:'닫기',all:'4종 한꺼번에',bundle:'스텝 묶음 PDF',bundleS:'스텝별·종류별로 하나의 PDF',size:'약',files:n=>`${n}개 파일`,lessons:'회차별 PDF',ios:'iPhone·iPad에서는 "공유" → GoodNotes를 고르면 바로 불러올 수 있어요.'}
+};
+const DT=()=>DLT[LANG];
+function pdfName(no,t){const d=DOCS.find(x=>x[0]===t);return t==='guide'?`구루구루_제${String(no).padStart(3,'0')}회_교사용지도안.pdf`:`ぐるぐる_第${String(no).padStart(3,'0')}回_${d[1]}.pdf`}
+function bundleName(s,t){const d=DOCS.find(x=>x[0]===t),r=STEP_RANGE[s];return t==='guide'?`구루구루_스텝${s}_교사용지도안_${r[0]}-${r[1]}회.pdf`:`ぐるぐる_ステップ${s}_${d[1]}_第${r[0]}-${r[1]}回.pdf`}
+/* data-dl="url|name;url|name" を持つリンクをタップすると共有シートを出す */
+const dlAttr=list=>list.map(x=>x.join('|')).join(';');
+const lessonDl=(no,t)=>dlAttr([[pdfUrl(no,t),pdfName(no,t)]]);
+const lessonDlAll=no=>dlAttr(DOCS.map(d=>[pdfUrl(no,d[0]),pdfName(no,d[0])]));
+const bundleDl=(s,t)=>dlAttr([[bundleUrl(s,t),bundleName(s,t)]]);
+function bundleGrid(s){
+  const t=T(),dt=DT();
+  return `<div class="bgrid">${DOCS.map(d=>`<a class="bdl" style="--c:${cv(d[4])}" href="${bundleUrl(s,d[0])}" data-dl="${esc(bundleDl(s,d[0]))}"><span class="ic">${d[3]}</span><b>${t.docs[d[0]][0]}</b><small>${t.stepOf(s)}</small></a>`).join('')}</div>`;
+}
+let dlBusy=false;
+async function startDl(spec,label){
+  if(dlBusy)return;dlBusy=true;
+  const dt=DT(),items=spec.split(';').map(x=>{const [u,n]=x.split('|');return {u,n}});
+  const el=document.createElement('div');el.className='dl-ov';
+  el.innerHTML=`<div class="dl-box" role="dialog" aria-modal="true"><b class="dl-t">${esc(label||items[0].n)}</b><p class="dl-s">${dt.prep}</p><div class="dl-bar"><i></i></div><div class="dl-acts"></div><button class="btn sm dl-x">${dt.close}</button></div>`;
+  document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+  const close=()=>{el.classList.remove('show');setTimeout(()=>{el.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250);dlBusy=false};
+  const urls=[];el.querySelector('.dl-x').onclick=close;el.onclick=e=>{if(e.target===el)close()};
+  const bar=el.querySelector('.dl-bar i');
+  try{
+    const files=[];let k=0;
+    for(const it of items){
+      const res=await fetch(it.u,{cache:'no-store'});if(!res.ok)throw new Error(res.status);
+      const total=+res.headers.get('content-length')||0;let got=0;const chunks=[];
+      if(res.body&&total){const rd=res.body.getReader();for(;;){const {done,value}=await rd.read();if(done)break;chunks.push(value);got+=value.length;bar.style.width=((k+got/total)/items.length*100)+'%'}}
+      else{chunks.push(new Uint8Array(await res.arrayBuffer()))}
+      files.push(new File(chunks,it.n,{type:'application/pdf'}));k++;bar.style.width=(k/items.length*100)+'%';
+    }
+    const mb=(files.reduce((a,f)=>a+f.size,0)/1048576).toFixed(1);
+    el.querySelector('.dl-s').textContent=`${dt.ready} · ${items.length>1?dt.files(items.length)+' · ':''}${dt.size}${mb}MB`;
+    const acts=el.querySelector('.dl-acts');
+    const canShare=navigator.canShare&&navigator.canShare({files});
+    if(canShare){const b=document.createElement('button');b.className='btn pink block';b.innerHTML=`${dt.share}<small>${dt.shareS}</small>`;
+      b.onclick=async()=>{try{await navigator.share({files,title:files.length>1?label:files[0].name})}catch(e){}};acts.appendChild(b)}
+    const s=document.createElement('button');s.className='btn block';s.innerHTML=`${dt.save}<small>${dt.saveS}</small>`;
+    s.onclick=()=>{files.forEach((f,i)=>setTimeout(()=>{const u=URL.createObjectURL(f);urls.push(u);const a=document.createElement('a');a.href=u;a.download='guruguru_'+items[i].u.split('/').pop();document.body.appendChild(a);a.click();a.remove()},i*400))};
+    acts.appendChild(s);
+    if(canShare&&/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent)){const p=document.createElement('p');p.className='dl-n';p.textContent=dt.ios;acts.appendChild(p)}
+  }catch(e){el.querySelector('.dl-s').textContent=dt.fail;bar.parentNode.remove()}
+}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-dl]');if(!a)return;e.preventDefault();startDl(a.dataset.dl,a.dataset.label)});
