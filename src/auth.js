@@ -83,7 +83,7 @@ function vLogin(err){
     <h1 class="jua">${a.loginT}</h1><p>${a.loginP}</p>
     ${err?`<p class="auth-err">${a.loginErr}</p>`:''}
     <div id="gbtn" class="gbtn"><div class="dl-bar"><i style="width:40%"></i></div></div>
-    <p class="note">${a.loginNote}</p>
+    <p class="note">${a.loginNote}<br><a href="privacy.html" target="_blank">${LANG==='ko'?'개인정보 처리방침':'プライバシー'}</a> · <a href="terms.html" target="_blank">${LANG==='ko'?'이용 약관':'利用規約'}</a></p>
   </div></div>`;
 }
 function profileForm(u,first){
