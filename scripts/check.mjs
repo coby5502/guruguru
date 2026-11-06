@@ -27,6 +27,7 @@ if (!L.length) errs.push('no lessons');
 const audioMap = JSON.parse(fs.readFileSync(path.join(root, 'src', 'audio-map.json'), 'utf8'));
 for (const h of new Set(Object.values(audioMap))) must(`audio/${h}.mp3`);
 for (const l of L) for (const t of ['text', 'guide', 'work', 'hw']) must(`pdf/l${l.no}-${t}.pdf`);
+for (let s = 0; s <= 6; s++) for (const t of ['text', 'guide', 'work', 'hw']) must(`pdf/step${s}-${t}.pdf`);
 const nos = L.map(l => l.no); if (new Set(nos).size !== nos.length) errs.push('duplicate lesson numbers');
 for (const l of L.filter(l => l.no > 8)) {
   if (!ctx.__x.KO[l.no]) errs.push(`lesson ${l.no}: missing Korean teacher data (KO_EXT)`);
