@@ -170,6 +170,7 @@ function vStep(n){
     <div class="goals"><div>🎯 ${t.goal}: ${esc(s.goal)}</div><div>📚 ${esc(s.key)}</div></div>
     <div class="prog" style="margin:14px 0 0"><div class="prog-top"><span>${t.syllabus}</span><span>${st.done} / ${t.lessonsN(st.total)}</span></div><div class="bar"><i style="width:${st.done/st.total*100}%"></i></div></div></section>
   ${st.ready?'':`<p class="note" style="margin:14px 2px 0">${t.prepNote}</p>`}
+  <details class="sdl"><summary>📦 ${DT().bundle}<small>${DT().bundleS}</small></summary>${bundleGrid(n)}<p class="note">${DT().ios}</p></details>
   <div class="llist">${ls.map(x=>{const d=done.includes(x.no),isn=x.ready&&x.no===ni&&!d;
     const inner=`<span class="ln">${x.no}</span><span class="lt"><b>${esc(LANG==='ko'?x.ko:x.ja)}</b><small lang="${/[\uac00-\ud7a3]/.test(x.g)?'ko':'ja'}">${esc(x.g)}</small></span><span class="ls ${d?'done':isn?'next':x.ready?'':'soon'}">${d?'✓':isn?'NEXT':x.ready?'▶':t.prep}</span>`;
     return x.ready?`<a href="#/l/${x.no}" class="lrow">${inner}</a>`:`<div class="lrow off">${inner}</div>`}).join('')}</div>
@@ -349,13 +350,13 @@ function bindWords(){
 const GT={
 ja:{t:'カリキュラムガイド',tag:'7ステップ',lead:'週1回60分 × 1対1で、約6年でTOPIK 6級へ。',leadP:'語順・助詞・漢字語が似ているのが日本語話者の強み。つまずきやすい発音と敬語には最初から時間をかけます。',
  road:['ロードマップ','7つのステップと目標'],study:'▶ 学習する',roadN:'※ 期間は目安。各ステップの到達目標を満たしたら次へ進みます。',
- prints:['プリント集（PDF）','4種類 × 全8回'],printsN:'A4サイズ。ワークシートと宿題の最後のページは解答。교사용 지도안は韓国語です。',
+ prints:['プリント集（PDF）','4種類 × 全290回・ステップまとめ'],printsN:'A4サイズ。ワークシートと宿題の最後のページは解答。교사용 지도안は韓国語です。',
  topik:['TOPIKの形式と合格ライン','TOPIK I・II'],kv:[['TOPIK I（1〜2級）','聞き30・読み40／200点'],['TOPIK II（3〜6級）','聞き50・書き4・読み50／300点'],['書き（TOPIK II）','51・52 空欄／53 グラフ説明／54 論説文']],lv:'級',pt:'点〜',topikN:'※ 日程・形式は公式サイト（topik.go.kr）で確認。',
  lesson:['60分授業の流れ','毎回この流れで進めます'],flow:['あいさつ・フリートーク','宿題チェック・復習','新しい文法・語彙','練習（会話・ロールプレイ）','発音・聞き取り','まとめ・宿題'],min:'分',lessonN:'宿題は週2〜3時間。初級はドリルと音読、中級は作文とシャドーイング、上級は論説文と要約。',
  mats:['使用教材','メイン教材＋オリジナル教案'],matsSub:['ステップ0 · ハングル導入','ステップ1・2 · メイン教科書','ステップ1・2 · 宿題用','ステップ1〜4 · 語彙','ステップ1・2 · 試験対策','ステップ3〜6 · 試験対策'],matsN:'TOPIK公式サイトの過去問（無料）を模擬試験に使います。教材は購入時に最新版を確認してください。',foot:'いっしょに始めましょう'},
 ko:{t:'커리큘럼 가이드',tag:'7스텝',lead:'주 1회 60분 1:1 수업으로, 약 6년에 TOPIK 6급까지.',leadP:'어순·조사·한자어가 비슷한 것이 일본어 화자의 강점. 막히기 쉬운 발음과 존댓말에는 처음부터 시간을 들입니다.',
  road:['로드맵','7개 스텝과 목표'],study:'▶ 학습하기',roadN:'※ 기간은 기준. 각 스텝의 도달 목표를 채우면 다음으로 넘어갑니다.',
- prints:['프린트 모음 (PDF)','4종 × 전 8회'],printsN:'A4 크기. 워크시트와 숙제의 마지막 페이지는 정답. 학생용 자료는 일본어, 교사용 지도안은 한국어입니다.',
+ prints:['프린트 모음 (PDF)','4종 × 전 290회·스텝 묶음'],printsN:'A4 크기. 워크시트와 숙제의 마지막 페이지는 정답. 학생용 자료는 일본어, 교사용 지도안은 한국어입니다.',
  topik:['TOPIK 형식과 합격 기준','TOPIK I·II'],kv:[['TOPIK I (1~2급)','듣기 30·읽기 40 / 200점'],['TOPIK II (3~6급)','듣기 50·쓰기 4·읽기 50 / 300점'],['쓰기 (TOPIK II)','51·52 빈칸 / 53 그래프 설명 / 54 논술']],lv:'급',pt:'점~',topikN:'※ 일정·형식은 공식 사이트(topik.go.kr)에서 확인하세요.',
  lesson:['60분 수업 흐름','매번 이 흐름으로 진행합니다'],flow:['인사·프리토킹','숙제 확인·복습','새 문법·어휘','연습(회화·롤플레이)','발음·듣기','정리·숙제'],min:'분',lessonN:'숙제는 주 2~3시간. 초급은 드릴과 음독, 중급은 작문과 섀도잉, 고급은 논술과 요약.',
  mats:['사용 교재','메인 교재 ＋ 자체 교안'],matsSub:['스텝0 · 한글 도입','스텝1·2 · 메인 교과서','스텝1·2 · 숙제용','스텝1~4 · 어휘','스텝1·2 · 시험 대비','스텝3~6 · 시험 대비'],matsN:'TOPIK 공식 사이트의 기출문제(무료)를 모의고사로 씁니다. 교재는 구입 시 최신판을 확인하세요.',foot:'함께 시작해요'}
@@ -369,7 +370,8 @@ function vGuide(){
   <div class="card lead"><b>${g.lead}</b><p>${g.leadP}</p></div>
   <div class="acc">
    <details open><summary><span class="e" style="--c:var(--yellow)">길</span><span class="st2">${g.road[0]}<small>${g.road[1]}</small></span></summary><div class="in"><div class="road">${STEPS.map((_,i)=>{const s=ST(i);return `<div class="rs" style="--c:${cv(SCOL[i])}"><span class="n">${s.n}</span><div><b>${s.name}：${s.sub}</b><small>${s.range} · ${s.total} · ${esc(s.key)}</small><div class="rg"><span class="g">🎯 ${s.goal}</span><a href="#/s/${i}" class="g go">${g.study}</a></div></div></div>`}).join('')}</div><p class="note">${g.roadN}</p></div></details>
-   <details><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in"><div class="plist">${L.map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${DOCS.map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" download>${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}</span></div>`}).join('')}</div><p class="note">${g.printsN}</p></div></details>
+   <details><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in"><b class="dlh">📦 ${DT().bundle}</b><small class="dls">${DT().bundleS}</small>${STEP_RANGE.map((r,sn)=>`<div class="bstep"><b>${t.stepOf(sn)} <small>${t.no?'':''}${r[0]}–${r[1]}</small></b>${bundleGrid(sn)}</div>`).join('')}
+     <b class="dlh">📄 ${DT().lessons}</b>${STEP_RANGE.map((r,sn)=>`<details class="pstep"><summary>${t.stepOf(sn)} · ${r[0]}–${r[1]}</summary><div class="plist">${L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${DOCS.map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" data-dl="${esc(lessonDl(l.no,d[0]))}">${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}<a class="chip all" href="${pdfUrl(l.no,'text')}" data-dl="${esc(lessonDlAll(l.no))}" data-label="${esc(t.no(l.no))} · ${DT().all}">⬇ ${DT().all}</a></span></div>`}).join('')}</div></details>`).join('')}<p class="note">${g.printsN}</p></div></details>
    <details><summary><span class="e" style="--c:var(--mint)">시</span><span class="st2">${g.topik[0]}<small>${g.topik[1]}</small></span></summary><div class="in">
      <div class="kv">${g.kv.map(k=>`<div><span>${k[0]}</span><b>${k[1]}</b></div>`).join('')}</div>
      <div style="margin-top:12px">${lv(1,80,200,'mint')}${lv(2,140,200,'mint')}${lv(3,120,300,'sky')}${lv(4,150,300,'sky')}${lv(5,190,300,'purple')}${lv(6,230,300,'pink')}</div>
@@ -385,12 +387,13 @@ function vGuide(){
 /* ======================= router ======================= */
 function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='l'&&h[1]&&L.some(l=>l.no===+h[1]))return {v:'lesson',no:+h[1],tab:TABK.includes(h[2])?h[2]:'learn'};
+  if(h[0]==='print'&&h[1]&&/^s\d$/.test(h[1]))return {v:'print',no:0,sn:+h[1].slice(1),t:h[2]||'text'};
   if(h[0]==='print'&&h[1])return {v:'print',no:+h[1],t:h[2]||'text'};
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
   if(h[0]==='words')return {v:'words'};if(h[0]==='guide')return {v:'guide'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
-  const r=route(),key=r.v==='lesson'?`l${r.no}-${r.tab}`:r.v==='print'?`p${r.no}${r.t}`:r.v==='step'?`s${r.n}`:r.v;
+  const r=route(),key=r.v==='lesson'?`l${r.no}-${r.tab}`:r.v==='print'?`p${r.sn!=null?'s'+r.sn:r.no}${r.t}`:r.v==='step'?`s${r.n}`:r.v;
   if(last)scrollMem[last]=scrollY;
   if(r.v==='lesson'){
     if(!last||!last.startsWith(`l${r.no}-`))fcState={i:0,flip:false,got:new Set(store.get('got-'+r.no,[]))};
@@ -398,7 +401,7 @@ function render(keep){
   }
   document.body.classList.toggle('pmode',r.v==='print');
   document.body.dataset.view=r.v;
-  const html=r.v==='print'?vPrint(r.no,r.t):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide():vHome();
+  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide():vHome();
   if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);else topbar('main');
   tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
