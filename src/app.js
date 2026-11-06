@@ -423,7 +423,7 @@ function render(keep){
   tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
   fitTables();
-  if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print()}
+  if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print();(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>fitPages())}
   else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='admin')bindAdmin();
   if(r.v==='guide'&&r.open==='prints'&&!keep){const d=$('#printsAcc');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({block:'start'}),30)}}
   if(keep){}else if(r.v==='lesson'&&last&&last.startsWith(`l${r.no}-`)){const seg=$('.seg');const y=seg?seg.getBoundingClientRect().top+scrollY-60:0;if(scrollY>y)scrollTo(0,y)}
