@@ -1,0 +1,45 @@
+# ぐるぐる API (prod · dev) — setup.sh 가 ~/apps/guruguru-api 에 복사해서 씁니다.
+# 코드: ./prod/code, ./dev/code (CI 가 rsync, node --watch 가 자동 재시작)
+# DB  : ./prod/data, ./dev/data (SQLite, 백업 대상)
+# 비밀값·설정: ./prod/.env, ./dev/.env
+x-api: &api
+  image: node:24-alpine
+  user: "${APP_UID:-1000}:${APP_GID:-1000}"
+  working_dir: /app
+  command: ["node", "--watch-path=/app", "/app/server.mjs"]
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ["no-new-privileges:true"]
+  networks: [npm]
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+  logging:
+    driver: json-file
+    options: { max-size: "5m", max-file: "3" }
+
+services:
+  api:
+    <<: *api
+    container_name: guruguru-api
+    env_file: ./prod/.env
+    volumes:
+      - ./prod/code:/app:ro
+      - ./prod/data:/data
+      - ${SITE_PROD:-/home/coby/sites/guruguru}:/site:ro
+  api-dev:
+    <<: *api
+    container_name: guruguru-api-dev
+    env_file: ./dev/.env
+    volumes:
+      - ./dev/code:/app:ro
+      - ./dev/data:/data
+      - ${SITE_DEV:-/home/coby/sites/guruguru-dev}:/site:ro
+
+networks:
+  npm:
+    external: true
+    name: ${NPM_NETWORK:?NPM_NETWORK 를 .env 에 지정하세요}

@@ -35,5 +35,7 @@ jobs:
         run: node scripts/build.mjs --env=prod
       - name: Check
         run: node scripts/check.mjs
+      - name: API tests
+        run: node server/test.mjs
       - name: Build (dev)
         run: node scripts/build.mjs --env=dev && node scripts/check.mjs
