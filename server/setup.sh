@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ぐるぐる API 서버 설치 (cobyserver 에서 한 번 실행)
-#   Mac:  scp -r ~/guruguru/server coby@cobyserver.iptime.org:~/guruguru-api-setup
+#   Mac:  (server/keys/ 에 CI 배포용 공개키가 들어 있어야 함 — README 참고)
+#         scp -r ~/guruguru/server coby@cobyserver.iptime.org:~/guruguru-api-setup
 #         ssh -t coby@cobyserver.iptime.org 'bash ~/guruguru-api-setup/setup.sh'
 # 다시 실행해도 안전합니다(기존 .env·DB 는 그대로 둠).
 set -euo pipefail
@@ -32,23 +33,10 @@ SITE_PROD=$SITE_PROD
 SITE_DEV=$SITE_DEV
 ENV
 
-if [ ! -f "$DIR/prod/.env" ] || [ ! -f "$DIR/dev/.env" ]; then
-  say "Google OAuth 클라이언트 ID / 관리자 이메일"
-  read -rp "GOOGLE_CLIENT_ID (…apps.googleusercontent.com): " CID
-  read -rp "관리자 이메일 (쉼표로 여러 개): " ADM
-  for e in prod dev; do
-    [ -f "$DIR/$e/.env" ] && continue
-    ORI=$([ $e = prod ] && echo https://guruguru.app || echo https://dev.guruguru.app)
-    umask 077; cat > "$DIR/$e/.env" <<ENV
-GOOGLE_CLIENT_ID=$CID
-ADMIN_EMAILS=$ADM
-ORIGINS=$ORI
-DB_PATH=/data/guruguru.db
-SITE_DIR=/site
-PORT=8787
-ENV
-  done
-fi
+# 로그인 설정(GOOGLE_CLIENT_ID·ADMIN_EMAILS·ORIGINS)은 GitHub Environment 변수 → CI 가 code/config.json 으로 배포
+for e in prod dev; do
+  [ -f "$DIR/$e/.env" ] || { umask 077; printf 'DB_PATH=/data/guruguru.db\nSITE_DIR=/site\nPORT=8787\n' > "$DIR/$e/.env"; }
+done
 chmod 600 "$DIR"/{prod,dev}/.env
 
 say "컨테이너 시작"
@@ -58,22 +46,15 @@ for c in guruguru-api guruguru-api-dev; do
   printf '  %s: ' "$c"; docker exec "$c" wget -qO- http://127.0.0.1:8787/api/config || echo "(실패 — docker logs $c 확인)"; echo
 done
 
-say "CI 자동 배포용 키 (선택)"
-if command -v rrsync >/dev/null 2>&1 || [ -x /usr/bin/rrsync ]; then
-  RR="$(command -v rrsync || echo /usr/bin/rrsync)"
-  for e in prod dev; do
-    K="$HOME/.ssh/guruguru-api-$e"
-    [ -f "$K" ] || ssh-keygen -q -t ed25519 -N '' -C "guruguru-api-$e-deploy" -f "$K"
-    LINE="command=\"$RR $DIR/$e/code\",restrict $(cat "$K.pub")"
-    grep -qF "$(cat "$K.pub")" "$HOME/.ssh/authorized_keys" 2>/dev/null || echo "$LINE" >> "$HOME/.ssh/authorized_keys"
-  done
-  echo "  GitHub → Settings → Environments 에 API_DEPLOY_SSH_KEY 로 등록:"
-  echo "    production : cat ~/.ssh/guruguru-api-prod"
-  echo "    development: cat ~/.ssh/guruguru-api-dev"
-  echo "  (등록 후 서버의 개인키 파일은 지워도 됩니다)"
-else
-  echo "  rrsync 가 없어 건너뜀 — 서버 코드는 이 스크립트를 다시 실행해 갱신하세요"
-fi
+say "CI 배포 키 등록 (Mac 에서 만든 공개키 → rrsync 로 code 폴더에만 쓰기)"
+RR="$(command -v rrsync || ls /usr/bin/rrsync /usr/share/doc/rsync/scripts/rrsync 2>/dev/null | head -1 || true)"
+[ -n "$RR" ] || { echo "  rrsync 가 없습니다 (sudo apt install rsync)"; exit 1; }
+for e in prod dev; do
+  PUB="$SRC/keys/guruguru-api-$e.pub"
+  [ -f "$PUB" ] || { echo "  $PUB 없음 — 건너뜀"; continue; }
+  if grep -qF "$(awk '{print $2}' "$PUB")" "$HOME/.ssh/authorized_keys" 2>/dev/null; then echo "  $e: 이미 등록됨"
+  else echo "command=\"$RR $DIR/$e/code\",restrict $(cat "$PUB")" >> "$HOME/.ssh/authorized_keys"; echo "  $e: 등록"; fi
+done
 
 say "Nginx Proxy Manager 설정 (guruguru.app / dev.guruguru.app 각각)"
 cat <<NPMCONF

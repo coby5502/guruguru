@@ -22,7 +22,26 @@ Google 로그인 → 프로필(이름·역할·수준) → **학생 화면 / 선
    - 승인된 리디렉션 URI: `https://guruguru.app/api/auth/google/redirect`, `https://dev.guruguru.app/api/auth/google/redirect`
 5. 만들어진 **클라이언트 ID**(`…apps.googleusercontent.com`)를 복사. 클라이언트 보안 비밀번호는 쓰지 않습니다.
 
-## 2. 서버 설치 (한 번)
+## 2. GitHub Environment 설정
+
+설정값은 서버가 아니라 GitHub에 둡니다. Settings → Environments → `production` / `development` 각각에 넣어요:
+
+| 종류 | 이름 | 값 |
+|---|---|---|
+| Secret | `API_DEPLOY_SSH_KEY` | CI → 서버 API 코드 폴더 전용 rrsync 키 (등록 완료) |
+| Variable | `GOOGLE_CLIENT_ID` | 1번에서 만든 클라이언트 ID |
+| Variable | `ADMIN_EMAILS` | 선생님 승인 권한을 줄 Google 이메일 (쉼표 구분) |
+
+배포 때 CI가 이 값으로 `config.json`을 만들어 `server.mjs`와 함께 서버에 올립니다. `ORIGINS`는 환경에 맞춰 자동으로 들어가요. 서버는 파일이 바뀌면 자동으로 재시작합니다.
+
+```sh
+gh variable set GOOGLE_CLIENT_ID --env development --body "…apps.googleusercontent.com"
+gh variable set ADMIN_EMAILS    --env development --body "me@gmail.com"
+```
+
+배포 키는 Mac 에서 만들어 GitHub에 넣었고, 공개키는 `server/keys/`에 있어요(git 제외). 이 공개키는 서버 설치 때 함께 올라갑니다.
+
+## 3. 서버 설치 (한 번)
 
 Mac 터미널에서 (서버 비밀번호를 직접 입력):
 
@@ -36,11 +55,12 @@ ssh -t coby@cobyserver.iptime.org 'bash ~/guruguru-api-setup/setup.sh'
 
 1. NPM 컨테이너의 Docker 네트워크를 찾습니다.
 2. `~/apps/guruguru-api`에 prod·dev 컨테이너를 띄웁니다.
-3. 클라이언트 ID와 관리자 이메일을 물어 `.env`에 저장합니다.
-4. CI 배포용 rrsync 키를 만듭니다.
-5. NPM에 붙일 설정을 출력합니다.
+3. 배포 공개키를 rrsync 제한으로 등록합니다.
+4. NPM에 붙일 설정을 출력합니다.
 
-## 3. Nginx Proxy Manager
+설치가 끝나면 `gh workflow run deploy.yml -f environment=development`로 dev 배포를 한 번 돌려 설정을 올려 주세요.
+
+## 4. Nginx Proxy Manager
 
 `dev.guruguru.app` Proxy Host → **Advanced** 에 스크립트가 출력한 설정을 붙여넣습니다.
 붙여넣는 설정은 두 부분이에요:
@@ -50,19 +70,12 @@ ssh -t coby@cobyserver.iptime.org 'bash ~/guruguru-api-setup/setup.sh'
 
 설정한 뒤 dev 에서 로그인 → 선생님 신청 → 승인까지 확인하고, 같은 설정(이름만 `guruguru-api`)을 `guruguru.app` 에 넣습니다.
 
-## 4. GitHub 자동 배포 (선택)
-
-Settings → Environments → `production` / `development` 에 `API_DEPLOY_SSH_KEY` 추가
-(서버의 `~/.ssh/guruguru-api-prod`, `~/.ssh/guruguru-api-dev` 내용).
-이후 `server/server.mjs` 변경은 사이트 배포 때 함께 올라가고, 컨테이너가 자동 재시작합니다.
-키를 넣지 않으면 API 배포 단계는 건너뜁니다.
-
 ## 운영
 
 - **승인:** 관리자 이메일로 로그인한 뒤 마이 → `선생님 승인`에서 승인·반려합니다.
 - **백업:** `~/apps/guruguru-api/prod/data/guruguru.db`를 백업합니다(SQLite WAL 모드). 예: `sqlite3 guruguru.db ".backup b.db"`.
 - **로그:** `docker logs guruguru-api`
-- **설정 변경:** `~/apps/guruguru-api/prod/.env`을 수정한 뒤 `cd ~/apps/guruguru-api && docker compose up -d`.
+- **설정 변경:** GitHub Environment 변수를 바꾸고 Deploy 를 다시 실행합니다.
 - **저장하는 정보:**
   - Google에서 받는 것: sub, 이메일, 이름, 프로필 사진 URL
   - 사용자가 입력하는 것: 표시 이름, 역할, 수준, 목적, 소개

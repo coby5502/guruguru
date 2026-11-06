@@ -1,5 +1,7 @@
 # 배포: develop → dev.guruguru.app (development) · main → guruguru.app (production)
 # Environment secrets: DEPLOY_SSH_KEY (환경별 전용 키, 서버에서 rrsync 로 해당 폴더에만 쓰기 가능)
+#                      API_DEPLOY_SSH_KEY (API 코드 폴더 전용 rrsync 키)
+# Environment vars:    GOOGLE_CLIENT_ID, ADMIN_EMAILS (로그인 백엔드 설정)
 # Repository secrets:  DEPLOY_HOST, DEPLOY_USER, DEPLOY_KNOWN_HOSTS
 name: Deploy
 
@@ -74,12 +76,18 @@ jobs:
           API_KEY: ${{ secrets.API_DEPLOY_SSH_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          ADMIN_EMAILS: ${{ vars.ADMIN_EMAILS }}
         run: |
           if [ -z "$API_KEY" ]; then echo "API_DEPLOY_SSH_KEY 없음 — API 배포 건너뜀"; exit 0; fi
+          export ORIGINS=$([ "$TARGET" = production ] && echo https://guruguru.app || echo https://dev.guruguru.app)
+          mkdir -p api-out && cp server/server.mjs api-out/
+          node -e 'const e=process.env;require("fs").writeFileSync("api-out/config.json",JSON.stringify({GOOGLE_CLIENT_ID:e.GOOGLE_CLIENT_ID||"",ADMIN_EMAILS:e.ADMIN_EMAILS||"",ORIGINS:e.ORIGINS},null,1))'
+          [ -n "$GOOGLE_CLIENT_ID" ] || echo "::warning::GOOGLE_CLIENT_ID 변수가 없어 로그인이 꺼진 상태로 배포됩니다"
           printf '%s\n' "$API_KEY" > ~/.ssh/api_key && chmod 600 ~/.ssh/api_key
           rsync -rlptz --omit-dir-times \
             -e "ssh -i ~/.ssh/api_key -o IdentitiesOnly=yes -o BatchMode=yes" \
-            server/server.mjs "$DEPLOY_USER@$HOST:/"
+            api-out/ "$DEPLOY_USER@$HOST:/"
           sleep 4
 
       - name: Smoke test
