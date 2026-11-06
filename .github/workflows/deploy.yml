@@ -72,6 +72,7 @@ jobs:
             dist/ "$DEPLOY_USER@$HOST:/"
 
       - name: Deploy API (server/ → ~/apps/guruguru-api/<env>/code, 키가 있을 때만)
+        continue-on-error: true   # 서버 설치 전에는 키가 등록돼 있지 않아 실패할 수 있음 — 사이트 배포는 막지 않음
         env:
           API_KEY: ${{ secrets.API_DEPLOY_SSH_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
