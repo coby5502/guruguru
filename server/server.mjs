@@ -6,6 +6,7 @@
 //   ADMIN_EMAILS      관리자 이메일 (쉼표 구분) — 선생님 승인 권한
 //   ORIGINS           허용 Origin (쉼표 구분, 예: https://guruguru.app)
 //   SITE_DIR          사이트 폴더(읽기 전용 마운트) — 교사용 지도안 PDF 를 선생님에게만 내보냄
+//   ※ config.json(서버 코드 옆, CI 가 GitHub Environment 변수로 생성)이 있으면 그 값을 우선 사용
 //   PORT=8787  DB_PATH=/data/guruguru.db  COOKIE_SECURE=1  TRUST_PROXY=1
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -13,7 +14,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-const env = (k, d = '') => (process.env[k] ?? d).trim();
+// CI 가 GitHub Environment 변수(GOOGLE_CLIENT_ID·ADMIN_EMAILS)로 만든 config.json 을 우선 적용
+const FILE_CFG = (() => { try { return JSON.parse(fs.readFileSync(new URL('./config.json', import.meta.url), 'utf8')); } catch { return {}; } })();
+const env = (k, d = '') => String(FILE_CFG[k] ?? process.env[k] ?? d).trim();
 const CFG = {
   port: +env('PORT', '8787'),
   db: env('DB_PATH', '/data/guruguru.db'),
