@@ -69,6 +69,19 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes" \
             dist/ "$DEPLOY_USER@$HOST:/"
 
+      - name: Deploy API (server/ → ~/apps/guruguru-api/<env>/code, 키가 있을 때만)
+        env:
+          API_KEY: ${{ secrets.API_DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          if [ -z "$API_KEY" ]; then echo "API_DEPLOY_SSH_KEY 없음 — API 배포 건너뜀"; exit 0; fi
+          printf '%s\n' "$API_KEY" > ~/.ssh/api_key && chmod 600 ~/.ssh/api_key
+          rsync -rlptz --omit-dir-times \
+            -e "ssh -i ~/.ssh/api_key -o IdentitiesOnly=yes -o BatchMode=yes" \
+            server/server.mjs "$DEPLOY_USER@$HOST:/"
+          sleep 4
+
       - name: Smoke test
         run: |
           URL=$([ "$TARGET" = production ] && echo https://guruguru.app || echo https://dev.guruguru.app)

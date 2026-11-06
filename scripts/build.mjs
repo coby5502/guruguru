@@ -24,7 +24,7 @@ let html = src('template.html')
   .replace('/*__SYLLABUS__*/', () => src('syllabus.js'))
   .replace('/*__PRINT__*/', () => src('print.js'))
   .replace('/*__MASCOT__*/', () => src('kana.js') + '\n' + src('mascot.js'))
-  .replace('/*__APP__*/', () => app);
+  .replace('/*__APP__*/', () => src('auth.js') + '\n' + app);
 if (ENV !== 'prod') {
   html = html
     .replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex,nofollow">')

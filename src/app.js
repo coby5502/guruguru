@@ -30,7 +30,8 @@ ja:{brand:'ぐるぐる',gotCount:(n,m)=>`覚えた ${n} / ${m}`,gotStamp:'覚�
  perfect:'パーフェクト！すごい！',good:'よくできました！',retryMsg:'もう一度チャレンジしよう！',toNext:n=>`第${n}回へすすむ →`,fin:'ステップ0 修了！ホームへ',retry:'もう一度',review:'単語カードで復習',
  ok:'せいかい！',ng:'ざんねん…',nextQ:'次の問題 →',result:'結果を見る →',search:'韓国語・日本語で検索',all:'すべて',none:'見つかりませんでした',
  noVoice:'このブラウザは音声に対応していません',addVoice:'音が出ないときは端末の設定で韓国語の音声を追加してください',pBack:'← 戻る',pPrint:'🖨 印刷',view:'👀 見る・印刷',
- docs:{text:['学習テキスト','学生用 · 日本語'],guide:['교사용 지도안','先生用 · 韓国語'],work:['ワークシート','授業中の練習'],hw:['宿題プリント','復習＋音読チェック']}},
+ docs:{text:['学習テキスト','学生用 · 日本語'],guide:['교사용 지도안','先生用 · 韓国語'],work:['ワークシート','授業中の練習'],hw:['宿題プリント','復習＋音読チェック']},
+ flowT:'授業の流れ（60分）',practice:'練習アクティビティ',hw:'宿題',tip:'指導のコツ'},
 ko:{brand:'ぐるぐる',gotCount:(n,m)=>`외운 단어 ${n} / ${m}`,gotStamp:'외웠어요!',stepsT:'스텝',stepsSub:'7스텝 · 전 290회',stepOf:n=>`스텝${n}`,lessonsN:n=>`${n}회`,ready:'교안 있음',prep:'준비 중',studying:'학습 중',complete:'완료',syllabus:'수업 목록',prepNote:'이 스텝의 교안은 준비 중입니다. 문법과 내용 계획을 확인할 수 있어요.',backStep:'스텝으로',goal:'목표',dex:'구루구루 도감',dexSub:'수업을 완료하면 진화!',evoLeft:n=>`${n}회 더 하면 진화!`,evoMax:'전부 마스터!',dexReq:n=>n?`${n}회 완료`:'시작',evoWhat:n=>`${n}가 빛나기 시작했어…!`,evoDone:n=>`짜잔! ${n} 등장!`,evoOk:'야호!',home:'홈',words:'단어장',guide:'가이드',lang:'日本語',langAria:'日本語に切り替え',theme:'테마 변경',back:'홈으로',
  heroP:'한글 기초부터 TOPIK 6급까지.<br>눌러서 듣고, 카드로 외우고, 퀴즈로 확인!',prog:'스텝0 한글과 발음',unit:'회',
  again:'다시 복습하기',cont:'이어서 하기',start:'바로 시작하기',lessonQ:(n,t)=>`제${n}회 "${t}"`,
@@ -127,6 +128,7 @@ const icon={
  x:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
  words:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="16" rx="2.5"/><path d="M7 9h6M7 13h4"/><path d="M17 8h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9"/></svg>',
+ me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
  guide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>'
 };
 
@@ -143,7 +145,7 @@ function topbar(mode,l){
 }
 function tabbar(active){
   const t=T();document.body.classList.toggle('hide-tab',!active);
-  $('#tabs').innerHTML=[['home','#/'],['words','#/words'],['guide','#/guide']].map(([k,h])=>`<a href="${h}" class="${k===active?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${t[k]}</span></a>`).join('');
+  $('#tabs').innerHTML=[['home','#/'],['words','#/words'],['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${k==='me'?A().me:t[k]}</span></a>`).join('');
 }
 function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='ko'?'ぐるぐる guruguru｜한글부터 TOPIK 6급까지':'ぐるぐる guruguru｜ハングルからTOPIK 6級まで'}
 
@@ -186,17 +188,19 @@ function vHome(){
   const t=T(),ni=nextIdx(),nl=V(L[ni]),cnt=done.length,all=cnt>=L.length;
   const day=Math.floor(Date.now()/864e5),w=ALLW[day%ALLW.length];
   const inst=!standalone()&&!store.get('hideInstall',false)&&(deferredPrompt||isIOS);
-  return `<section class="card hero">
+  const tv=authed()&&ME.view==='teacher';
+  return `${statusBanner()}${tv?teacherHero():`<section class="card hero">
     <span class="sticker s1">★</span>
+    ${authed()?`<div class="hello">${esc(A().hi(ME.name))}</div>`:''}
     ${evoCard()}
     <div class="prog"><div class="prog-top"><span>${t.stepOf(stepOfLesson(nl.no))} · ${esc(ST(stepOfLesson(nl.no)).name)}</span><span>${stepStat(stepOfLesson(nl.no)).done} / ${t.lessonsN(stepStat(stepOfLesson(nl.no)).total)}</span></div><div class="bar"><i style="width:${stepStat(stepOfLesson(nl.no)).done/stepStat(stepOfLesson(nl.no)).total*100}%"></i></div></div>
     <a href="#/l/${nl.no}" class="btn pink block cta"><span class="play">▶</span><span class="ctat">${all?t.again:cnt?t.cont:t.start}<small>${esc(t.lessonQ(nl.no,nl.title))}</small></span></a>
-  </section>
+  </section>`}
   ${inst?`<div class="card install"><span class="ic">📲</span><p><b>${t.instT}</b>${deferredPrompt?t.instA:t.instI}</p>${deferredPrompt?`<button class="btn sm mint" id="instBtn">${t.instB}</button>`:''}<button class="ibtn sm" id="instX" aria-label="${t.close}">${icon.x}</button></div>`:''}
   <div class="h2"><span>${t.stepsT}</span><small>${t.stepsSub}</small></div>
   <div class="steps">${[0,1,2,3,4,5,6].map(stepCard).join('')}</div>
-  <div class="h2"><span>${t.dex}</span><small>${t.dexSub}</small></div>
-  ${dexHTML()}
+  ${tv?'':`<div class="h2"><span>${t.dex}</span><small>${t.dexSub}</small></div>
+  ${dexHTML()}`}
   <div class="h2"><span>${t.wod}</span><small>${t.tapPlay}</small></div>
   <button class="card wod" id="wod"><div class="wodt"><div class="k" lang="ko">${esc(w.k)}</div><div class="kn" lang="ja">${esc(kn(w))}</div><div class="m">${w.p?`<span lang="ko">［${esc(w.p)}］</span> `:''}${esc(w.m)}</div></div><span class="btn sm yellow sp">${t.listen}</span></button>
   <div class="foot"><div class="jua" lang="ko">한 걸음씩!</div>${t.foot}</div>`;
@@ -233,9 +237,9 @@ function pLearn(l){
       return `<td>${esc(c)}</td>`}).join('')}</tr>`).join('')}</tbody></table></div></div>`}
   if(l.sheet)h+=`<div class="blk"><h3>${t.test}<em><button class="btn sm yellow" id="ansBtn">${t.showA}</button></em></h3><div class="sheetg" id="sheet">${l.sheet.map(s=>`<div class="sh"><h4>${s.t}</h4><small>${s.d}</small><ol>${s.items.map(x=>`<li><span lang="ko" class="ko">${esc(x[0])}</span><span class="ans" lang="ja">${esc(x[1])}</span></li>`).join('')}</ol></div>`).join('')}</div></div>`;
   h+=`<div class="blk"><h3>${t.points}</h3><div class="bubbles">${l.points.map((p,k)=>`<div class="bub" style="--c:${cv(COL[(k+2)%6])}"><b>${esc(p[0])}</b>${esc(p[1])}</div>`).join('')}</div></div>`;
-  if(LANG==='ko'){const k=KO[l.no];let acc=0;
-    h+=`<div class="blk"><h3>⏱ ${t.flowT}</h3><div class="card teach"><div class="timebar">${l.flow.map((f,j)=>`<div style="flex:${f[0]};background:${cv(COL[j%6])}">${f[0]>=7?f[0]+'분':''}</div>`).join('')}</div>
-      <div class="flow">${l.flow.map((f,j)=>{const s=acc;acc+=f[0];return `<div class="fi"><div class="t"><i style="background:${cv(COL[j%6])}"></i>${s}~${acc}분</div><div><b>${esc(k.flow[j][0])}</b><p>${esc(k.flow[j][1])}</p></div></div>`}).join('')}</div>
+  if(teachView()){const k0=KO[l.no],L0=L.find(x=>x.no===l.no),k=LANG==='ko'?k0:{flow:L0.flow.map(f=>[f[1],f[2]]),practice:L0.practice,homework:L0.homework,memo:L0.memo};let acc=0;
+    h+=`<div class="blk"><h3>⏱ ${t.flowT}</h3><div class="card teach"><div class="timebar">${l.flow.map((f,j)=>`<div style="flex:${f[0]};background:${cv(COL[j%6])}">${f[0]>=7?f[0]+(LANG==='ko'?'분':'分'):''}</div>`).join('')}</div>
+      <div class="flow">${l.flow.map((f,j)=>{const s=acc;acc+=f[0];return `<div class="fi"><div class="t"><i style="background:${cv(COL[j%6])}"></i>${s}~${acc}${LANG==='ko'?'분':'分'}</div><div><b>${esc(k.flow[j][0])}</b><p>${esc(k.flow[j][1])}</p></div></div>`}).join('')}</div>
       <div class="cols2"><div><h4>${t.practice}</h4><ul class="ul">${k.practice.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div><div><h4>${t.hw}</h4><ul class="ul">${k.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>
       <h4>💡 ${t.tip}</h4><div class="memo">${esc(k.memo)}</div></div></div>`;
   }else{
@@ -361,7 +365,7 @@ ko:{t:'커리큘럼 가이드',tag:'7스텝',lead:'주 1회 60분 1:1 수업으�
  lesson:['60분 수업 흐름','매번 이 흐름으로 진행합니다'],flow:['인사·프리토킹','숙제 확인·복습','새 문법·어휘','연습(회화·롤플레이)','발음·듣기','정리·숙제'],min:'분',lessonN:'숙제는 주 2~3시간. 초급은 드릴과 음독, 중급은 작문과 섀도잉, 고급은 논술과 요약.',
  mats:['사용 교재','메인 교재 ＋ 자체 교안'],matsSub:['스텝0 · 한글 도입','스텝1·2 · 메인 교과서','스텝1·2 · 숙제용','스텝1~4 · 어휘','스텝1·2 · 시험 대비','스텝3~6 · 시험 대비'],matsN:'TOPIK 공식 사이트의 기출문제(무료)를 모의고사로 씁니다. 교재는 구입 시 최신판을 확인하세요.',foot:'함께 시작해요'}
 };
-function vGuide(){
+function vGuide(open){
   const g=GT[LANG],t=T();
   const lv=(n,v,max,c)=>`<div class="lv"><span>${n}${g.lv}</span><div class="tr"><i style="width:${v/max*100}%;background:${cv(c)}"></i></div><span>${v}${g.pt}</span></div>`;
   const flow=[5,10,20,15,7,3];let acc=0;
@@ -370,8 +374,8 @@ function vGuide(){
   <div class="card lead"><b>${g.lead}</b><p>${g.leadP}</p></div>
   <div class="acc">
    <details open><summary><span class="e" style="--c:var(--yellow)">길</span><span class="st2">${g.road[0]}<small>${g.road[1]}</small></span></summary><div class="in"><div class="road">${STEPS.map((_,i)=>{const s=ST(i);return `<div class="rs" style="--c:${cv(SCOL[i])}"><span class="n">${s.n}</span><div><b>${s.name}：${s.sub}</b><small>${s.range} · ${s.total} · ${esc(s.key)}</small><div class="rg"><span class="g">🎯 ${s.goal}</span><a href="#/s/${i}" class="g go">${g.study}</a></div></div></div>`}).join('')}</div><p class="note">${g.roadN}</p></div></details>
-   <details><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in"><b class="dlh">📦 ${DT().bundle}</b><small class="dls">${DT().bundleS}</small>${STEP_RANGE.map((r,sn)=>`<div class="bstep"><b>${t.stepOf(sn)} <small>${t.no?'':''}${r[0]}–${r[1]}</small></b>${bundleGrid(sn)}</div>`).join('')}
-     <b class="dlh">📄 ${DT().lessons}</b>${STEP_RANGE.map((r,sn)=>`<details class="pstep"><summary>${t.stepOf(sn)} · ${r[0]}–${r[1]}</summary><div class="plist">${L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${DOCS.map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" data-dl="${esc(lessonDl(l.no,d[0]))}">${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}<a class="chip all" href="${pdfUrl(l.no,'text')}" data-dl="${esc(lessonDlAll(l.no))}" data-label="${esc(t.no(l.no))} · ${DT().all}">⬇ ${DT().all}</a></span></div>`}).join('')}</div></details>`).join('')}<p class="note">${g.printsN}</p></div></details>
+   <details id="printsAcc"><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in"><b class="dlh">📦 ${DT().bundle}</b><small class="dls">${DT().bundleS}</small>${STEP_RANGE.map((r,sn)=>`<div class="bstep"><b>${t.stepOf(sn)} <small>${t.no?'':''}${r[0]}–${r[1]}</small></b>${bundleGrid(sn)}</div>`).join('')}
+     <b class="dlh">📄 ${DT().lessons}</b>${STEP_RANGE.map((r,sn)=>`<details class="pstep"><summary>${t.stepOf(sn)} · ${r[0]}–${r[1]}</summary><div class="plist">${L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${docsFor().map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" data-dl="${esc(lessonDl(l.no,d[0]))}">${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}<a class="chip all" href="${pdfUrl(l.no,'text')}" data-dl="${esc(lessonDlAll(l.no))}" data-label="${esc(t.no(l.no))} · ${DT().all}">⬇ ${DT().all}</a></span></div>`}).join('')}</div></details>`).join('')}<p class="note">${g.printsN}</p></div></details>
    <details><summary><span class="e" style="--c:var(--mint)">시</span><span class="st2">${g.topik[0]}<small>${g.topik[1]}</small></span></summary><div class="in">
      <div class="kv">${g.kv.map(k=>`<div><span>${k[0]}</span><b>${k[1]}</b></div>`).join('')}</div>
      <div style="margin-top:12px">${lv(1,80,200,'mint')}${lv(2,140,200,'mint')}${lv(3,120,300,'sky')}${lv(4,150,300,'sky')}${lv(5,190,300,'purple')}${lv(6,230,300,'pink')}</div>
@@ -390,10 +394,12 @@ function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='print'&&h[1]&&/^s\d$/.test(h[1]))return {v:'print',no:0,sn:+h[1].slice(1),t:h[2]||'text'};
   if(h[0]==='print'&&h[1])return {v:'print',no:+h[1],t:h[2]||'text'};
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
-  if(h[0]==='words')return {v:'words'};if(h[0]==='guide')return {v:'guide'};return {v:'home'}}
+  if(h[0]==='words')return {v:'words'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
+  if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin'};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
-  const r=route(),key=r.v==='lesson'?`l${r.no}-${r.tab}`:r.v==='print'?`p${r.sn!=null?'s'+r.sn:r.no}${r.t}`:r.v==='step'?`s${r.n}`:r.v;
+  const r=route();if(authGate(r))return;
+  const key=r.v==='lesson'?`l${r.no}-${r.tab}`:r.v==='print'?`p${r.sn!=null?'s'+r.sn:r.no}${r.t}`:r.v==='step'?`s${r.n}`:r.v;
   if(last)scrollMem[last]=scrollY;
   if(r.v==='lesson'){
     if(!last||!last.startsWith(`l${r.no}-`))fcState={i:0,flip:false,got:new Set(store.get('got-'+r.no,[]))};
@@ -401,19 +407,20 @@ function render(keep){
   }
   document.body.classList.toggle('pmode',r.v==='print');
   document.body.dataset.view=r.v;
-  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide():vHome();
+  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
   if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);else topbar('main');
-  tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v);
+  tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
   if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print()}
-  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();
+  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='admin')bindAdmin();
+  if(r.v==='guide'&&r.open==='prints'&&!keep){const d=$('#printsAcc');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({block:'start'}),30)}}
   if(keep){}else if(r.v==='lesson'&&last&&last.startsWith(`l${r.no}-`)){const seg=$('.seg');const y=seg?seg.getBoundingClientRect().top+scrollY-60:0;if(scrollY>y)scrollTo(0,y)}
   else scrollTo(0,scrollMem[key]&&r.v!=='lesson'?scrollMem[key]:0);
   last=key;
 }
 addEventListener('hashchange',()=>render(false));
 if('scrollRestoration' in history)history.scrollRestoration='manual';
-applyLang();render(false);
+applyLang();authBoot();
 
 /* theme */
 const root=document.documentElement;
