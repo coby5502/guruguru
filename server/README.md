@@ -70,6 +70,12 @@ ssh -t coby@cobyserver.iptime.org 'bash ~/guruguru-api-setup/setup.sh'
 
 설정한 뒤 dev 에서 로그인 → 선생님 신청 → 승인까지 확인하고, 같은 설정(이름만 `guruguru-api`)을 `guruguru.app` 에 넣습니다.
 
+## 현재 상태 (2026-11-06)
+
+- Google Cloud 프로젝트 `guruguru-513906` (coby5502@gmail.com) · 동의 화면 프로덕션 게시
+- NPM Proxy Host: guruguru.app(id 7) → `guruguru-api`, dev.guruguru.app(id 8) → `guruguru-api-dev` (Advanced 설정)
+- NPM 관리 화면은 서버 내부(:81)에서만 열림 → `ssh -N -L 8181:127.0.0.1:81 coby@cobyserver.iptime.org` 후 http://localhost:8181
+
 ## 운영
 
 - **승인:** 관리자 이메일로 로그인한 뒤 마이 → `선생님 승인`에서 승인·반려합니다.
