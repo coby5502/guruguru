@@ -388,6 +388,17 @@ function vGuide(open){
   <div class="foot"><div class="jua" lang="ko">함께 시작해요!</div>${g.foot}</div>`;
 }
 
+/* 표: 화면에 안 들어가면 카드형으로 */
+function fitTables(){
+  $$('.tbl').forEach(t=>{
+    if(!t.dataset.prep){t.dataset.prep=1;const th=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());
+      t.querySelectorAll('tbody tr').forEach(tr=>[...tr.children].forEach((td,i)=>{td.dataset.th=th[i]||'';const v=document.createElement('span');v.className='v';while(td.firstChild)v.appendChild(td.firstChild);td.appendChild(v)}))}
+    t.classList.remove('cards');
+    if(t.scrollWidth>t.clientWidth+2)t.classList.add('cards');
+  });
+}
+let fitT;addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fitTables,150)});
+
 /* ======================= router ======================= */
 function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='l'&&h[1]&&L.some(l=>l.no===+h[1]))return {v:'lesson',no:+h[1],tab:TABK.includes(h[2])?h[2]:'learn'};
@@ -411,6 +422,7 @@ function render(keep){
   if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);else topbar('main');
   tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
+  fitTables();
   if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print()}
   else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='admin')bindAdmin();
   if(r.v==='guide'&&r.open==='prints'&&!keep){const d=$('#printsAcc');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({block:'start'}),30)}}
