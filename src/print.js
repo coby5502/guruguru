@@ -75,7 +75,7 @@ function traceItems(l){
 function pageHead(l,badge,cls,title,sub,name=true){
   return `<div class="ph"><span class="badge ${cls}">${badge}</span><h1>第${l.no}回 ${esc(l.title)}<small>${title}${sub?' · '+esc(sub):''}</small></h1>${name?'<div class="nm">日付<span></span><br>名前<span></span></div>':''}</div>`;
 }
-const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>ぐるぐる guruguru · 스텝${stepOfLesson(l.no)} ${esc(STEPS_KO[stepOfLesson(l.no)][0])}</span><span>제${l.no}회 ${t} ${p}</span></div>`:`<div class="pf"><span>ぐるぐる guruguru · ステップ${stepOfLesson(l.no)} ${esc(STEPS[stepOfLesson(l.no)].name)}</span><span>第${l.no}回 ${t} ${p}</span></div>`;
+const pfoot=(l,t,p,ko)=>ko?`<div class="pf"><span>ぐるぐる guruguru · 스텝${stepOfLesson(l.no)} ${esc(STEPS_KO[stepOfLesson(l.no)][0])}</span><span>제${l.no}회 ${t} <b class="pn">${p}</b></span></div>`:`<div class="pf"><span>ぐるぐる guruguru · ステップ${stepOfLesson(l.no)} ${esc(STEPS[stepOfLesson(l.no)].name)}</span><span>第${l.no}回 ${t} <b class="pn">${p}</b></span></div>`;
 function sec(i,t,body,em=''){return `<div class="ps"><h2><i>${i}</i>${t}${em?`<em>${em}</em>`:''}</h2>${body}</div>`}
 function koHead(l,sub){const k=KO[l.no];return `<div class="ph"><span class="badge y">지도안</span><h1>제${l.no}회 ${esc(k.title)}<small>교사용 · ${esc(sub||k.sub)}</small></h1><div class="nm">수업일<span></span><br>학생<span></span></div></div>`}
 function docGuide(l){
@@ -89,7 +89,7 @@ function docGuide(l){
   p2+=`<div class="cols">${sec('연','연습 활동',`<ul class="chk">${k.practice.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`)}${sec('숙','숙제',`<ul class="chk">${k.homework.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`)}</div>`;
   p2+=sec('팁','지도 팁',`<div class="memo2">${esc(k.memo)}</div>`);
   p2+=sec('퀴','확인 퀴즈 정답（학생 화면은 일본어）',`<table class="pt2"><tbody>${l.quiz.map((q,i)=>`<tr><td class="c" style="width:8mm">${i+1}</td><td>${esc(q.q)}</td><td style="width:40mm"><b>${esc(q.o[q.a])}</b></td></tr>`).join('')}</tbody></table>`);
-  p2+=sec('메','수업 메모',`<div style="border:1.5px solid #1d1a2e;border-radius:8px;height:26mm"></div>`);
+  p2+=sec('메','수업 메모',`<div class="grow" style="border:1.5px solid #1d1a2e;border-radius:8px;height:26mm"></div>`);
   return [p1,p2];
 }
 function docText(l){
@@ -101,14 +101,14 @@ function docText(l){
   p2+=sec('点','ここがポイント',`<table class="pt2"><tbody>${l.points.map(p=>`<tr><th style="width:38mm">${esc(p[0])}</th><td>${esc(p[1])}</td></tr>`).join('')}</tbody></table>`);
   const ws=words(l);if(ws.length)p2+=sec('語','今日の単語',`<table class="pt2"><tbody>${ws.reduce((a,w,i)=>{if(i%2===0)a.push([]);a.at(-1).push(w);return a},[]).map(r=>`<tr>${r.map(w=>`<td class="ko" style="width:28mm">${esc(w.k)}<div style="font-family:'Zen Maru Gothic',sans-serif;font-size:7.5pt;color:#6b6680;font-weight:700;line-height:1.2">${esc(KANA(w.p||w.k))}</div></td><td>${w.p?`［<span class="ko2">${esc(w.p)}</span>］`:''}${esc(w.m)}</td>`).join('')}${r.length<2?'<td></td><td></td>':''}</tr>`).join('')}</tbody></table>`,'アプリでタップすると音声が聞けます');
   p2+=sec('宿','今週の宿題',`<ul class="chk">${l.homework.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`);
-  p2+=sec('メ','メモ',`<div style="border:1.5px solid #1d1a2e;border-radius:8px;height:40mm;background:repeating-linear-gradient(#fff 0 9mm,#e3dfe8 9mm calc(9mm + 1px))"></div>`);
+  p2+=sec('メ','メモ',`<div class="grow" style="border:1.5px solid #1d1a2e;border-radius:8px;height:40mm;background:repeating-linear-gradient(#fff 0 9mm,#e3dfe8 9mm calc(9mm + 1px))"></div>`);
   return [p1,p2];
 }
 function docWork(l){
   const ws=words(l),tr=traceItems(l);let p1=pageHead(l,'ワーク','m','ワークシート',l.sub),p2='',key=[];
   const trR=tr.slice(0,l.letters?11:8);
-  p1+=sec('1','なぞって書こう',`<div class="trace">${trR.map(t=>`<div class="lb">${esc(t.lb)}</div><div class="t1">${esc(t.k)}</div><div class="t2">${esc(t.k)}</div><div class="t2">${esc(t.k)}</div><div></div><div></div><div></div>`).join('')}</div>`,'1マス目はお手本、うすい字をなぞってから自分で書こう');
-  if(l.letters&&tr.length>11)p2+=sec('1','なぞって書こう（つづき）',`<div class="trace">${tr.slice(11).map(t=>`<div class="lb">${esc(t.lb)}</div><div class="t1">${esc(t.k)}</div><div class="t2">${esc(t.k)}</div><div class="t2">${esc(t.k)}</div><div></div><div></div><div></div>`).join('')}</div>`);
+  p1+=sec('1','なぞって書こう',`<div class="trace">${trR.map(t=>`<div class="lb">${esc(t.lb)}</div>${["t1","t2","t2"].map(c=>`<div class="${c} w${Math.min(4,[...t.k].length)}">${esc(t.k)}</div>`).join("")}<div></div><div></div><div></div>`).join('')}</div>`,'1マス目はお手本、うすい字をなぞってから自分で書こう');
+  if(l.letters&&tr.length>11)p2+=sec('1','なぞって書こう（つづき）',`<div class="trace">${tr.slice(11).map(t=>`<div class="lb">${esc(t.lb)}</div>${["t1","t2","t2"].map(c=>`<div class="${c} w${Math.min(4,[...t.k].length)}">${esc(t.k)}</div>`).join("")}<div></div><div></div><div></div>`).join('')}</div>`);
   let n=2;
   if(l.table){
     let bi=0;const body=l.table.rows.map((r,ri)=>`<tr>${r.map((c,k)=>{if(tableKo(l,r,c,k)&&(ri*7+k*3)%5<2){bi++;key.push(['表 '+bi,c]);return `<td class="c blank"><span style="font-size:7pt;color:#8d88a0">${bi}</span></td>`}return `<td class="${tableKo(l,r,c,k)?'c ko':''}">${esc(c)}</td>`}).join('')}</tr>`).join('');
@@ -123,7 +123,7 @@ function docWork(l){
   const lis=ws.length?[1,3,5,7,9,0].map(i=>ws[i%ws.length]).filter((w,i,a)=>a.findIndex(x=>x.k===w.k)===i).slice(0,5):[];
   if(lis.length){p2+=sec(n++,'聞いて書こう',`<div class="lines">${lis.map((w,i)=>`<div class="ln"><span class="n">${i+1}</span><span style="border-bottom:0"></span><span class="a">意味：＿＿＿＿＿＿</span></div>`).join('')}</div>`,'先生が読む単語をハングルで書こう');
     lis.forEach((w,i)=>key.push(['聞き'+(i+1),w.k+'（'+w.m+'）']))}
-  p2+=sec(n++,'今日のふりかえり',`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:9.5pt"><div style="border:1.5px solid #1d1a2e;border-radius:8px;padding:6px 10px;height:22mm">できたこと</div><div style="border:1.5px solid #1d1a2e;border-radius:8px;padding:6px 10px;height:22mm">むずかしかったこと</div></div>`);
+  p2+=sec(n++,'今日のふりかえり',`<div class="grow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:9.5pt;height:22mm"><div style="border:1.5px solid #1d1a2e;border-radius:8px;padding:6px 10px">できたこと</div><div style="border:1.5px solid #1d1a2e;border-radius:8px;padding:6px 10px">むずかしかったこと</div></div>`);
   const p3=`<div class="ph"><span class="badge m">解答</span><h1>第${l.no}回 ワークシート 解答<small>先生用 · 聞き取りの読み上げリストつき</small></h1></div><div class="keyl">${key.map(k=>`<div>${esc(k[0])}：<b>${esc(k[1])}</b></div>`).join('')}</div>`;
   return [p1,p2.startsWith('<div class="ph"')?p2:pageHead(l,'ワーク','m','ワークシート（つづき）','',false)+p2,{key:p3}];
 }
@@ -140,20 +140,62 @@ function docHw(l){
   l.quiz.forEach((q,i)=>key.push(['Q'+(i+1),q.o[q.a]+' — '+q.e]));
   p2+=sec('5','今週の宿題',`<ul class="chk">${l.homework.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`);
   p2+=sec('6','音読チェック',`<div class="week">${['月','火','水','木','金','土','日'].map(d=>`<div class="h">${d}</div>`).join('')}${'<div class="c"></div>'.repeat(7)}</div>`,'音読したらシールか○を書こう');
-  p2+=sec('7','先生から',`<div style="border:1.5px solid #1d1a2e;border-radius:8px;height:24mm"></div>`);
+  p2+=sec('7','先生から',`<div class="grow" style="border:1.5px solid #1d1a2e;border-radius:8px;height:24mm"></div>`);
   const p3=`<div class="ph"><span class="badge m">解答</span><h1>第${l.no}回 宿題プリント 解答<small>答え合わせ用</small></h1></div><div class="keyl">${tr.slice(0,10).map((t,i)=>`<div>1-${i+1}：<b>${esc(t.k)}</b></div>`).join('')}${key.map(k=>`<div>${esc(k[0])}：<b>${esc(k[1])}</b></div>`).join('')}</div>`;
   return [p1,p2,{key:p3}];
+}
+function pagesHTML(l,d,t,parts){
+  return parts.map((p,i)=>typeof p==='string'
+    ?`<section class="page" data-g="${l.no}"><div class="pin">${p}</div>${pfoot(l,d[1],(i+1)+'/'+parts.length,t==='guide')}</section>`
+    :`<section class="page key" data-g="${l.no}"><div class="pin">${p.key}</div>${pfoot(l,d[1]+' 解答',(i+1)+'/'+parts.length)}</section>`).join('');
+}
+/* ---------- 페이지 채우기: 합칠 수 있는 페이지는 합치고, 남는 공간은 확대·쓰기 칸으로 채움 ---------- */
+const FIT={max:1.5,min:1,gap:10};
+function fitPages(root=document){
+  const pages=[...root.querySelectorAll('.pages .page')];if(!pages.length)return;
+  const avail=pg=>{const r=pg.getBoundingClientRect(),pf=pg.querySelector('.pf').getBoundingClientRect(),pin=pg.querySelector('.pin').getBoundingClientRect(),z=r.width/793.7;return pf.top-pin.top-FIT.gap*z};
+  const h=pg=>pg.querySelector('.pin').getBoundingClientRect().height;
+  const reset=pg=>{const pin=pg.querySelector('.pin');pin.style.zoom='';pin.style.width='';pg.querySelectorAll('.grow').forEach(g=>{if(g.dataset.h==null)g.dataset.h=g.style.height;g.style.height=g.dataset.h})};
+  pages.forEach(reset);
+  // 1) 같은 회차의 다음 페이지 섹션을 앞 페이지에 들어가는 만큼 끌어옴 (순서 유지)
+  const groups={};pages.forEach(pg=>(groups[pg.dataset.g]=groups[pg.dataset.g]||[]).push(pg));
+  Object.values(groups).forEach(gp=>{
+    for(let i=0;i<gp.length-1;i++){const a=gp[i],b=gp[i+1];if(a.classList.contains('key')||b.classList.contains('key'))continue;
+      const apin=a.querySelector('.pin'),bpin=b.querySelector('.pin'),av=avail(a);
+      for(;;){const c=[...bpin.children].find(x=>!x.classList.contains('ph'));if(!c)break;
+        apin.appendChild(c);if(h(a)>av/1.1){bpin.insertBefore(c,[...bpin.children].find(x=>!x.classList.contains('ph'))||null);break}}
+      // 두 페이지 높이가 비슷해지도록 앞 페이지 끝 섹션을 뒤로 돌려보냄
+      if([...bpin.children].some(x=>!x.classList.contains('ph')))for(;;){
+        const as=[...apin.children].filter(x=>!x.classList.contains('ph'));if(as.length<2)break;
+        const last=as[as.length-1],d0=Math.abs(h(a)-h(b));
+        bpin.insertBefore(last,[...bpin.children].find(x=>!x.classList.contains('ph'))||null);
+        if(h(b)>avail(b)/1.1||Math.abs(h(a)-h(b))>=d0){apin.appendChild(last);break}}
+      if(![...bpin.children].some(x=>!x.classList.contains('ph'))){b.remove();gp.splice(i+1,1);i--}}
+    gp.forEach((pg,i)=>{const pn=pg.querySelector('.pn');if(pn)pn.textContent=(i+1)+'/'+gp.length});
+  });
+  // 2) 페이지마다 가장 크게 들어가는 배율을 찾고, 남는 높이는 쓰기 칸(.grow)에 나눠 줌
+  root.querySelectorAll('.pages .page').forEach(pg=>{
+    const pin=pg.querySelector('.pin'),base=687.87,av=avail(pg);
+    const set=k=>{pin.style.zoom=k;pin.style.width=(base/k)+'px'};
+    if(h(pg)>av)return;
+    let lo=FIT.min,hi=FIT.max;set(hi);if(h(pg)<=av)lo=hi;else for(let n=0;n<9;n++){const m=(lo+hi)/2;set(m);if(h(pg)<=av)lo=m;else hi=m}
+    set(lo);
+    const gs=[...pin.querySelectorAll('.grow')];if(!gs.length)return;
+    const left=av-h(pg);if(left<4)return;
+    const g0=gs[0],h0=g0.getBoundingClientRect().height,o0=g0.offsetHeight;g0.style.height=(o0+100)+'px';const per=(g0.getBoundingClientRect().height-h0)/100;g0.style.height=g0.dataset.h;
+    if(per>0)gs.forEach(g=>{g.style.height=(g.offsetHeight+left/gs.length/per-1)+'px'});
+  });
 }
 function vPrintStep(sn,t){
   const d=DOCS.find(x=>x[0]===t)||DOCS[0];t=d[0];const r=STEP_RANGE[sn]||STEP_RANGE[0];
   const fn=t==='work'?docWork:t==='hw'?docHw:t==='guide'?docGuide:docText;
-  const pages=L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l=>{const parts=fn(l);return parts.map((p,i)=>typeof p==='string'?`<section class="page">${p}${pfoot(l,d[1],(i+1)+'/'+parts.length,t==='guide')}</section>`:`<section class="page key">${p.key}${pfoot(l,d[1]+' 解答',(i+1)+'/'+parts.length)}</section>`).join('')}).join('');
+  const pages=L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l=>pagesHTML(l,d,t,fn(l))).join('');
   return `<div class="ptool"><a href="#/s/${sn}" class="btn">${T().pBack}</a><b>${T().stepOf(sn)} ${d[1]}</b><a class="btn" href="${bundleUrl(sn,t)}" data-dl="${esc(bundleDl(sn,t))}">⬇ PDF</a><button class="btn pink" id="pBtn">${T().pPrint}</button></div><div class="pages">${pages}</div>`;
 }
 function vPrint(no,t){
   const l=L.find(x=>x.no===no)||L[0],d=DOCS.find(x=>x[0]===t)||DOCS[0];t=d[0];
   const parts=(t==='work'?docWork:t==='hw'?docHw:t==='guide'?docGuide:docText)(l);
-  const pages=parts.map((p,i)=>typeof p==='string'?`<section class="page">${p}${pfoot(l,d[1],(i+1)+'/'+parts.length,t==='guide')}</section>`:`<section class="page key">${p.key}${pfoot(l,d[1]+' 解答',(i+1)+'/'+parts.length)}</section>`).join('');
+  const pages=pagesHTML(l,d,t,parts);
   return `<div class="ptool"><a href="#/l/${l.no}" class="btn">${T().pBack}</a><b>${t==='guide'?`제${l.no}회 `:`第${l.no}回 `}${d[1]}</b><a class="btn" href="${pdfUrl(l.no,t)}" data-dl="${esc(lessonDl(l.no,t))}">⬇ PDF</a><button class="btn pink" id="pBtn">${T().pPrint}</button></div><div class="pages">${pages}</div>`;
 }
 
