@@ -132,8 +132,14 @@ const icon={
  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
  words:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="16" rx="2.5"/><path d="M7 9h6M7 13h4"/><path d="M17 8h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9"/></svg>',
  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+ prints:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>',
  guide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>'
 };
+
+/* ---------- 선생님 모드 문구 ---------- */
+const TM={ja:{mode:'授業モード',prints:'授業資料',cur:'カリキュラム',plan:'授業プラン',learn:'学習内容',key:'クイズ・解答',preview:'👀 生徒が見る画面のプレビューです',next:'最初の授業',recent:'前回開いた授業',prep:'授業プランを開く',guidePdf:'指導案',lessonsN:n=>`全${n}回`,docs:'教材4種＋指導案',board:'板書ポイント',script:'会話スクリプト',drillKey:'文型練習の解答',tipT:'文化・表現の指導ポイント',forSt:'生徒向けの説明',play:'▶ 出題モード',keyMode:'← 解答一覧',printsLead:'すべての回の教科書・ワークシート・宿題・指導案をまとめてダウンロードできます。',goal:'授業目標'},
+ ko:{mode:'수업 모드',prints:'수업 자료',cur:'커리큘럼',plan:'수업안',learn:'학습 내용',key:'퀴즈·정답',preview:'👀 학생에게 보이는 화면 미리보기예요',next:'첫 수업',recent:'지난번에 연 수업',prep:'수업안 열기',guidePdf:'지도안',lessonsN:n=>`전 ${n}회`,docs:'교재 4종＋지도안',board:'판서 포인트',script:'회화 대본',drillKey:'문형 연습 정답',tipT:'문화·표현 지도 포인트',forSt:'학생용 설명',play:'▶ 출제 모드',keyMode:'← 정답 목록',printsLead:'모든 회차의 교재·워크시트·숙제·지도안을 한곳에서 내려받을 수 있어요.',goal:'수업 목표'}};
+const TMx=()=>TM[LANG];
 
 /* ======================= chrome ======================= */
 const langBtn=()=>`<button class="lang" id="langBtn" aria-label="${T().langAria}"><span class="${LANG==='ja'?'on':''}">あ</span><span class="${LANG==='ko'?'on':''}" lang="ko">가</span></button>`;
@@ -142,13 +148,14 @@ function topbar(mode,l){
   $('#topbar').innerHTML=mode==='lesson'
     ?`<a href="#/s/${stepOfLesson(l.no)}" class="ibtn" aria-label="${t.backStep}">${icon.back}</a><div class="ttl">${t.no(l.no)} ${esc(V(l).title)}</div>${langBtn()}`
     :mode==='step'?`<a href="#/" class="ibtn" aria-label="${t.back}">${icon.back}</a><div class="ttl">${t.stepOf(l)} · ${esc(ST(l).name)}</div>${langBtn()}`
-    :`<a href="#/" class="brand"><span class="brand-mark">${mascotSVG(3,'mini')}</span><span class="bt">${t.brand}<small>guruguru</small></span></a><div class="tr">${langBtn()}<button class="ibtn" id="themeBtn" aria-label="${t.theme}">${icon.moon}</button></div>`;
+    :`<a href="#/" class="brand"><span class="brand-mark">${mascotSVG(3,'mini')}</span><span class="bt">${t.brand}<small>guruguru</small></span></a>${teachView()?`<span class="mbadge">🧑‍🏫 ${TMx().mode}</span>`:''}<div class="tr">${langBtn()}<button class="ibtn" id="themeBtn" aria-label="${t.theme}">${icon.moon}</button></div>`;
   $('#langBtn').onclick=()=>{LANG=LANG==='ja'?'ko':'ja';store.set('lang',LANG);applyLang();render(true)};
   const tb=$('#themeBtn');if(tb)tb.onclick=toggleTheme;
 }
 function tabbar(active){
-  const t=T();document.body.classList.toggle('hide-tab',!active);
-  $('#tabs').innerHTML=[['home','#/'],['words','#/words'],['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${k==='me'?A().me:t[k]}</span></a>`).join('');
+  const t=T(),tv=teachView();document.body.classList.toggle('hide-tab',!active);
+  const lb=k=>k==='me'?A().me:k==='prints'?TMx().prints:k==='guide'&&tv?TMx().cur:t[k];
+  $('#tabs').innerHTML=[['home','#/'],tv?['prints','#/prints']:['words','#/words'],['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${lb(k)}</span></a>`).join('');
 }
 function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='ko'?'ぐるぐる guruguru｜한글부터 TOPIK 6급까지':'ぐるぐる guruguru｜ハングルからTOPIK 6級まで'}
 
@@ -162,6 +169,11 @@ function stepStat(n){const ls=stepLessons(n),d=ls.filter(x=>done.includes(x.no))
 function stepCard(n){
   const t=T(),s=ST(n),st=stepStat(n),c=SCOL[n];
   const state=st.done===st.total?t.complete:st.ready?t.studying:t.prep;
+  if(teachView())return `<a href="#/s/${n}" class="stc tst ${st.ready?'':'soon'}" style="--c:${cv(c)};--cs:${cs(c)}">
+    <div class="stn"><span>STEP</span><b>${n}</b></div>
+    <div class="stb"><div class="sth"><b>${esc(s.name)}</b><span class="pill on">${TMx().lessonsN(st.total)}</span></div>
+    <small>${esc(s.sub)} · ${esc(s.range)}</small>
+    <div class="stf"><span>🎯 ${esc(s.goal)}</span><span>📄 ${TMx().docs}</span></div></div></a>`;
   return `<a href="#/s/${n}" class="stc ${st.ready?'':'soon'}" style="--c:${cv(c)};--cs:${cs(c)}">
     <div class="stn"><span>STEP</span><b>${n}</b></div>
     <div class="stb"><div class="sth"><b>${esc(s.name)}</b><span class="pill ${st.ready?'on':''}">${state}</span></div>
@@ -170,7 +182,14 @@ function stepCard(n){
     <div class="stf"><span>🎯 ${esc(s.goal)}</span><span>${st.done} / ${t.lessonsN(st.total)}</span></div></div></a>`;
 }
 function vStep(n){
-  const t=T(),s=ST(n),st=stepStat(n),c=SCOL[n],ls=stepLessons(n),ni=L[nextIdx()].no;
+  const t=T(),s=ST(n),st=stepStat(n),c=SCOL[n],ls=stepLessons(n),ni=L[nextIdx()].no,tv=teachView();
+  if(tv)return `<section class="card lhero" style="--c:${cv(c)}"><span class="g">${n}</span><span class="no">${t.stepOf(n)} · ${esc(s.range)} · ${esc(s.total)}</span><h1>${esc(s.name)}</h1><div class="sub">${esc(s.sub)}</div>
+    <div class="goals"><div>🎯 ${TMx().goal}: ${esc(s.goal)}</div><div>📚 ${esc(s.key)}</div></div></section>
+  ${st.ready?'':`<p class="note" style="margin:14px 2px 0">${t.prepNote}</p>`}
+  <details class="sdl" open><summary>📦 ${DT().bundle}<small>${DT().bundleS}</small></summary>${bundleGrid(n)}<p class="note">${DT().ios}</p></details>
+  <div class="llist">${ls.map(x=>{const inner=`<span class="ln">${x.no}</span><span class="lt"><b>${esc(LANG==='ko'?x.ko:x.ja)}</b><small lang="${/[\uac00-\ud7a3]/.test(x.g)?'ko':'ja'}">${esc(x.g)}</small></span><span class="ls ${x.ready?'tp':'soon'}">${x.ready?'📘':t.prep}</span>`;
+    return x.ready?`<a href="#/l/${x.no}" class="lrow">${inner}</a>`:`<div class="lrow off">${inner}</div>`}).join('')}</div>
+  <div class="stnav">${n>0?`<a href="#/s/${n-1}" class="btn sm">← ${t.stepOf(n-1)}</a>`:'<span></span>'}${n<6?`<a href="#/s/${n+1}" class="btn sm">${t.stepOf(n+1)} →</a>`:''}</div>`;
   return `<section class="card lhero" style="--c:${cv(c)}"><span class="g">${n}</span><span class="no">${t.stepOf(n)} · ${esc(s.range)} · ${esc(s.total)}</span><h1>${esc(s.name)}</h1><div class="sub">${esc(s.sub)}</div>
     <div class="goals"><div>🎯 ${t.goal}: ${esc(s.goal)}</div><div>📚 ${esc(s.key)}</div></div>
     <div class="prog" style="margin:14px 0 0"><div class="prog-top"><span>${t.syllabus}</span><span>${st.done} / ${t.lessonsN(st.total)}</span></div><div class="bar"><i style="width:${st.done/st.total*100}%"></i></div></div></section>
@@ -191,7 +210,7 @@ function vHome(){
   const t=T(),ni=nextIdx(),nl=V(L[ni]),cnt=done.length,all=cnt>=L.length;
   const day=Math.floor(Date.now()/864e5),w=ALLW[day%ALLW.length];
   const inst=!standalone()&&!store.get('hideInstall',false)&&(deferredPrompt||isIOS);
-  const tv=authed()&&ME.view==='teacher';
+  const tv=teachView();
   return `${statusBanner()}${tv?teacherHero():`<section class="card hero">
     <span class="sticker s1">★</span>
     ${authed()?`<div class="hello">${esc(A().hi(ME.name))}</div>`:''}
@@ -219,18 +238,19 @@ const TABK=['learn','cards','quiz'];
 let fcState={i:0,flip:false,got:new Set()},qState=null;
 function vLesson(no,tab){
   const i=L.findIndex(x=>x.no===no);const l=V(L[i]),c=COL[i%COL.length],t=T();
-  visited[no]=visited[no]||{};visited[no][tab]=1;store.set('visited',visited);
-  const v=visited[no],ok=k=>k==='quiz'?done.includes(no):!!v[k];
+  const tv=teachView(),TK=tv?['plan','learn','quiz']:TABK,TL=tv?[TMx().plan,TMx().learn,TMx().key]:t.tabs;
+  if(tv)store.set('tlast',no);else{visited[no]=visited[no]||{};visited[no][tab]=1;store.set('visited',visited)}
+  const v=visited[no]||{},ok=k=>!tv&&(k==='quiz'?done.includes(no):!!v[k]);
   let h=`<section class="card lhero" style="--c:${cv(c)}"><span class="g" lang="ko">${l.big}</span><span class="no">${t.noOf(l.no)}</span><h1>${esc(l.title)}</h1><div class="sub">${esc(l.sub)}</div>
-    ${tab==='learn'?`<div class="goals">${l.goals.map(g=>`<div>🎯 ${esc(g)}</div>`).join('')}</div>`:''}</section>
-    <div class="seg"><nav role="tablist">${TABK.map((k,j)=>`<a href="#/l/${no}/${k}" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''} ${ok(k)&&k!==tab?'ok':''}"><i>${ok(k)&&k!==tab?'✓':j+1}</i>${t.tabs[j]}</a>`).join('')}</nav></div>
-    <div class="panel" id="panel" style="--c:${cv(c)}">${tab==='learn'?pLearn(l):tab==='cards'?pCards(l):pQuiz(l)}</div>`;
-  const nxt=tab==='learn'?['cards',t.toCards]:tab==='cards'?['quiz',t.toQuiz]:null;
+    ${tab==='learn'||tab==='plan'?`<div class="goals">${l.goals.map(g=>`<div>🎯 ${esc(g)}</div>`).join('')}</div>`:''}</section>
+    <div class="seg"><nav role="tablist">${TK.map((k,j)=>`<a href="#/l/${no}/${k}" role="tab" aria-selected="${k===tab}" class="${k===tab?'on':''} ${ok(k)&&k!==tab?'ok':''}"><i>${ok(k)&&k!==tab?'✓':j+1}</i>${TL[j]}</a>`).join('')}</nav></div>
+    <div class="panel" id="panel" style="--c:${cv(c)}">${tab==='plan'?pPlan(l):tab==='learn'?pLearn(l):tab==='cards'?pCards(l):tv&&!tqPlay?pKey(l):pQuiz(l)}</div>`;
+  const nxt=tv?null:tab==='learn'?['cards',t.toCards]:tab==='cards'?['quiz',t.toQuiz]:null;
   if(nxt)h+=`<div class="lbar"><div class="in"><a href="#/l/${no}/${nxt[0]}" class="btn pink">${nxt[1]}</a></div></div>`;
   return h;
 }
 function pLearn(l){
-  const t=T();let h='';
+  const t=T();let h=teachView()?`<p class="tprev">${TMx().preview}</p>`:'';
   if(l.letters)l.letters.forEach(g=>{h+=`<div class="blk"><h3>${esc(g.g)}<em>${t.tapPlay} 🔊</em></h3><div class="tiles">${g.items.map(x=>`<button class="tile" data-say="${x[0]}"><span class="sp">🔊</span><div class="k" lang="ko">${x[1]}</div><div class="s" lang="ko">${x[0]}</div><div class="r" lang="ja">${esc(x[2])}</div></button>`).join('')}</div></div>`});
   if(l.table){const lf=l.table.left||[],wide=l.table.cols.length>4;
     h+=`<div class="blk"><h3>${TBL[LANG][l.no]}<em>${wide?t.scroll:t.tapPlay+' 🔊'}</em></h3><div class="tbl${wide?'':' fit'}"><table><thead><tr>${l.table.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${l.table.rows.map(r=>`<tr>${r.map((c,k)=>{
@@ -241,28 +261,37 @@ function pLearn(l){
   if(l.sheet)h+=`<div class="blk"><h3>${t.test}<em><button class="btn sm yellow" id="ansBtn">${t.showA}</button></em></h3><div class="sheetg" id="sheet">${l.sheet.map(s=>`<div class="sh"><h4>${s.t}</h4><small>${s.d}</small><ol>${s.items.map(x=>`<li><span lang="ko" class="ko">${esc(x[0])}</span><span class="ans" lang="ja">${esc(x[1])}</span></li>`).join('')}</ol></div>`).join('')}</div></div>`;
   h+=pDialog(l);
   h+=`<div class="blk"><h3>${t.points}</h3><div class="bubbles">${l.points.map((p,k)=>`<div class="bub" style="--c:${cv(COL[(k+2)%6])}"><b>${esc(p[0])}</b>${esc(p[1])}</div>`).join('')}</div></div>`;
-  if(teachView()){const k0=KO[l.no],L0=L.find(x=>x.no===l.no),k=LANG==='ko'?k0:{flow:L0.flow.map(f=>[f[1],f[2]]),practice:L0.practice,homework:L0.homework,memo:L0.memo};let acc=0;
-    h+=`<div class="blk"><h3>⏱ ${t.flowT}</h3><div class="card teach"><div class="timebar">${l.flow.map((f,j)=>`<div style="flex:${f[0]};background:${cv(COL[j%6])}">${f[0]>=7?f[0]+(LANG==='ko'?'분':'分'):''}</div>`).join('')}</div>
-      <div class="flow">${l.flow.map((f,j)=>{const s=acc;acc+=f[0];return `<div class="fi"><div class="t"><i style="background:${cv(COL[j%6])}"></i>${s}~${acc}${LANG==='ko'?'분':'分'}</div><div><b>${esc(k.flow[j][0])}</b><p>${esc(k.flow[j][1])}</p></div></div>`}).join('')}</div>
-      <div class="cols2"><div><h4>${t.practice}</h4><ul class="ul">${k.practice.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div><div><h4>${t.hw}</h4><ul class="ul">${k.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>
-      <h4>💡 ${t.tip}</h4><div class="memo">${esc(k.memo)}</div></div></div>`;
-  }else{
-    h+=`<div class="blk"><h3>🏠 ${t.hwT}</h3><div class="card teach"><ul class="ul">${l.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`;
-  }
+  h+=`<div class="blk"><h3>🏠 ${t.hwT}</h3><div class="card teach"><ul class="ul">${l.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`;
   h+=pDrill(l)+pTip(l);
   h+=`<div class="blk"><h3>${t.print}<em>${t.printSub}</em></h3>${printCards(l.no)}</div>`;
   return h;
 }
+function pPlan(l){
+  const t=T(),m=TMx(),p=PL(l.no);let h='';
+const k0=KO[l.no],L0=L.find(x=>x.no===l.no),k=LANG==='ko'?k0:{flow:L0.flow.map(f=>[f[1],f[2]]),practice:L0.practice,homework:L0.homework,memo:L0.memo};let acc=0;
+    h+=`<div class="blk"><h3>⏱ ${t.flowT}</h3><div class="card teach"><div class="timebar">${l.flow.map((f,j)=>`<div style="flex:${f[0]};background:${cv(COL[j%6])}">${f[0]>=7?f[0]+(LANG==='ko'?'분':'分'):''}</div>`).join('')}</div>
+      <div class="flow">${l.flow.map((f,j)=>{const s=acc;acc+=f[0];return `<div class="fi"><div class="t"><i style="background:${cv(COL[j%6])}"></i>${s}~${acc}${LANG==='ko'?'분':'分'}</div><div><b>${esc(k.flow[j][0])}</b><p>${esc(k.flow[j][1])}</p></div></div>`}).join('')}</div>
+      <div class="cols2"><div><h4>${t.practice}</h4><ul class="ul">${k.practice.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div><div><h4>${t.hw}</h4><ul class="ul">${k.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>
+      <h4>💡 ${t.tip}</h4><div class="memo">${esc(k.memo)}</div></div></div>`;
+  h+=`<div class="blk"><h3>🧾 ${m.board}</h3><div class="bubbles">${l.points.map((p,k)=>`<div class="bub" style="--c:${cv(COL[(k+2)%6])}"><b>${esc(p[0])}</b>${esc(p[1])}</div>`).join('')}</div></div>`;
+  h+=pDialog(l,m.script)+pDrill(l,m.drillKey);
+  if(p&&p.t)h+=`<div class="blk"><h3>🌏 ${m.tipT}</h3><div class="card tipc"><p lang="ko">${esc(p.t[1])}</p><small class="tfor"><b>${m.forSt}</b><span lang="ja">${esc(p.t[0])}</span></small></div></div>`;
+  h+=`<div class="blk"><h3>${t.print}<em>${t.printSub}</em></h3>${printCards(l.no)}</div>`;
+  return h;
+}
+let tqPlay=false;
+function pKey(l){const m=TMx();
+  return `<div class="blk"><h3>✅ ${m.key}<em><button class="btn sm pink" id="tqPlay">${m.play}</button></em></h3><ol class="qkey">${l.quiz.map((q,i)=>`<li class="card"><b><span class="qn">Q${i+1}</span>${esc(q.q)}</b><div class="qo">${q.o.map((o,j)=>`<span class="${j===q.a?'ok':''}"${isKo(o)?' lang="ko"':''}>${'ABC'[j]}. ${esc(o)}</span>`).join('')}</div>${q.e?`<small>${esc(q.e)}</small>`:''}</li>`).join('')}</ol></div>`}
 /* ---------- 보강: 회화 · 문형 연습 · 문화 메모 ---------- */
 const PT={ja:{dlg:'会話',tr:'訳',play:'▶ 通して聞く',stop:'■ 止める',drill:'練習ドリル',all:'答えを全部見る',hide:'答えをかくす',tap:'タップで答え',tip:'文化・表現メモ'},
  ko:{dlg:'회화',tr:'번역',play:'▶ 전체 듣기',stop:'■ 멈추기',drill:'문형 연습',all:'정답 모두 보기',hide:'정답 숨기기',tap:'눌러서 정답',tip:'문화·표현 메모'}};
 const PL=no=>typeof PLUS!=='undefined'?PLUS[no]:null;
-function pDialog(l){const p=PL(l.no);if(!p||!p.d)return '';const a=PT[LANG],sp=p.d[0][0];
-  return `<div class="blk"><h3>💬 ${a.dlg}<em><button class="btn sm" id="dlgTr" aria-pressed="true">${a.tr}</button><button class="btn sm yellow" id="dlgPlay">${a.play}</button></em></h3>
+function pDialog(l,ttl){const p=PL(l.no);if(!p||!p.d)return '';const a=PT[LANG],sp=p.d[0][0];
+  return `<div class="blk"><h3>💬 ${ttl||a.dlg}<em><button class="btn sm" id="dlgTr" aria-pressed="true">${a.tr}</button><button class="btn sm yellow" id="dlgPlay">${a.play}</button></em></h3>
   <div class="dlg" id="dlg">${p.d.map(x=>`<div class="dl ${x[0]===sp?'l':'r'}"><span class="who" lang="ko">${esc(x[0])}</span><button class="bub2" data-say="${esc(x[1])}"><span class="k" lang="ko">${esc(x[1])}</span><span class="j" lang="ja">${esc(x[2])}</span></button></div>`).join('')}</div></div>`}
-function pDrill(l){const p=PL(l.no);if(!p||!p.x)return '';const a=PT[LANG];
-  return `<div class="blk"><h3>✏️ ${a.drill}<em><button class="btn sm yellow" id="drAll">${a.all}</button></em></h3>${p.r?`<p class="drq">${esc(p.r[LANG==='ko'?1:0])}</p>`:''}
-  <ol class="drill" id="drill">${p.x.map(x=>`<li><button class="dr" data-a="${esc(x[1])}"><span class="p">${esc(x[0])}</span><span class="ans"><b${isKo(x[1])?' lang="ko"':''}>${esc(x[1])}</b>${x[2]?`<small>${esc(x[2])}</small>`:''}</span><span class="tap">${a.tap}</span></button></li>`).join('')}</ol></div>`}
+function pDrill(l,key){const p=PL(l.no);if(!p||!p.x)return '';const a=PT[LANG];
+  return `<div class="blk"><h3>✏️ ${key||a.drill}<em><button class="btn sm yellow" id="drAll">${key?a.hide:a.all}</button></em></h3>${p.r?`<p class="drq">${esc(p.r[LANG==='ko'?1:0])}</p>`:''}
+  <ol class="drill${key?' all':''}" id="drill">${p.x.map(x=>`<li><button class="dr${key?' open':''}" data-a="${esc(x[1])}"><span class="p">${esc(x[0])}</span><span class="ans"><b${isKo(x[1])?' lang="ko"':''}>${esc(x[1])}</b>${x[2]?`<small>${esc(x[2])}</small>`:''}</span><span class="tap">${a.tap}</span></button></li>`).join('')}</ol></div>`}
 function pTip(l){const p=PL(l.no);if(!p||!p.t)return '';return `<div class="blk"><h3>🌏 ${PT[LANG].tip}</h3><div class="card tipc">${esc(p.t[LANG==='ko'?1:0])}</div></div>`}
 function sayP(t){return new Promise(res=>{const c=cleanSay(t),h=AUDIO[c];
   if(h){const a=acache[h]||(acache[h]=new Audio('audio/'+h+'.mp3'));curA=a;a.currentTime=0;a.onended=()=>res();a.onerror=()=>res();const p=a.play();if(p&&p.catch)p.catch(()=>res());return}
@@ -299,11 +328,11 @@ function pQuiz(l){
   const t=T(),q=qState;
   if(q.i>=l.quiz.length){
     const n=l.quiz.length,s=q.score,st=s===n?3:s>=n*.6?2:1;
-    return `<div class="qwrap"><div class="card result"><div class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><div class="sc">${s}<span> / ${n}</span></div><p>${s===n?t.perfect:s>=n*.6?t.good:t.retryMsg}</p>
+    return `${teachView()?`<button class="btn sm tqk" id="tqKey">${TMx().keyMode}</button>`:''}<div class="qwrap"><div class="card result"><div class="stars">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><div class="sc">${s}<span> / ${n}</span></div><p>${s===n?t.perfect:s>=n*.6?t.good:t.retryMsg}</p>
       <div class="btns">${L.some(x=>x.no===l.no+1)?`<a href="#/l/${l.no+1}" class="btn pink block">${t.toNext(l.no+1)}</a>`:`<a href="#/s/${stepOfLesson(l.no)}" class="btn pink block">${t.backStep} →</a>`}<button class="btn block" id="qRetry">${t.retry}</button><a href="#/l/${l.no}/cards" class="btn block">${t.review}</a></div></div></div>`;
   }
   const it=l.quiz[q.i],ans=q.ans;
-  return `<div class="qwrap"><div class="qhead"><div class="bar"><i style="width:${q.i/l.quiz.length*100}%"></i></div><b>${q.i+1} / ${l.quiz.length}</b></div>
+  return `${teachView()?`<button class="btn sm tqk" id="tqKey">${TMx().keyMode}</button>`:''}<div class="qwrap"><div class="qhead"><div class="bar"><i style="width:${q.i/l.quiz.length*100}%"></i></div><b>${q.i+1} / ${l.quiz.length}</b></div>
     <div class="card qcard"><span class="qn">Q${q.i+1}</span><div class="qq">${esc(it.q)}</div>
     <div class="opts">${it.o.map((o,j)=>{let c='';if(ans!=null){c=j===it.a?'ok':j===ans?'ng':'dim'}return `<button class="opt ${c}" data-j="${j}" ${ans!=null?'disabled':''}${isKo(o)?' lang="ko"':''}><span class="l">${'ABC'[j]}</span><span class="ot">${esc(o)}</span></button>`}).join('')}</div>
     ${ans!=null?`<div class="fb ${ans===it.a?'ok':'ng'}" role="status"><b>${ans===it.a?t.ok:t.ng}</b>${esc(it.e)}</div><button class="btn pink block" id="qNext">${q.i+1<l.quiz.length?t.nextQ:t.result}</button>`:''}
@@ -342,6 +371,8 @@ function bindLesson(no,tab){
         f.i=j;f.flip=false;re();say(ws[f.i].k)},650)};
   }
   if(tab==='quiz'){
+    const tp=$('#tqPlay');if(tp)tp.onclick=()=>{tqPlay=true;qState={no,i:0,score:0,ans:null};panel.innerHTML=pQuiz(l);bindLesson(no,tab)};
+    const tk=$('#tqKey');if(tk)tk.onclick=()=>{tqPlay=false;panel.innerHTML=pKey(l);bindLesson(no,tab)};
     const q=qState;
     $$('.opt').forEach(o=>o.onclick=()=>{
       const j=+o.dataset.j,it=l.quiz[q.i];q.ans=j;
@@ -349,7 +380,7 @@ function bindLesson(no,tab){
       if(isKo(it.o[it.a]))say(it.o[it.a]);
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);const nb=$('#qNext');if(nb)nb.scrollIntoView({block:'nearest',behavior:'smooth'})});
     const nb=$('#qNext');if(nb)nb.onclick=()=>{q.i++;q.ans=null;
-      if(q.i>=l.quiz.length&&!done.includes(no)){const s0=evoStage(done.length);done.push(no);store.set('done',done);const s1=evoStage(done.length);if(s1>s0)setTimeout(()=>showEvolution(s0,s1),1400)}
+      if(q.i>=l.quiz.length&&!done.includes(no)&&!teachView()){const s0=evoStage(done.length);done.push(no);store.set('done',done);const s1=evoStage(done.length);if(s1>s0)setTimeout(()=>showEvolution(s0,s1),1400)}
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);
       const seg=$('.seg');if(seg)window.scrollTo({top:Math.max(0,seg.getBoundingClientRect().top+scrollY-70),behavior:'smooth'});
       if(q.i>=l.quiz.length){setTimeout(()=>{const r=$('.result');if(r){const b=r.getBoundingClientRect();confetti(b.left+b.width/2,b.top+80,24)}},250);
@@ -398,6 +429,9 @@ ko:{t:'커리큘럼 가이드',tag:'7스텝',lead:'주 1회 60분 1:1 수업으�
  lesson:['60분 수업 흐름','매번 이 흐름으로 진행합니다'],flow:['인사·프리토킹','숙제 확인·복습','새 문법·어휘','연습(회화·롤플레이)','발음·듣기','정리·숙제'],min:'분',lessonN:'숙제는 주 2~3시간. 초급은 드릴과 음독, 중급은 작문과 섀도잉, 고급은 논술과 요약.',
  mats:['사용 교재','메인 교재 ＋ 자체 교안'],matsSub:['스텝0 · 한글 도입','스텝1·2 · 메인 교과서','스텝1·2 · 숙제용','스텝1~4 · 어휘','스텝1·2 · 시험 대비','스텝3~6 · 시험 대비'],matsN:'TOPIK 공식 사이트의 기출문제(무료)를 모의고사로 씁니다. 교재는 구입 시 최신판을 확인하세요.',foot:'함께 시작해요'}
 };
+function printsInner(){const t=T(),g=GT[LANG];return `<b class="dlh">📦 ${DT().bundle}</b><small class="dls">${DT().bundleS}</small>${STEP_RANGE.map((r,sn)=>`<div class="bstep"><b>${t.stepOf(sn)} <small>${t.no?'':''}${r[0]}–${r[1]}</small></b>${bundleGrid(sn)}</div>`).join('')}
+     <b class="dlh">📄 ${DT().lessons}</b>${STEP_RANGE.map((r,sn)=>`<details class="pstep"><summary>${t.stepOf(sn)} · ${r[0]}–${r[1]}</summary><div class="plist">${L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${docsFor().map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" data-dl="${esc(lessonDl(l.no,d[0]))}">${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}<a class="chip all" href="${pdfUrl(l.no,'text')}" data-dl="${esc(lessonDlAll(l.no))}" data-label="${esc(t.no(l.no))} · ${DT().all}">⬇ ${DT().all}</a></span></div>`}).join('')}</div></details>`).join('')}<p class="note">${g.printsN}</p>`}
+function vPrints(){const m=TMx();return `<div class="h2 first"><span>${m.prints}</span></div><div class="card lead"><p>${m.printsLead}</p></div><div class="card prwrap">${printsInner()}</div>`}
 function vGuide(open){
   const g=GT[LANG],t=T();
   const lv=(n,v,max,c)=>`<div class="lv"><span>${n}${g.lv}</span><div class="tr"><i style="width:${v/max*100}%;background:${cv(c)}"></i></div><span>${v}${g.pt}</span></div>`;
@@ -407,13 +441,13 @@ function vGuide(open){
   <div class="card lead"><b>${g.lead}</b><p>${g.leadP}</p></div>
   <div class="acc">
    <details open><summary><span class="e" style="--c:var(--yellow)">길</span><span class="st2">${g.road[0]}<small>${g.road[1]}</small></span></summary><div class="in"><div class="road">${STEPS.map((_,i)=>{const s=ST(i);return `<div class="rs" style="--c:${cv(SCOL[i])}"><span class="n">${s.n}</span><div><b>${s.name}：${s.sub}</b><small>${s.range} · ${s.total} · ${esc(s.key)}</small><div class="rg"><span class="g">🎯 ${s.goal}</span><a href="#/s/${i}" class="g go">${g.study}</a></div></div></div>`}).join('')}</div><p class="note">${g.roadN}</p></div></details>
-   <details id="printsAcc"><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in"><b class="dlh">📦 ${DT().bundle}</b><small class="dls">${DT().bundleS}</small>${STEP_RANGE.map((r,sn)=>`<div class="bstep"><b>${t.stepOf(sn)} <small>${t.no?'':''}${r[0]}–${r[1]}</small></b>${bundleGrid(sn)}</div>`).join('')}
-     <b class="dlh">📄 ${DT().lessons}</b>${STEP_RANGE.map((r,sn)=>`<details class="pstep"><summary>${t.stepOf(sn)} · ${r[0]}–${r[1]}</summary><div class="plist">${L.filter(l=>l.no>=r[0]&&l.no<=r[1]).sort((a,b)=>a.no-b.no).map(l0=>{const l=V(l0);return `<div class="pl"><b>${t.no(l.no)} ${esc(l.title)}</b><span>${docsFor().map(d=>`<a class="chip" href="${pdfUrl(l.no,d[0])}" data-dl="${esc(lessonDl(l.no,d[0]))}">${d[3]} ${t.docs[d[0]][0]}</a>`).join('')}<a class="chip all" href="${pdfUrl(l.no,'text')}" data-dl="${esc(lessonDlAll(l.no))}" data-label="${esc(t.no(l.no))} · ${DT().all}">⬇ ${DT().all}</a></span></div>`}).join('')}</div></details>`).join('')}<p class="note">${g.printsN}</p></div></details>
+   ${teachView()?'':`   <details id="printsAcc"><summary><span class="e" style="--c:var(--pink)">종</span><span class="st2">${g.prints[0]}<small>${g.prints[1]}</small></span></summary><div class="in">${printsInner()}</div></details>
+`}
    <details><summary><span class="e" style="--c:var(--mint)">시</span><span class="st2">${g.topik[0]}<small>${g.topik[1]}</small></span></summary><div class="in">
      <div class="kv">${g.kv.map(k=>`<div><span>${k[0]}</span><b>${k[1]}</b></div>`).join('')}</div>
      <div style="margin-top:12px">${lv(1,80,200,'mint')}${lv(2,140,200,'mint')}${lv(3,120,300,'sky')}${lv(4,150,300,'sky')}${lv(5,190,300,'purple')}${lv(6,230,300,'pink')}</div>
      <p class="note">${g.topikN}</p></div></details>
-   <details><summary><span class="e" style="--c:var(--sky)">수</span><span class="st2">${g.lesson[0]}<small>${g.lesson[1]}</small></span></summary><div class="in"><div class="timebar">${flow.map((f,k)=>`<div style="flex:${f};background:${cv(COL[k])}">${f>=7?f+g.min:''}</div>`).join('')}</div><div class="flow">${flow.map((f,k)=>{const s=acc;acc+=f;return `<div class="fi"><div class="t"><i style="background:${cv(COL[k])}"></i>${s}~${acc}${g.min}</div><div><b>${g.flow[k]}</b></div></div>`}).join('')}</div><p class="note">${g.lessonN}</p></div></details>
+   ${teachView()?`<details open><summary><span class="e" style="--c:var(--sky)">수</span><span class="st2">${g.lesson[0]}<small>${g.lesson[1]}</small></span></summary><div class="in"><div class="timebar">${flow.map((f,k)=>`<div style="flex:${f};background:${cv(COL[k])}">${f>=7?f+g.min:''}</div>`).join('')}</div><div class="flow">${flow.map((f,k)=>{const s=acc;acc+=f;return `<div class="fi"><div class="t"><i style="background:${cv(COL[k])}"></i>${s}~${acc}${g.min}</div><div><b>${g.flow[k]}</b></div></div>`}).join('')}</div><p class="note">${g.lessonN}</p></div></details>`:''}
    <details><summary><span class="e" style="--c:var(--orange)">책</span><span class="st2">${g.mats[0]}<small>${g.mats[1]}</small></span></summary><div class="in">
      ${books.map((b,i)=>`<div class="mat"><span class="bk" style="--c:${cv(bc[i])}"></span><div><b lang="ja">${b}</b><small>${g.matsSub[i]}</small></div></div>`).join('')}
      <p class="note">${g.matsN}</p></div></details>
@@ -434,11 +468,11 @@ let fitT;addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fitTa
 
 /* ======================= router ======================= */
 function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
-  if(h[0]==='l'&&h[1]&&L.some(l=>l.no===+h[1]))return {v:'lesson',no:+h[1],tab:TABK.includes(h[2])?h[2]:'learn'};
+  if(h[0]==='l'&&h[1]&&L.some(l=>l.no===+h[1])){const tv=teachView(),tk=tv?['plan','learn','quiz','cards']:TABK;return {v:'lesson',no:+h[1],tab:tk.includes(h[2])?h[2]:tv?'plan':'learn'}}
   if(h[0]==='print'&&h[1]&&/^s\d$/.test(h[1]))return {v:'print',no:0,sn:+h[1].slice(1),t:h[2]||'text'};
   if(h[0]==='print'&&h[1])return {v:'print',no:+h[1],t:h[2]||'text'};
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
-  if(h[0]==='words')return {v:'words'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
+  if(h[0]==='words')return {v:'words'};if(h[0]==='prints'||(h[0]==='guide'&&h[1]==='prints'&&teachView()))return {v:'prints'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
   if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin'};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
@@ -449,9 +483,9 @@ function render(keep){
     if(!last||!last.startsWith(`l${r.no}-`))fcState={i:0,flip:false,got:new Set(store.get('got-'+r.no,[]))};
     if(r.tab==='quiz'&&(!qState||qState.no!==r.no||last!==key&&!keep))qState={no:r.no,i:0,score:0,ans:null};
   }
-  document.body.classList.toggle('pmode',r.v==='print');
+  document.body.classList.toggle('pmode',r.v==='print');document.body.classList.toggle('tmode',teachView());
   document.body.dataset.view=r.v;
-  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
+  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='prints'?vPrints():r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
   if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);else topbar('main');
   tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;

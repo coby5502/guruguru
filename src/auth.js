@@ -170,10 +170,12 @@ function bindAdmin(){$$('[data-act]').forEach(b=>b.onclick=async()=>{b.disabled=
 
 /* ---------- 선생님 홈 ---------- */
 function teacherHero(){
-  const a=A();
+  const a=A(),m=TMx(),t=T(),st=store.get('tlast',0),l0=L.find(x=>x.no===st)||L[0],l=V(l0);
   return `<section class="card hero thero"><span class="sticker s1">★</span>
-    <div class="th-top">${avatar(ME,'lg')}<div><small>${a.tHero}</small><b class="jua">${esc(a.tHi(ME.name))}</b><span>${a.tHeroS}</span></div></div>
-    <div class="th-btns"><a class="btn yellow block" href="#/guide/prints">${a.tPrints}</a><a class="btn block" href="#/guide">${a.tGuide}</a></div>
+    <div class="th-top">${ME?avatar(ME,'lg'):''}<div><small>${a.tHero}</small><b class="jua">${ME?esc(a.tHi(ME.name)):m.mode}</b><span>${a.tHeroS}</span></div></div>
+    <div class="tnext card"><small>${st?m.recent:m.next}</small><b>${t.no(l.no)} ${esc(l.title)}</b><span>${esc(l.sub)}</span>
+      <div class="tnb"><a class="btn pink" href="#/l/${l.no}/plan">📋 ${m.prep}</a><a class="btn" href="${pdfUrl(l.no,'guide')}" data-dl="${esc(lessonDl(l.no,'guide'))}">📘 ${m.guidePdf}</a></div></div>
+    <div class="th-btns two"><a class="btn block" href="#/prints">🖨 ${m.prints}</a><a class="btn block" href="#/guide">🧭 ${m.cur}</a></div>
   </section>`;
 }
 
