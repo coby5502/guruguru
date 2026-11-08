@@ -20,8 +20,10 @@ try { JSON.parse(fs.readFileSync(path.join(dist, 'manifest.webmanifest'), 'utf8'
 // lessons + audio + pdf coverage
 const ctx = {};
 const extDir = path.join(root, 'src', 'lessons-ext');
+const plusDir = path.join(root, 'src', 'lessons-plus');
+const plusSrc = fs.existsSync(plusDir) ? fs.readdirSync(plusDir).filter(f => f.endsWith('.js')).sort().map(f => fs.readFileSync(path.join(plusDir, f), 'utf8')).join('\n') : '';
 const extSrc = fs.existsSync(extDir) ? fs.readdirSync(extDir).filter(f => f.endsWith('.js')).sort().map(f => fs.readFileSync(path.join(extDir, f), 'utf8')).join('\n') : '';
-vm.runInNewContext(fs.readFileSync(path.join(root, 'src', 'lessons.js'), 'utf8').replace('const L=', 'globalThis.L=') + '\n' + extSrc + "\n;globalThis.__x={KO:typeof KO_EXT!=='undefined'?KO_EXT:{},KOQ:typeof KOQ_EXT!=='undefined'?KOQ_EXT:{}};", ctx);
+vm.runInNewContext(fs.readFileSync(path.join(root, 'src', 'lessons.js'), 'utf8').replace('const L=', 'globalThis.L=') + '\n' + extSrc + '\n' + plusSrc + "\n;globalThis.__x={PLUS:typeof PLUS!=='undefined'?PLUS:{},KO:typeof KO_EXT!=='undefined'?KO_EXT:{},KOQ:typeof KOQ_EXT!=='undefined'?KOQ_EXT:{}};", ctx);
 const L = ctx.L || [];
 if (!L.length) errs.push('no lessons');
 const audioMap = JSON.parse(fs.readFileSync(path.join(root, 'src', 'audio-map.json'), 'utf8'));
@@ -33,6 +35,15 @@ for (const l of L.filter(l => l.no > 8)) {
   if (!ctx.__x.KO[l.no]) errs.push(`lesson ${l.no}: missing Korean teacher data (KO_EXT)`);
   else if (ctx.__x.KO[l.no].flow.length !== l.flow.length) errs.push(`lesson ${l.no}: KO flow length mismatch`);
   if (!ctx.__x.KOQ[l.no] || ctx.__x.KOQ[l.no].length !== l.quiz.length) errs.push(`lesson ${l.no}: KOQ mismatch`);
+  { const P = ctx.__x.PLUS[l.no];
+    if (P) {
+      if (!Array.isArray(P.d) || P.d.length < 4 || P.d.some(x => x.length !== 3 || !x.every(v => typeof v === 'string' && v.trim()))) errs.push(`lesson ${l.no}: plus.d`);
+      if (!Array.isArray(P.x) || P.x.length < 5 || P.x.some(x => x.length < 2 || !x[0] || !x[1])) errs.push(`lesson ${l.no}: plus.x`);
+      if (!Array.isArray(P.r) || P.r.length !== 2) errs.push(`lesson ${l.no}: plus.r`);
+      if (!Array.isArray(P.q) || P.q.length !== 4 || P.q.some(q => q.length !== 6 || !Array.isArray(q[2]) || q[2].length < 2 || !(q[3] >= 0 && q[3] < q[2].length) || new Set(q[2]).size !== q[2].length)) errs.push(`lesson ${l.no}: plus.q`);
+      if (!Array.isArray(P.t) || P.t.length !== 2 || !P.t[0] || !P.t[1]) errs.push(`lesson ${l.no}: plus.t`);
+    } else if (process.env.PLUS_ALL) errs.push(`lesson ${l.no}: plus missing`);
+  }
   if (l.flow.reduce((s, f) => s + f[0], 0) !== 60) errs.push(`lesson ${l.no}: flow is not 60 min`);
 }
 for (const l of L) {

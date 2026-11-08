@@ -10,6 +10,9 @@ const KOQ={
 8:[{q:'"선생님"의 뜻은?',e:'선생님＝先生.'},{q:'"꽃"의 발음은?',e:'받침 ㅊ은 [ㄷ] 소리.'},{q:'"일본어"의 발음은?',e:'ㄴ이 넘어가 [일보너].'},{q:'목을 조여서 내는 소리(경음)는?',e:'따가 경음, 타가 격음, 다가 평음.'},{q:'"まつもと"를 한글로 쓰면?',e:'"つ"는 쓰, 어중의 "と"는 토.'}]
 };
 if(typeof KOQ_EXT!=='undefined')Object.assign(KOQ,KOQ_EXT);
+/* 보강 퀴즈를 각 회차 퀴즈 뒤에 붙임 */
+if(typeof PLUS!=='undefined')for(const n in PLUS){const l=L.find(x=>x.no===+n),p=PLUS[n];if(!l||l._plus)continue;l._plus=1;
+  (p.q||[]).forEach(q=>{l.quiz.push({q:q[0],o:q[2],a:q[3],e:q[4]});(KOQ[n]=KOQ[n]||[]).push({q:q[1],e:q[5]})})}
 const KOG={'縦棒（ㅇの右につく）':'세로 모음 (ㅇ 오른쪽에)','横棒（ㅇの下につく）':'가로 모음 (ㅇ 아래에)','基本子音（平音）':'기본 자음 (평음)','激音（息を強く）':'격음 (숨을 세게)','濃音（のどを詰める）':'경음 (목을 조여서)','ㅐ・ㅔ の仲間':'ㅐ·ㅔ 계열','ㅗ・ㅜ ＋ 母音':'ㅗ·ㅜ ＋ 모음'};
 const TBL={ja:{2:'가나다表',3:'3段比較表',5:'7つの代表音',6:'発音の変化',7:'あいさつ表現'},ko:{2:'가나다표',3:'3단 비교표',5:'7가지 대표음',6:'발음 변화',7:'인사 표현'}};
 const TCOLS={3:['','평음','격음','경음'],5:['대표음','받침 글자','예','일본어로 치면'],6:['철자','발음','뜻(일본어)'],7:['한국어','발음','뜻·장면(일본어)']};
@@ -236,6 +239,7 @@ function pLearn(l){
       if(c!=='—'&&isKo(c)&&!/^［/.test(c)&&!/ㄱ ㅋ|ㄷ ㅌ|ㅂ ㅍ/.test(c)){const sv=(l.no===6||l.no===7)&&k===1?r[0]:c.replace(/［.*$/,'').replace(/（.*$/,'');return /[\uac00-\ud7a3]/.test(sv)?`<td class="ko" lang="ko" data-say="${esc(sv)}">${esc(c)}</td>`:`<td class="ko" lang="ko">${esc(c)}</td>`}
       return `<td>${esc(c)}</td>`}).join('')}</tr>`).join('')}</tbody></table></div></div>`}
   if(l.sheet)h+=`<div class="blk"><h3>${t.test}<em><button class="btn sm yellow" id="ansBtn">${t.showA}</button></em></h3><div class="sheetg" id="sheet">${l.sheet.map(s=>`<div class="sh"><h4>${s.t}</h4><small>${s.d}</small><ol>${s.items.map(x=>`<li><span lang="ko" class="ko">${esc(x[0])}</span><span class="ans" lang="ja">${esc(x[1])}</span></li>`).join('')}</ol></div>`).join('')}</div></div>`;
+  h+=pDialog(l);
   h+=`<div class="blk"><h3>${t.points}</h3><div class="bubbles">${l.points.map((p,k)=>`<div class="bub" style="--c:${cv(COL[(k+2)%6])}"><b>${esc(p[0])}</b>${esc(p[1])}</div>`).join('')}</div></div>`;
   if(teachView()){const k0=KO[l.no],L0=L.find(x=>x.no===l.no),k=LANG==='ko'?k0:{flow:L0.flow.map(f=>[f[1],f[2]]),practice:L0.practice,homework:L0.homework,memo:L0.memo};let acc=0;
     h+=`<div class="blk"><h3>⏱ ${t.flowT}</h3><div class="card teach"><div class="timebar">${l.flow.map((f,j)=>`<div style="flex:${f[0]};background:${cv(COL[j%6])}">${f[0]>=7?f[0]+(LANG==='ko'?'분':'分'):''}</div>`).join('')}</div>
@@ -245,8 +249,37 @@ function pLearn(l){
   }else{
     h+=`<div class="blk"><h3>🏠 ${t.hwT}</h3><div class="card teach"><ul class="ul">${l.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`;
   }
+  h+=pDrill(l)+pTip(l);
   h+=`<div class="blk"><h3>${t.print}<em>${t.printSub}</em></h3>${printCards(l.no)}</div>`;
   return h;
+}
+/* ---------- 보강: 회화 · 문형 연습 · 문화 메모 ---------- */
+const PT={ja:{dlg:'会話',tr:'訳',play:'▶ 通して聞く',stop:'■ 止める',drill:'練習ドリル',all:'答えを全部見る',hide:'答えをかくす',tap:'タップで答え',tip:'文化・表現メモ'},
+ ko:{dlg:'회화',tr:'번역',play:'▶ 전체 듣기',stop:'■ 멈추기',drill:'문형 연습',all:'정답 모두 보기',hide:'정답 숨기기',tap:'눌러서 정답',tip:'문화·표현 메모'}};
+const PL=no=>typeof PLUS!=='undefined'?PLUS[no]:null;
+function pDialog(l){const p=PL(l.no);if(!p||!p.d)return '';const a=PT[LANG],sp=p.d[0][0];
+  return `<div class="blk"><h3>💬 ${a.dlg}<em><button class="btn sm" id="dlgTr" aria-pressed="true">${a.tr}</button><button class="btn sm yellow" id="dlgPlay">${a.play}</button></em></h3>
+  <div class="dlg" id="dlg">${p.d.map(x=>`<div class="dl ${x[0]===sp?'l':'r'}"><span class="who" lang="ko">${esc(x[0])}</span><button class="bub2" data-say="${esc(x[1])}"><span class="k" lang="ko">${esc(x[1])}</span><span class="j" lang="ja">${esc(x[2])}</span></button></div>`).join('')}</div></div>`}
+function pDrill(l){const p=PL(l.no);if(!p||!p.x)return '';const a=PT[LANG];
+  return `<div class="blk"><h3>✏️ ${a.drill}<em><button class="btn sm yellow" id="drAll">${a.all}</button></em></h3>${p.r?`<p class="drq">${esc(p.r[LANG==='ko'?1:0])}</p>`:''}
+  <ol class="drill" id="drill">${p.x.map(x=>`<li><button class="dr" data-a="${esc(x[1])}"><span class="p">${esc(x[0])}</span><span class="ans"><b${isKo(x[1])?' lang="ko"':''}>${esc(x[1])}</b>${x[2]?`<small>${esc(x[2])}</small>`:''}</span><span class="tap">${a.tap}</span></button></li>`).join('')}</ol></div>`}
+function pTip(l){const p=PL(l.no);if(!p||!p.t)return '';return `<div class="blk"><h3>🌏 ${PT[LANG].tip}</h3><div class="card tipc">${esc(p.t[LANG==='ko'?1:0])}</div></div>`}
+function sayP(t){return new Promise(res=>{const c=cleanSay(t),h=AUDIO[c];
+  if(h){const a=acache[h]||(acache[h]=new Audio('audio/'+h+'.mp3'));curA=a;a.currentTime=0;a.onended=()=>res();a.onerror=()=>res();const p=a.play();if(p&&p.catch)p.catch(()=>res());return}
+  if(!('speechSynthesis' in window))return setTimeout(res,600);
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(c);u.lang='ko-KR';u.rate=.85;if(koVoice)u.voice=koVoice;u.onend=()=>res();u.onerror=()=>res();speechSynthesis.speak(u)}catch(e){res()}})}
+let dlgRun=0;
+function bindPlus(panel){
+  const tr=$('#dlgTr'),dl=$('#dlg');
+  if(tr&&dl){tr.onclick=()=>{const on=dl.classList.toggle('no-tr');tr.setAttribute('aria-pressed',String(!on))}}
+  const pb=$('#dlgPlay');
+  if(pb&&dl){const a=PT[LANG];pb.onclick=async()=>{if(dlgRun){dlgRun=0;pb.textContent=a.play;try{curA&&curA.pause();speechSynthesis.cancel()}catch(e){}return}
+    const id=dlgRun=Date.now();pb.textContent=a.stop;
+    for(const b of dl.querySelectorAll('.bub2')){if(dlgRun!==id||!b.isConnected)break;b.classList.add('playing');await sayP(b.dataset.say);b.classList.remove('playing');await new Promise(r=>setTimeout(r,250))}
+    if(dlgRun===id){dlgRun=0;if(pb.isConnected)pb.textContent=a.play}}}
+  const dr=$('#drill');
+  if(dr){dr.querySelectorAll('.dr').forEach(b=>b.onclick=()=>{const o=b.classList.toggle('open');if(o&&isKo(b.dataset.a))say(b.dataset.a)});
+    const all=$('#drAll'),a=PT[LANG];all.onclick=()=>{const open=!dr.classList.contains('all');dr.classList.toggle('all',open);dr.querySelectorAll('.dr').forEach(b=>b.classList.toggle('open',open));all.textContent=open?a.hide:a.all}}
 }
 function pCards(l){
   const t=T(),ws=words(l);if(!ws.length)return `<p class="empty">${t.noCards}</p>`;
@@ -280,7 +313,7 @@ function bindSay(root=document){root.querySelectorAll('[data-say]').forEach(b=>b
 function bindLesson(no,tab){
   const l=V(L.find(x=>x.no===no)),t=T(),panel=$('#panel');
   if(!panel)return;
-  bindSay(panel);preload([...panel.querySelectorAll('[data-say]')].slice(0,40).map(e=>e.dataset.say));
+  bindSay(panel);preload([...panel.querySelectorAll('[data-say]')].slice(0,40).map(e=>e.dataset.say));bindPlus(panel);
   const ab=$('#ansBtn');if(ab)ab.onclick=()=>{const s=$('#sheet');s.classList.toggle('show-ans');ab.textContent=s.classList.contains('show-ans')?t.hideA:t.showA};
   if(tab==='cards'&&$('#fc')){
     const ws=words(l),f=fcState;
