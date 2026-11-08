@@ -695,6 +695,32 @@ section.card:has(>.pform){padding:16px;margin-bottom:12px}
 .urow{display:flex;gap:12px;align-items:flex-start;padding:14px}.urow.pend{background:color-mix(in srgb,var(--orange) 22%,var(--card))}
 .urow .ui{flex:1;min-width:0}.urow .ui b{display:block}.urow .ui small{display:block;color:var(--ink3);font-weight:700;font-size:12px;word-break:break-all}.urow .ub{margin-top:4px}
 .urow .ua{display:grid;gap:6px}
+
+/* ---------- 선생님 모드 ---------- */
+.mbadge{flex-shrink:0;font-size:11.5px;font-weight:900;background:var(--sky);color:var(--on);border:2px solid var(--line);border-radius:999px;padding:3px 9px;white-space:nowrap;box-shadow:var(--sh-s)}
+@media(max-width:430px){body.tmode .brand .bt{display:none}}
+body.tmode{--accent:var(--sky)}
+body.tmode header.top{box-shadow:inset 0 -3px 0 var(--sky)}
+body.tmode .tabbar a.on{background:var(--sky)}
+body.tmode .thero{background:var(--sky)}
+.tnext{display:flex;flex-direction:column;gap:2px;padding:14px;margin-bottom:12px;background:var(--card);color:var(--ink)}
+.tnext small{font-size:12px;font-weight:900;color:var(--ink3)}.tnext b{font-size:17px;line-height:1.35}.tnext>span{font-size:13px;color:var(--ink2);font-weight:700}
+.tnb{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}.tnb .btn{justify-content:center;text-align:center;white-space:nowrap}
+.th-btns.two{grid-template-columns:1fr 1fr}
+.stc.tst .stf{margin-top:8px}
+.ls.tp{font-size:16px;background:none;border:0}
+.tprev{margin:0 0 14px;padding:10px 14px;border:2px dashed var(--line);border-radius:14px;font-size:13px;font-weight:900;color:var(--ink2);background:color-mix(in srgb,var(--sky) 18%,var(--card))}
+.tfor{display:block;margin-top:10px;padding-top:10px;border-top:2px dashed color-mix(in srgb,var(--ink) 15%,transparent);color:var(--ink2);font-size:12.5px;line-height:1.6}.tfor b{display:block;font-size:11.5px;color:var(--ink3)}
+.tipc p{margin:0}
+.qkey{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.qkey li{padding:12px 14px}.qkey li>b{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;line-height:1.5}
+.qkey .qn{flex-shrink:0;font-size:11px;font-weight:900;background:var(--yellow);color:var(--on);border:2px solid var(--line);border-radius:999px;padding:1px 7px;margin-top:2px}
+.qkey .qo{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.qkey .qo span{font-size:13.5px;font-weight:700;padding:3px 10px;border-radius:999px;border:2px solid color-mix(in srgb,var(--ink) 20%,transparent);color:var(--ink2)}
+.qkey .qo span.ok{background:var(--mint);border-color:var(--line);color:var(--on);font-weight:900}
+.qkey small{display:block;font-size:12.5px;color:var(--ink2);line-height:1.55}
+.tqk{margin:0 0 10px}
+.prwrap{padding:16px}
 </style>
 </head>
 <body>
