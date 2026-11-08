@@ -16,11 +16,12 @@ const dist = path.join(root, 'dist');
 fs.rmSync(dist, { recursive: true, force: true });
 fs.cpSync(path.join(root, 'public'), dist, { recursive: true });
 
+const plusFiles = fs.existsSync(path.join(root, 'src', 'lessons-plus')) ? fs.readdirSync(path.join(root, 'src', 'lessons-plus')).filter(f => f.endsWith('.js')).sort() : [];
 const extFiles = fs.existsSync(path.join(root, 'src', 'lessons-ext')) ? fs.readdirSync(path.join(root, 'src', 'lessons-ext')).filter(f => f.endsWith('.js')).sort() : [];
 const audioMap = JSON.parse(src('audio-map.json'));
 let app = src('app.js').replace('/*__AUDIO__*/{}', JSON.stringify(audioMap));
 let html = src('template.html')
-  .replace('/*__LESSONS__*/', () => [src('lessons.js'), ...extFiles.map(f => src('lessons-ext/' + f))].join('\n'))
+  .replace('/*__LESSONS__*/', () => [src('lessons.js'), ...extFiles.map(f => src('lessons-ext/' + f)), ...plusFiles.map(f => src('lessons-plus/' + f))].join('\n'))
   .replace('/*__SYLLABUS__*/', () => src('syllabus.js'))
   .replace('/*__PRINT__*/', () => src('print.js'))
   .replace('/*__MASCOT__*/', () => src('kana.js') + '\n' + src('mascot.js'))

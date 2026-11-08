@@ -27,7 +27,7 @@ for t in u:
             a16=resample_poly(a,160,441).astype(np.float32);segs,_=asr.transcribe(a16,language='ko',beam_size=3);hyp=''.join(s.text for s in segs);c=cer(t,hyp)
         else:c,hyp=0,''
         if best is None or c<best[0]:best=(c,a,hyp)
-        if c==0:break
+        if c<=float(os.environ.get('CER_OK','0')):break
     c,a,hyp=best
     # trim silence
     thr=0.01*np.max(np.abs(a));idx=np.where(np.abs(a)>thr)[0]
