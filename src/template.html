@@ -414,6 +414,9 @@ body.pmode main>.wrap{max-width:none;padding:0}
 .ln{display:grid;grid-template-columns:8mm 1fr 1fr;gap:6px;align-items:end;padding:5px 0;border-bottom:1.5px solid #cfcad9;font-size:10pt}
 .ln .n{font-weight:900;color:#f2a2bf}
 .ln .q{font-family:"Noto Sans KR",sans-serif;font-weight:700;font-size:12pt}
+.ln.drl{grid-template-columns:8mm 1.15fr 1fr}.ln .q2{font-size:10pt;line-height:1.45}
+.dlgt td.ko{text-align:left;font-family:"Noto Sans KR",sans-serif;font-size:11pt}.dlgt .jt{font-family:"Zen Maru Gothic",sans-serif;font-size:8.5pt;color:#6b6680;font-weight:500;margin-top:1px}.dlgt th{text-align:center}
+.drq2{font-size:9pt;color:#575270;margin:0 0 4px}
 .ln .a{color:#575270;font-size:8.5pt;text-align:right}
 .match{display:grid;grid-template-columns:1fr 18mm 1fr;align-items:center;row-gap:6px}
 .match .l,.match .r{border:1.5px solid #3a3650;border-radius:8px;padding:4px 10px;display:flex;align-items:center;gap:8px}
@@ -618,6 +621,29 @@ html,body{touch-action:manipulation}
 .gotc{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;font-size:13px;font-weight:900;color:var(--ink2);min-height:36px}
 #fGot{transition:background .2s}
 
+
+/* ---------- 보강: 회화 · 드릴 · 메모 ---------- */
+.blk h3 em .btn+.btn{margin-left:6px}
+.dlg{display:grid;gap:10px}
+.dl{display:flex;flex-direction:column;align-items:flex-start;max-width:88%}
+.dl.r{align-self:flex-end;align-items:flex-end;margin-left:auto}
+.dl .who{font-size:11.5px;font-weight:900;color:var(--ink3);margin:0 8px 3px}
+.bub2{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 14px;border-radius:18px 18px 18px 6px;border:var(--bw) solid var(--line);background:var(--card);box-shadow:var(--sh-s);font:inherit;color:inherit;cursor:pointer;transition:transform .12s}
+.dl.r .bub2{border-radius:18px 18px 6px 18px;background:color-mix(in srgb,var(--c,var(--yellow)) 32%,var(--card))}
+.bub2 .k{font-size:17px;font-weight:700;line-height:1.45}
+.bub2 .j{font-size:13px;color:var(--ink2);font-weight:700;line-height:1.5}
+.dlg.no-tr .bub2 .j{display:none}
+.bub2.playing{transform:scale(1.03);outline:3px solid var(--yellow);outline-offset:2px}
+.drq{font-size:13.5px;font-weight:700;color:var(--ink2);margin:-2px 0 10px}
+.drill{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:dr}
+.drill li{counter-increment:dr}
+.dr{width:100%;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;text-align:left;padding:11px 14px;border-radius:16px;border:var(--bw) solid var(--line);background:var(--card);box-shadow:var(--sh-s);font:inherit;color:inherit;cursor:pointer}
+.dr::before{content:counter(dr);grid-row:span 2;width:24px;height:24px;border-radius:50%;background:var(--yellow);color:var(--on);border:2px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:900}
+.dr .p{font-weight:700;font-size:15px;line-height:1.5}
+.dr .ans{display:none;flex-direction:column}.dr .ans b{font-size:16px;color:color-mix(in srgb,var(--c,var(--pink)) 60%,var(--ink))}.dr .ans small{font-size:12px;color:var(--ink3);font-weight:700}
+.dr .tap{font-size:11.5px;color:var(--ink3);font-weight:900}
+.dr.open .ans{display:flex}.dr.open .tap{display:none}.dr.open{background:color-mix(in srgb,var(--mint) 18%,var(--card))}
+.tipc{padding:14px 16px;font-size:14px;line-height:1.75;font-weight:700;background:color-mix(in srgb,var(--sky) 20%,var(--card))}
 /* ---------- auth · role ---------- */
 .auth{min-height:calc(100dvh - 140px);display:grid;place-items:center;padding:18px 0 40px}
 .auth-c{width:100%;max-width:420px;padding:26px 22px 20px;text-align:center}
