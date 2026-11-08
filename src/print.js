@@ -64,7 +64,7 @@ const DOCS=[['text','学習テキスト','学生用 · 日本語','📗','mint']
 const pdfUrl=(no,t)=>`pdf/l${no}-${t}.pdf`;
 function printCards(no){
   const t=T();
-  return `<div class="prints">${docsFor().map(d=>`<div class="pc" style="--c:${cv(d[4])}"><div class="pt"><span class="ic">${d[3]}</span><div><b>${t.docs[d[0]][0]}</b><small>${t.docs[d[0]][1]}</small></div></div><div class="pa"><a class="btn" href="${pdfUrl(no,d[0])}" data-dl="${esc(lessonDl(no,d[0]))}">⬇ PDF</a><a class="btn" href="#/print/${no}/${d[0]}">${t.view}</a></div></div>`).join('')}</div><a class="btn block pall" href="${pdfUrl(no,'text')}" data-dl="${esc(lessonDlAll(no))}" data-label="${esc(t.no?t.no(no):'#'+no)} · ${DT().all}">⬇ ${DT().all}（PDF×${docsFor().length}）</a>`;
+  return `<div class="prints">${(teachView()?[...docsFor()].sort((a,b)=>(b[0]==='guide')-(a[0]==='guide')):docsFor()).map(d=>`<div class="pc" style="--c:${cv(d[4])}"><div class="pt"><span class="ic">${d[3]}</span><div><b>${t.docs[d[0]][0]}</b><small>${t.docs[d[0]][1]}</small></div></div><div class="pa"><a class="btn" href="${pdfUrl(no,d[0])}" data-dl="${esc(lessonDl(no,d[0]))}">⬇ PDF</a><a class="btn" href="#/print/${no}/${d[0]}">${t.view}</a></div></div>`).join('')}</div><a class="btn block pall" href="${pdfUrl(no,'text')}" data-dl="${esc(lessonDlAll(no))}" data-label="${esc(t.no?t.no(no):'#'+no)} · ${DT().all}">⬇ ${DT().all}（PDF×${docsFor().length}）</a>`;
 }
 const PAD=n=>String(n).padStart(2,'0');
 function tableKo(l,r,c,k){return c!=='—'&&isKo(c)&&!/^［/.test(c)&&!/ㄱ ㅋ|ㄷ ㅌ|ㅂ ㅍ/.test(c)&&!((l.no===2||l.no===3)&&k===0)&&!(l.table.left||[]).includes(k)}
