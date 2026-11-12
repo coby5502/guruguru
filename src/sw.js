@@ -12,3 +12,8 @@ self.addEventListener('fetch',e=>{
     e.respondWith(caches.match(r).then(hit=>{const net=fetch(r).then(res=>{if(res.ok||res.type==='opaque'){const cp=res.clone();caches.open(V).then(c=>c.put(r,cp))}return res}).catch(()=>hit);return hit||net}));
   }
 });
+// 웹 푸시 알림
+self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(_){d={title:'ぐるぐる',body:e.data&&e.data.text()}}
+  e.waitUntil(self.registration.showNotification(d.title||'ぐるぐる',{body:d.body||'',tag:d.tag||undefined,renotify:!!d.tag,icon:'icons/icon-192.png',badge:'icons/icon-192.png',data:{url:d.url||'/'}}))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const url=new URL(e.notification.data&&e.notification.data.url||'/',self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if(c.url.startsWith(self.location.origin)){c.focus();return c.navigate(url)}}return self.clients.openWindow(url)}))});

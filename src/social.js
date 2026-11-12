@@ -42,7 +42,7 @@ const lessonsOn=()=>authed()&&AUTH==='in'&&(isTeacherMe()||isStudentMe());
 let sumT=0;
 async function loadSummary(){if(!lessonsOn())return;try{SOC.sum=await api('GET','/summary');paintBadge()}catch(e){}}
 function sumSoon(){clearTimeout(sumT);sumT=setTimeout(loadSummary,250)}
-function paintBadge(){const a=$('#tabs a[href="#/lessons"]');if(!a)return;const n=(SOC.sum.unread||0)+(SOC.sum.requests||0);
+function paintBadge(){const a=$('#tabs a[href="#/lessons"]');if(!a)return;const n=(SOC.sum.unread||0)+(SOC.sum.requests||0)+(SOC.sum.todo||0);
   let b=a.querySelector('.tbadge');if(!n){if(b)b.remove();return}if(!b){b=document.createElement('b');b.className='tbadge';a.appendChild(b)}b.textContent=n>99?'99+':n}
 let ES=null,esOk=false;
 function sseStart(){if(ES||!lessonsOn()||!window.EventSource)return;
@@ -52,6 +52,7 @@ function sseStop(){if(ES){ES.close();ES=null;esOk=false}}
 function onEvent(d){
   const r=route();sumSoon();
   if(r.v==='chat'&&d.matchId===r.id){if(d.t==='read')$$('#cmsgs .cm.me').forEach(x=>x.classList.add('rd'));else chatPull();return}
+  if(r.v==='notes'&&d.matchId===r.id){loadNotes(r.id);return}
   if(r.v==='lessons'||r.v==='book'){loadHub(true);return}
   if(d.t==='msg')toast(S_().newMsg);else if(d.t==='match')toast(S_().newReq);else if(d.t==='slot')toast(S_().updated);
 }
@@ -64,7 +65,7 @@ function socialTick(){hookStore();if(authed()&&AUTH==='in'&&!socialTick.pg){soci
 async function loadHub(silent){
   if(!lessonsOn())return;SOC.busy++;
   try{const t=isTeacherMe();const [m,s,x]=await Promise.all([api('GET','/matches'),api('GET','/schedule'),t?api('GET','/slots'):api('GET','/teachers')]);
-    SOC.matches=m.matches;SOC.schedule=s.lessons;SOC.at=Date.now();if(t)SOC.slots=x.slots;else SOC.teachers=x.teachers;SOC.err=false}
+    SOC.matches=m.matches;SOC.schedule=s.lessons;SOC.at=Date.now();loadTodo();if(t)SOC.slots=x.slots;else SOC.teachers=x.teachers;SOC.err=false}
   catch(e){SOC.err=true}
   SOC.busy--;const r=route();if(r.v==='lessons'||(r.v==='book'&&!silent))render(true);sumSoon();
 }
@@ -92,7 +93,7 @@ function vLessons(){
   const t=isTeacherMe(),ms=SOC.matches,act=ms.filter(m=>m.status==='accepted'),pend=ms.filter(m=>m.status==='pending'),old=ms.filter(m=>!['accepted','pending'].includes(m.status));
   const mrow=m=>`<a class="card mrow" href="#/chat/${m.id}">${peerHead(m.peer)}<div class="mr">${stPill(m.status)}${m.unread?`<b class="ub2">${m.unread}</b>`:''}</div>
     ${m.last&&m.last.kind!=='sys'?`<p class="ml">${esc(m.last.body)}</p>`:''}${m.next?`<p class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</p>`:''}</a>`;
-  let h=`<div class="h2 first"><span>${o.tab}</span></div>`;
+  let h=`<div class="h2 first"><span>${o.tab}</span></div>${pushCard()}`+todoBlock();
   if(t){
     h+=`<div class="h2"><span>📨 ${o.reqs}</span>${pend.length?`<span class="tag">${pend.length}</span>`:''}</div>`;
     h+=pend.length?pend.map(m=>`<div class="card req">${peerHead(m.peer)}${m.last&&m.last.kind!=='sys'?`<p class="ml q">${esc(m.last.body)}</p>`:''}
@@ -134,7 +135,7 @@ function slotsEditor(){
 const arm={};
 function armed(key,el,msg){if(arm[key]&&Date.now()-arm[key]<4000){delete arm[key];return true}arm[key]=Date.now();el.textContent=msg;return false}
 function bindLessons(){
-  const o=S_(),app=$('#app');
+  const o=S_(),app=$('#app');bindPush();
   const rb=$('#hubRetry');if(rb)rb.onclick=()=>loadHub();
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('POST','/matches/'+b.dataset.id,{action:b.dataset.act});if(b.dataset.act==='accept')location.hash='#/chat/'+b.dataset.id;else loadHub()}catch(e){toast(A().err);b.disabled=false}});
   app.querySelectorAll('.apf').forEach(f=>f.onsubmit=async e=>{e.preventDefault();const btn=f.querySelector('button');btn.disabled=true;
@@ -197,7 +198,8 @@ function vChat(id){
 function chatHead(){
   const o=S_(),m=CH.m,t=m.side==='teacher';
   $('#chead').innerHTML=`<div class="card chc">${peerHead(m.peer,stPill(m.status))}
-    ${m.status==='accepted'?`<div class="cact">${t?`<a class="btn sm sky" href="#/lessons">🕒 ${o.openSlots}</a><a class="btn sm" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:`<a class="btn sm sky" href="#/book/${m.id}">📅 ${o.book}</a>`}${m.next?`<span class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</span>`:''}<button class="lnk danger" id="chEnd">${o.end}</button></div>`:''}
+    ${m.status==='accepted'?`<div class="cact">${t?`<a class="btn sm sky" href="#/lessons">🕒 ${o.openSlots}</a><a class="btn sm" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:`<a class="btn sm sky" href="#/book/${m.id}">📅 ${o.book}</a>`}${m.next?`<span class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</span>`:''}<a class="btn sm" href="#/notes/${m.id}">📒 ${NOX().t}</a><button class="lnk danger" id="chEnd">${o.end}</button></div>`:''}
+    ${m.status==='ended'?`<div class="cact"><a class="btn sm" href="#/notes/${m.id}">📒 ${NOX().t}</a></div>`:''}
     ${m.status==='pending'&&t?`<div class="cact"><b class="rq">📨 ${o.reqBanner}</b><button class="btn sm mint" data-ca="accept">${o.accept}</button><button class="btn sm" data-ca="decline">${o.decline}</button></div>`:''}
     ${m.status==='pending'&&!t?`<div class="cact"><span class="mn2">⏳ ${o.waitT}</span><button class="lnk danger" data-ca="cancel">${o.cancelReq}</button></div>`:''}</div>`;
   $$('#chead [data-ca]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('POST','/matches/'+m.id,{action:b.dataset.ca});SOC.matches=null;chatPull(true)}catch(e){toast(A().err);b.disabled=false}});

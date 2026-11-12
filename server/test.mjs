@@ -17,7 +17,7 @@ Object.assign(process.env, {
   DB_PATH: path.join(dir, 't.db'), SITE_DIR: dir, COOKIE_SECURE: '0', GOOGLE_JWKS_URL: `http://127.0.0.1:${jw.address().port}/`,
 });
 fs.mkdirSync(path.join(dir, 'pdf')); fs.writeFileSync(path.join(dir, 'pdf', 'l1-guide.pdf'), '%PDF-test');
-const { server } = await import('./server.mjs');
+const { server, encryptPush } = await import('./server.mjs');
 await new Promise(r => server.listen(0, r));
 const base = `http://127.0.0.1:${server.address().port}`;
 
@@ -244,6 +244,55 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   x = await call('GET', `/api/slots?teacher=${t2.j.id}`, { cookie: s3.cookie }); assert.equal(x.j.slots.find(s => s.mode === 'online').url, '');
   await call('POST', `/api/slots/${on.id}/book`, { cookie: s3.cookie });
   x = await call('GET', '/api/schedule', { cookie: s3.cookie }); assert.equal(x.j.lessons[0].url, 'https://zoom.us/j/123');
+}
+
+// ===== 웹 푸시 암호화(RFC 8291) 왕복 · 수업 기록 · 숙제 =====
+{
+  const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+  const authS = crypto.randomBytes(16);
+  const enc = encryptPush('{"title":"안녕"}', ua.getPublicKey().toString('base64url'), authS.toString('base64url'));
+  const salt = enc.subarray(0, 16), rs = enc.readUInt32BE(16), idl = enc[20], as = enc.subarray(21, 21 + idl), ct = enc.subarray(21 + idl);
+  assert.equal(rs, 4096); assert.equal(idl, 65);
+  const shared = ua.computeSecret(as);
+  const ikm = Buffer.from(crypto.hkdfSync('sha256', shared, authS, Buffer.concat([Buffer.from('WebPush: info\0'), ua.getPublicKey(), as]), 32));
+  const cek = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: aes128gcm\0'), 16));
+  const nonce = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: nonce\0'), 12));
+  const d = crypto.createDecipheriv('aes-128-gcm', cek, nonce); d.setAuthTag(ct.subarray(ct.length - 16));
+  const pt = Buffer.concat([d.update(ct.subarray(0, ct.length - 16)), d.final()]);
+  assert.equal(pt.subarray(0, pt.length - 1).toString(), '{"title":"안녕"}'); assert.equal(pt[pt.length - 1], 2);
+
+  const s4 = await login('ss4', 'ss4@example.com', 'Rin'); await call('PUT', '/api/me', { cookie: s4.cookie, body: { name: 'りん', role: 'student' } });
+  let x = await call('GET', '/api/push', { cookie: s4.cookie }); assert.equal(Buffer.from(x.j.key, 'base64url').length, 65);
+  assert.equal((await call('POST', '/api/push', { cookie: s4.cookie, body: { endpoint: 'http://evil', keys: {} } })).s, 400);
+  assert.equal((await call('POST', '/api/push', { cookie: s4.cookie, body: { endpoint: 'https://push.invalid/abc', keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: authS.toString('base64url') } } })).s, 200);
+  x = await call('GET', '/api/push', { cookie: s4.cookie }); assert.equal(x.j.subscribed, 1);
+  await call('DELETE', '/api/push', { cookie: s4.cookie, body: { endpoint: 'https://push.invalid/abc' } });
+
+  // 지난 레슨 하나 만들기(DB 직접): 매칭 → 슬롯 예약 후 시작 시각을 과거로
+  const t3 = await login('tt3', 'tt3@example.com', 'Choi'); await call('PUT', '/api/me', { cookie: t3.cookie, body: { name: '최선생', role: 'teacher' } });
+  await call('POST', `/api/admin/users/${t3.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
+  const mt = await call('POST', '/api/matches', { cookie: s4.cookie, body: { teacherId: t3.j.id } });
+  await call('POST', `/api/matches/${mt.j.id}`, { cookie: t3.cookie, body: { action: 'accept' } });
+  const st0 = Math.floor(Date.now() / 1000 / 3600) * 3600 + 5 * 3600;
+  x = await call('POST', '/api/slots', { cookie: t3.cookie, body: { slots: [{ start: st0, dur: 60 }] } });
+  const sid = x.j.slots[0].id; await call('POST', `/api/slots/${sid}/book`, { cookie: s4.cookie });
+  const { DatabaseSync } = await import('node:sqlite'); const db2 = new DatabaseSync(process.env.DB_PATH); db2.prepare('UPDATE slots SET start=? WHERE id=?').run(st0 - 3 * 86400, sid); db2.close();
+  x = await call('GET', '/api/todo', { cookie: t3.cookie }); assert.equal(x.j.teacher.length, 1);
+  assert.equal((await call('PUT', `/api/slots/${sid}/note`, { cookie: s4.cookie, body: { summary: 'x' } })).s, 403);
+  assert.equal((await call('PUT', `/api/slots/${sid}/note`, { cookie: t3.cookie, body: { summary: '자기소개 연습', good: '발음이 좋아요', homework: '문장 5개 쓰기' } })).s, 200);
+  x = await call('GET', '/api/todo', { cookie: s4.cookie }); assert.equal(x.j.student.length, 1);
+  assert.equal((await call('POST', `/api/slots/${sid}/homework`, { cookie: s4.cookie, body: { text: '저는 린입니다.' } })).s, 200);
+  const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(500, 3)]);
+  const up = await fetch(base + `/api/slots/${sid}/hwimage`, { method: 'POST', headers: { cookie: s4.cookie, origin: 'https://guruguru.app', 'content-type': 'image/jpeg' }, body: jpg });
+  const img = (await up.json()).image; assert.match(img, /^\/api\/media\//);
+  assert.equal((await fetch(base + img, { headers: { cookie: t3.cookie } })).status, 200);
+  assert.equal((await fetch(base + img, { headers: { cookie: te.cookie } })).status, 404);
+  x = await call('GET', '/api/todo', { cookie: s4.cookie }); assert.equal(x.j.student.length, 0);
+  x = await call('GET', '/api/todo', { cookie: t3.cookie }); assert.equal(x.j.teacher.length, 1, 'feedback pending');
+  assert.equal((await call('PUT', `/api/slots/${sid}/feedback`, { cookie: t3.cookie, body: { text: '잘했어요!' } })).s, 200);
+  x = await call('GET', `/api/matches/${mt.j.id}/notes`, { cookie: s4.cookie });
+  assert.equal(x.j.notes[0].summary, '자기소개 연습'); assert.equal(x.j.notes[0].fbText, '잘했어요!'); assert.equal(x.j.notes[0].hwText, '저는 린입니다.');
+  assert.equal((await call('GET', `/api/matches/${mt.j.id}/notes`, { cookie: te.cookie })).s, 404);
 }
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });
