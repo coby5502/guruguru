@@ -40,7 +40,7 @@ function vAdmin(){
 function adDash(){const o=ADX(),s=ADM.stats,su=s.signups||[],mx=Math.max(1,...su.map(x=>x.n)),pend=ADC.users.filter(u=>u.teacherStatus==='pending');
   return `${admInner().replace(/<div class="h2 first">[\s\S]*?<\/div>/,'').replace(/<div class="h2"><span>⚠️[\s\S]*$/,'')}
   <div class="h2"><span>📈 ${o.signups}</span></div><div class="card bars">${su.length?su.map(x=>`<div title="${x.d}: ${x.n}"><i style="height:${x.n/mx*100}%"></i><small>${x.d.slice(5)}</small></div>`).join(''):`<p class="note">${o.none}</p>`}</div>
-  ${pend.length?`<div class="h2"><span>⏳ ${o.pendingT}</span><span class="tag">${pend.length}</span></div>${pend.map(adRow).join('')}`:''}
+  ${pend.length?`<div class="h2"><span>⏳ ${o.pendingT}</span><span class="tag">${pend.length}</span></div>${pend.map(u=>adRow(u).replace('</a>',`${u.career?`<small class="apcar">${esc(u.career.slice(0,90))}</small>`:''}</a>`)).join('')}`:''}
   ${ADC.logs?`<div class="h2"><span>🔑 ${o.recentLogin}</span></div><div class="card adl">${ADC.logs.logins.slice(0,10).map(l=>`<a href="#/admin/u/${l.uid}"><b>${esc(l.name||l.email)}</b><span>${fdt(l.at)}</span></a>`).join('')}</div>`:''}`}
 function adRow(u){const o=ADX();return `<a class="card urow2" href="#/admin/u/${u.id}">${avatar(u)}<div class="ui"><b>${esc(u.name||'—')} ${gradeB(u.grade)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}${u.suspended?`<span class="rb st-rejected">${o.f.suspended}</span>`:''}</div></div><small class="ul">${o.last}<br>${fd(u.lastLogin)}</small></a>`}
 function adFilter(u){const f=ADC.f,q=ADC.q.trim().toLowerCase();
@@ -61,6 +61,8 @@ function adUser(d){const o=ADX(),u=d.user,a=A(),me=ME;
     <div class="ua">${u.role==='teacher'&&u.teacherStatus!=='approved'?`<button class="btn sm mint" data-ua="approve">${o.approve}</button>`:''}${u.role==='teacher'&&u.teacherStatus==='pending'?`<button class="btn sm" data-ua="reject">${o.reject}</button>`:''}${u.role==='teacher'&&!u.admin?`<button class="btn sm" data-ua="student">${o.toStu}</button>`:''}
       ${u.admin||u.superAdmin?'':u.suspended?`<button class="btn sm" data-ua="unsuspend">${o.unsuspend}</button>`:`<button class="btn sm ghost" data-ua="suspend">${o.suspend}</button>`}
       ${ME&&ME.superAdmin&&!u.superAdmin?(u.admin?`<button class="btn sm" data-ua="removeAdmin">${o.removeAdmin}</button>`:`<button class="btn sm yellow" data-ua="makeAdmin">🛡 ${o.makeAdmin}</button>`):''}</div>
+    ${u.role==='teacher'&&(u.career||u.applyAt)?`<div class="apr"><b>${APX().careerL} · ${APX().appliedAt} ${fd(u.applyAt)}</b>${esc(u.career||'—').replace(/\n/g,'<br>')}</div>`:''}
+    ${u.role==='teacher'&&u.teacherStatus==='pending'?`<label><span>${APX().rejReason}</span><input id="adRej" maxlength="300"></label>`:''}${u.rejectReason?`<div class="apr"><b>${APX().reason}</b>${esc(u.rejectReason)}</div>`:''}
     <label><span>${o.memo}</span><textarea id="adMemo" rows="3" maxlength="2000">${esc(u.memo||'')}</textarea></label><button class="btn sm" id="adMemoSave">${o.memoSave}</button></section>
   ${adSec('👤 '+o.profile,`<div class="mekv">${kv(a.level,esc(a.levels[u.level]||''))}${kv(a.goal,esc(u.goal))}${kv(a.bio,esc(u.bio))}${kv(PX().intro,esc(u.intro||'').replace(/\n/g,'<br>'))}${u.role==='teacher'?kv(PX().modeQ,PX()[u.modes||'online']):''}${kv(PX().places,(u.places||[]).map(p=>esc(p.name)).join(', '))}${kv(PX().meetUrl,u.meetUrl?esc(u.meetUrl):'')}</div>${tagChips(u.ptags)}${(u.tags||[]).length?`<div class="tags">${u.tags.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}${snsLinks(u.sns)}${mediaBlock(u)}`)}
   ${adSec('🧪 '+o.tests,d.tests.length?d.tests.map(t=>`<div class="adr"><span>${fdt(t.at)}</span><b>STEP ${t.step}</b><em>${t.score}/${t.total}</em></div>`).join(''):o.none)}
@@ -84,7 +86,35 @@ function bindAdmin(){
   const q0=$('#adQ');if(q0)q0.oninput=()=>{ADC.q=q0.value;$('#adList').innerHTML=ADC.users.filter(adFilter).map(adRow).join('')||`<p class="empty">${ADX().none}</p>`};
   $$('[data-af]').forEach(b=>b.onclick=()=>{ADC.f=b.dataset.af;render(true)});
   const act=async body=>{try{const u=await api('POST','/admin/users/'+ADC.did,body);if(ADC.detail)ADC.detail.user={...ADC.detail.user,...u};if(ADC.users)ADC.users=ADC.users.map(x=>x.id===u.id?u:x);ADC.logs=null;toast(A().saved);render(true)}catch(e){toast(e.status===403?'403':A().err)}};
-  $$('[data-ua]').forEach(b=>b.onclick=()=>{b.disabled=true;act({action:b.dataset.ua})});
+  $$('[data-ua]').forEach(b=>b.onclick=()=>{b.disabled=true;act({action:b.dataset.ua,reason:b.dataset.ua==='reject'&&$('#adRej')?$('#adRej').value:undefined})});
   const g=$('#adGrade');if(g)g.onchange=()=>act({action:'grade',grade:g.value});
   const ms=$('#adMemoSave');if(ms)ms.onclick=()=>act({action:'memo',memo:$('#adMemo').value});
 }
+
+/* ======================= 선생님 신청 · 대기 ======================= */
+const APT={ja:{studentNow:'登録後すぐに学習を始められます',teacherFlow:'申請 → 管理者の承認後に授業資料・レッスン機能が開きます',career:'先生の申請：韓国語を教えた経験・資格など（必須）',careerPh:'例）日本の語学教室で3年間講師。TOPIK 6級。初級〜中級の会話レッスンが得意です。',
+  appT:'先生の申請',s1:'申請完了',s2:'審査中',s3:'承認',waitT:'ただいま審査中です',waitS:d=>`${d} に申請 · ふつう1〜3日でお知らせします`,rejT:'今回は承認されませんでした',rejS:'内容を見直して、もう一度申請できます',reason:'理由',
+  edit:'申請内容を修正',reapply:'もう一度申請する',withdraw:'申請を取り消して学生として使う',withdrawC:'もう一度押すと学生に切り替わります',prepT:'承認までに準備しておきましょう',prep:{photo:'プロフィール写真',intro:'自己紹介',tags:'タグ',gallery:'紹介写真',video:'自己紹介動画',online:'ビデオ通話リンク・対面の場所'},
+  meanwhile:'承認までは学生向けの画面で教材を見られます',approvedT:'先生として承認されました！ 🎉',applies:n=>`先生の申請 ${n}件`,rejReason:'不承認の理由（申請者に表示）',careerL:'申請内容（経験・資格）',appliedAt:'申請日'},
+ ko:{studentNow:'가입하면 바로 공부를 시작할 수 있어요',teacherFlow:'신청 → 관리자 승인 후 수업 자료·레슨 기능이 열려요',career:'선생님 신청: 한국어를 가르친 경험·자격 등 (필수)',careerPh:'예) 일본 어학원에서 3년간 강사. TOPIK 6급. 초·중급 회화 수업에 자신 있어요.',
+  appT:'선생님 신청',s1:'신청 완료',s2:'검토 중',s3:'승인',waitT:'지금 검토 중이에요',waitS:d=>`${d} 신청 · 보통 1~3일 안에 알려 드려요`,rejT:'이번에는 승인되지 않았어요',rejS:'내용을 보완해서 다시 신청할 수 있어요',reason:'사유',
+  edit:'신청 내용 수정',reapply:'다시 신청하기',withdraw:'신청을 취소하고 학생으로 이용',withdrawC:'한 번 더 누르면 학생으로 바뀌어요',prepT:'승인 전에 미리 준비해 두세요',prep:{photo:'프로필 사진',intro:'자기소개',tags:'태그',gallery:'소개 사진',video:'자기소개 영상',online:'화상 링크·대면 장소'},
+  meanwhile:'승인 전까지는 학생 화면에서 교재를 볼 수 있어요',approvedT:'선생님으로 승인됐어요! 🎉',applies:n=>`선생님 신청 ${n}건`,rejReason:'반려 사유 (신청자에게 보여요)',careerL:'신청 내용 (경험·자격)',appliedAt:'신청일'}};
+const APX=()=>APT[LANG];
+function applyCard(){
+  if(!authed()||!ME||ME.role!=='teacher'||ME.admin||ME.teacherStatus==='approved')return '';
+  const o=APX(),u=ME,rej=u.teacherStatus==='rejected',d=u.applyAt?new Date(u.applyAt*1000).toLocaleDateString(loc()):'';
+  const chk=[['photo',u.customPicture],['intro',!!(u.intro||u.bio)],['tags',(u.ptags||[]).length>=3],['gallery',(u.gallery||[]).length>0],['video',!!u.video],['online',!!(u.meetUrl||(u.places||[]).length)]];
+  return `<section class="card apc ${rej?'rej':''}"><small class="apt">🧑‍🏫 ${o.appT}</small>
+    <div class="aps"><span class="ok">✓ ${o.s1}</span><i></i><span class="${rej?'ng':'cur'}">${rej?'✕':'⏳'} ${o.s2}</span><i></i><span>🎉 ${o.s3}</span></div>
+    <b class="apb">${rej?o.rejT:o.waitT}</b><p class="apd">${rej?o.rejS:o.waitS(d)}</p>
+    ${rej&&u.rejectReason?`<div class="apr"><b>${o.reason}</b>${esc(u.rejectReason)}</div>`:''}
+    <div class="apbtn"><a class="btn ${rej?'pink':''}" href="#/me" data-edit="1">${rej?o.reapply:o.edit}</a><button class="lnk" id="apW">${o.withdraw}</button></div>
+    <div class="apchk"><b>${o.prepT}</b>${chk.map(([k,v])=>`<a href="#/me" data-edit="${k==='gallery'||k==='video'||k==='photo'?'':1}" class="${v?'ok':''}">${v?'✅':'⬜'} ${o.prep[k]}</a>`).join('')}</div>
+    <p class="note">${o.meanwhile}</p></section>`}
+function bindApply(){
+  const w=$('#apW');if(w)w.onclick=async()=>{if(!armed('apw',w,APX().withdrawC))return;try{setMe(await api('POST','/me/withdraw'));render(true)}catch(e){toast(A().err)}};
+  $$('.apc [data-edit="1"]').forEach(a=>a.onclick=()=>{editMe=true});
+}
+// 승인/반려 알림을 받으면 즉시 반영
+async function roleChanged(){meAt=0;const was=ME&&ME.view;await refreshMe();if(ME&&was!=='teacher'&&ME.view==='teacher'){toast(APX().approvedT);confetti(innerWidth/2,innerHeight/3,30)}}

@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS notes(
 addCol('users', 'suspended', 'INTEGER');
 for (const c of ['gallery', 'video', 'sns', 'ptags', 'grade', 'memo']) addCol('users', c, 'TEXT');
 addCol('users', 'is_admin', 'INTEGER');
+for (const c of ['career', 'reject_reason']) addCol('users', c, 'TEXT');
+for (const c of ['apply_at', 'reviewed_at']) addCol('users', c, 'INTEGER');
 db.exec(`
 CREATE TABLE IF NOT EXISTS logins(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, at INTEGER NOT NULL, ip TEXT, ua TEXT);
 CREATE INDEX IF NOT EXISTS logins_u ON logins(user_id, at);
@@ -181,6 +183,10 @@ const q = {
   revsBy: db.prepare('SELECT r.*, t.name tname FROM reviews r JOIN users t ON t.id=r.teacher_id WHERE r.student_id=? ORDER BY r.at DESC'),
   repsOf: db.prepare('SELECT r.*, a.name rname, b.name tname FROM reports r LEFT JOIN users a ON a.id=r.reporter_id LEFT JOIN users b ON b.id=r.target_id WHERE r.target_id=?1 OR r.reporter_id=?1 ORDER BY r.at DESC LIMIT 50'),
   signups: db.prepare('SELECT date(created_at,\'unixepoch\',\'+9 hours\') d, COUNT(*) n FROM users WHERE created_at>? GROUP BY d ORDER BY d'),
+  setApply: db.prepare('UPDATE users SET career=?,apply_at=?,reject_reason=NULL WHERE id=?'),
+  setReview: db.prepare('UPDATE users SET reject_reason=?,reviewed_at=? WHERE id=?'),
+  admins: db.prepare('SELECT * FROM users WHERE is_admin=1 OR lower(email) IN (SELECT value FROM json_each(?))'),
+  pendingN: db.prepare("SELECT COUNT(*) n FROM users WHERE teacher_status='pending'"),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
@@ -263,7 +269,8 @@ const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture:
 const pub = u => ({
   id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
   role: u.role, teacherStatus: u.teacher_status, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '',
-  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), superAdmin: isSuper(u), grade: u.grade || 'normal', meetUrl: u.meet_url || '', ...teachInfo(u),
+  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), superAdmin: isSuper(u), grade: u.grade || 'normal',
+  career: u.career || '', applyAt: u.apply_at || 0, rejectReason: u.reject_reason || '', reviewedAt: u.reviewed_at || 0, meetUrl: u.meet_url || '', ...teachInfo(u),
 });
 const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login, suspended: !!u.suspended, grade: u.grade || 'normal', memo: u.memo || '', superAdmin: isSuper(u) });
 
@@ -529,11 +536,16 @@ async function handle(req, res) {
       const role = b.role === 'teacher' ? 'teacher' : b.role === 'student' ? 'student' : null;
       if (!name || !role) return send(res, 400, { error: 'name and role required' });
       let status = me.teacher_status;
+      const career = str(b.career ?? me.career, 2000);
+      if (role === 'teacher' && status !== 'approved' && !isAdmin(me) && career.length < 10) return send(res, 400, { error: 'career' });
+      const applying = role === 'teacher' && !isAdmin(me) && (status === 'none' || status === 'rejected' || (status === 'pending' && b.career !== undefined && career !== (me.career || '')));
       if (role === 'teacher') { if (status !== 'approved') status = isAdmin(me) ? 'approved' : 'pending'; }
       else status = 'none';
       const level = LEVELS.includes(b.level) ? b.level : null;
       const lang = b.lang === 'ko' || b.lang === 'ja' ? b.lang : null;
       q.saveProfile.run(name, role, status, level, str(b.goal, 200), str(b.bio, 200), lang, now(), me.id);
+      if (role === 'teacher' && b.career !== undefined) q.setApply.run(career, applying ? now() : (me.apply_at || now()), me.id);
+      if (applying) for (const a of q.admins.all(JSON.stringify(CFG.admins))) notify(a.id, { t: 'apply', userId: me.id }, { title: '🧑‍🏫 ' + name, body: '先生の申請 / 선생님 신청', url: '/#/admin/u/' + me.id, tag: 'apply-' + me.id });
       {
         const tg = (Array.isArray(b.ptags) ? b.ptags : String(b.ptags ?? me.ptags ?? '').split(',')).map(x => String(x).trim()).filter(x => /^[a-z0-9_]{1,24}$/.test(x)).slice(0, 20);
         const sn = b.sns && typeof b.sns === 'object' ? b.sns : js(me.sns, {}), o = {};
@@ -597,6 +609,13 @@ async function handle(req, res) {
     rmAvatar(me.video); q.setVideo.run(name, now(), me.id); return send(res, 200, pub(q.userById.get(me.id)));
   }
 
+  // 선생님 신청 취소 → 학생으로
+  if (p === '/api/me/withdraw' && m === 'POST') {
+    if (me.role !== 'teacher' || me.teacher_status === 'approved') return send(res, 409, { error: 'state' });
+    q.setStatus.run('student', 'none', now(), me.id);
+    return send(res, 200, pub(q.userById.get(me.id)));
+  }
+
   // 실력 테스트 결과
   if (p === '/api/me/test' && m === 'POST') {
     const b = await readJson(req);
@@ -646,7 +665,7 @@ async function handle(req, res) {
   if (p === '/api/summary' && m === 'GET') {
     const ms = q.myMatches.all(me.id, me.id);
     const td = { t: q.todoT.all(me.id, now(), now() - 60 * DAY).length, s: q.todoS.all(me.id, now() - 60 * DAY).length };
-    return send(res, 200, { todo: td.t + td.s, unread: q.unreadAll.get(me.id).n, requests: ms.filter(x => x.teacher_id === me.id && x.status === 'pending').length, next: (q.schedule.all(me.id, now())[0] || null) && slotOut(q.schedule.all(me.id, now())[0], me) });
+    return send(res, 200, { applies: isAdmin(me) ? q.pendingN.get().n : 0, todo: td.t + td.s, unread: q.unreadAll.get(me.id).n, requests: ms.filter(x => x.teacher_id === me.id && x.status === 'pending').length, next: (q.schedule.all(me.id, now())[0] || null) && slotOut(q.schedule.all(me.id, now())[0], me) });
   }
 
   // 선생님 찾기
@@ -954,7 +973,11 @@ async function handle(req, res) {
       const map = { approve: ['teacher', 'approved'], reject: [target.role || 'student', 'rejected'], student: ['student', 'none'] };
       const v = map[b.action];
       if (!v) return send(res, 400, { error: 'action' });
-      q.setStatus.run(v[0], v[1], now(), target.id); log();
+      q.setStatus.run(v[0], v[1], now(), target.id); log(b.action === 'reject' ? str(b.reason, 300) : '');
+      if (b.action === 'approve' || b.action === 'reject') {
+        q.setReview.run(b.action === 'reject' ? (str(b.reason, 500) || null) : null, now(), target.id);
+        notify(target.id, { t: 'role' }, b.action === 'approve' ? { title: '🎉 ぐるぐる', body: '先生として承認されました！ / 선생님으로 승인됐어요!', url: '/#/', tag: 'role' } : { title: 'ぐるぐる', body: '先生の申請結果が届きました / 선생님 신청 결과가 나왔어요', url: '/#/', tag: 'role' });
+      }
       return send(res, 200, adminRow(q.userById.get(target.id)));
     }
     return send(res, 404, { error: 'not found' });

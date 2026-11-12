@@ -37,20 +37,24 @@ const fWhen=(sec,dur)=>`${fDay(sec)} ${fTime(sec)}${dur?(LANG==='ko'?` (${dur}�
 const isTeacherMe=()=>!!ME&&ME.role==='teacher'&&ME.view==='teacher';
 const isStudentMe=()=>!!ME&&ME.role==='student';
 const lessonsOn=()=>authed()&&AUTH==='in'&&(isTeacherMe()||isStudentMe());
+const sseOn=()=>authed()&&AUTH==='in';
 
 /* ---------- 요약 · 실시간 ---------- */
 let sumT=0;
 async function loadSummary(){if(!lessonsOn())return;try{SOC.sum=await api('GET','/summary');paintBadge()}catch(e){}}
 function sumSoon(){clearTimeout(sumT);sumT=setTimeout(loadSummary,250)}
-function paintBadge(){const a=$('#tabs a[href="#/lessons"]');if(!a)return;const n=(SOC.sum.unread||0)+(SOC.sum.requests||0)+(SOC.sum.todo||0);
+function paintBadge(){
+  {const me=$('#tabs a[href="#/me"]');if(me){let b=me.querySelector('.tbadge');const n=SOC.sum.applies||0;if(!n){if(b)b.remove()}else{if(!b){b=document.createElement('b');b.className='tbadge';me.appendChild(b)}b.textContent=n}}}const a=$('#tabs a[href="#/lessons"]');if(!a)return;const n=(SOC.sum.unread||0)+(SOC.sum.requests||0)+(SOC.sum.todo||0);
   let b=a.querySelector('.tbadge');if(!n){if(b)b.remove();return}if(!b){b=document.createElement('b');b.className='tbadge';a.appendChild(b)}b.textContent=n>99?'99+':n}
 let ES=null,esOk=false;
-function sseStart(){if(ES||!lessonsOn()||!window.EventSource)return;
+function sseStart(){if(ES||!sseOn()||!window.EventSource)return;
   ES=new EventSource('/api/events');ES.onopen=()=>{esOk=true};ES.onerror=()=>{esOk=false};
   ES.onmessage=e=>{let d;try{d=JSON.parse(e.data)}catch(_){return}onEvent(d)}}
 function sseStop(){if(ES){ES.close();ES=null;esOk=false}}
 function onEvent(d){
   const r=route();sumSoon();
+  if(d.t==='role'){roleChanged();return}
+  if(d.t==='apply'){toast(APX().applies(1));if(r.v==='admin'){ADC.users=null;ADM.stats=null;render(true)}return}
   if(r.v==='chat'&&d.matchId===r.id){if(d.t==='read')$$('#cmsgs .cm.me').forEach(x=>x.classList.add('rd'));else chatPull();return}
   if(r.v==='notes'&&d.matchId===r.id){loadNotes(r.id);return}
   if(r.v==='lessons'||r.v==='book'){loadHub(true);return}
@@ -59,7 +63,8 @@ function onEvent(d){
 setInterval(()=>{if(document.visibilityState!=='visible'||!lessonsOn())return;if(!esOk)loadSummary();const r=route();if(r.v==='chat'&&!esOk)chatPull()},15000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lessonsOn()){loadSummary();const r=route();if(r.v==='chat')chatPull();if(r.v==='lessons')loadHub(true)}});
 function socialTick(){hookStore();if(authed()&&AUTH==='in'&&!socialTick.pg){socialTick.pg=1;progSync()}if(!authed())socialTick.pg=0;
-  if(lessonsOn()){sseStart();if(!socialTick.done){socialTick.done=1;loadSummary()}}else{sseStop();socialTick.done=0}}
+  if(sseOn())sseStart();else sseStop();
+  if(lessonsOn()){if(!socialTick.done){socialTick.done=1;loadSummary()}}else socialTick.done=0}
 
 /* ---------- 데이터 ---------- */
 async function loadHub(silent){
