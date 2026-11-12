@@ -266,7 +266,7 @@ function pLearn(l){
   h+=pDialog(l);
   h+=`<div class="blk"><h3>${t.points}</h3><div class="bubbles">${l.points.map((p,k)=>`<div class="bub" style="--c:${cv(COL[(k+2)%6])}"><b>${esc(p[0])}</b>${esc(p[1])}</div>`).join('')}</div></div>`;
   h+=`<div class="blk"><h3>🏠 ${t.hwT}</h3><div class="card teach"><ul class="ul">${l.homework.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`;
-  h+=pDrill(l)+pTip(l);
+  h+=pDrill(l)+pTip(l)+pSpeak(l);
   h+=`<div class="blk"><h3>${t.print}<em>${t.printSub}</em></h3>${printCards(l.no)}</div>`;
   return h;
 }
@@ -346,7 +346,7 @@ function bindSay(root=document){root.querySelectorAll('[data-say]').forEach(b=>b
 function bindLesson(no,tab){
   const l=V(L.find(x=>x.no===no)),t=T(),panel=$('#panel');
   if(!panel)return;
-  bindSay(panel);preload([...panel.querySelectorAll('[data-say]')].slice(0,40).map(e=>e.dataset.say));bindPlus(panel);
+  bindSay(panel);preload([...panel.querySelectorAll('[data-say]')].slice(0,40).map(e=>e.dataset.say));bindPlus(panel);bindSpeak(l);
   const ab=$('#ansBtn');if(ab)ab.onclick=()=>{const s=$('#sheet');s.classList.toggle('show-ans');ab.textContent=s.classList.contains('show-ans')?t.hideA:t.showA};
   if(tab==='cards'&&$('#fc')){
     const ws=words(l),f=fcState;
