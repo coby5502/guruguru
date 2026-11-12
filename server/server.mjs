@@ -1,4 +1,4 @@
-// ぐるぐる API — Google 로그인 · 프로필 · 역할(학생/선생) · 관리자 승인
+// ぐるぐる API — Google 로그인 · 프로필(사진) · 역할(학생/선생) · 관리자 승인 · 실력 테스트 · 매칭 · 일정 · 채팅
 // 의존성 없음: Node 22.13+ (node:sqlite, node:crypto)
 //
 // 환경 변수
@@ -54,7 +54,41 @@ CREATE TABLE IF NOT EXISTS sessions(
   created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
+CREATE TABLE IF NOT EXISTS tests(
+  id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  step INTEGER NOT NULL, score INTEGER NOT NULL, total INTEGER NOT NULL, at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS tests_user ON tests(user_id, at);
+CREATE TABLE IF NOT EXISTS matches(
+  id INTEGER PRIMARY KEY,
+  student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK(status IN ('pending','accepted','declined','ended','canceled')),
+  created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, last_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS matches_s ON matches(student_id);
+CREATE INDEX IF NOT EXISTS matches_t ON matches(teacher_id);
+CREATE TABLE IF NOT EXISTS messages(
+  id INTEGER PRIMARY KEY,
+  match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+  sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL DEFAULT 'text', body TEXT NOT NULL, at INTEGER NOT NULL, read_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS messages_m ON messages(match_id, id);
+CREATE TABLE IF NOT EXISTS slots(
+  id INTEGER PRIMARY KEY,
+  teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  start INTEGER NOT NULL, dur INTEGER NOT NULL,
+  student_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  match_id INTEGER REFERENCES matches(id) ON DELETE SET NULL,
+  lesson_no INTEGER, note TEXT, booked_at INTEGER, created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS slots_t ON slots(teacher_id, start);
+CREATE INDEX IF NOT EXISTS slots_s ON slots(student_id, start);
 `);
+if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'avatar')) db.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
+const AV_DIR = path.join(path.dirname(CFG.db), 'avatars');
+fs.mkdirSync(AV_DIR, { recursive: true });
 const q = {
   userBySub: db.prepare('SELECT * FROM users WHERE sub=?'),
   userById: db.prepare('SELECT * FROM users WHERE id=?'),
@@ -68,6 +102,39 @@ const q = {
   sess: db.prepare('SELECT s.expires_at, u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?'),
   delSess: db.prepare('DELETE FROM sessions WHERE token_hash=?'),
   gcSess: db.prepare('DELETE FROM sessions WHERE expires_at<?'),
+  setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
+  insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
+  lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
+  testsToday: db.prepare('SELECT COUNT(*) n FROM tests WHERE user_id=? AND at>?'),
+  teachers: db.prepare("SELECT * FROM users WHERE role='teacher' AND teacher_status='approved' AND id<>? ORDER BY last_login DESC LIMIT 200"),
+  match: db.prepare('SELECT * FROM matches WHERE id=?'),
+  activeMatch: db.prepare("SELECT * FROM matches WHERE student_id=? AND teacher_id=? AND status IN ('pending','accepted') ORDER BY id DESC LIMIT 1"),
+  myMatches: db.prepare('SELECT * FROM matches WHERE student_id=? OR teacher_id=? ORDER BY last_at DESC LIMIT 200'),
+  reqToday: db.prepare('SELECT COUNT(*) n FROM matches WHERE student_id=? AND created_at>?'),
+  insMatch: db.prepare("INSERT INTO matches(student_id,teacher_id,status,created_at,updated_at,last_at) VALUES(?,?,'pending',?,?,?)"),
+  setMatch: db.prepare('UPDATE matches SET status=?,updated_at=?,last_at=? WHERE id=?'),
+  touchMatch: db.prepare('UPDATE matches SET last_at=? WHERE id=?'),
+  insMsg: db.prepare('INSERT INTO messages(match_id,sender_id,kind,body,at) VALUES(?,?,?,?,?)'),
+  msgsAfter: db.prepare('SELECT * FROM messages WHERE match_id=? AND id>? ORDER BY id LIMIT 300'),
+  msgsLast: db.prepare('SELECT * FROM (SELECT * FROM messages WHERE match_id=? ORDER BY id DESC LIMIT 200) ORDER BY id'),
+  lastMsg: db.prepare('SELECT * FROM messages WHERE match_id=? ORDER BY id DESC LIMIT 1'),
+  unread: db.prepare('SELECT COUNT(*) n FROM messages WHERE match_id=? AND sender_id IS NOT ? AND read_at IS NULL'),
+  unreadAll: db.prepare("SELECT COUNT(*) n FROM messages m JOIN matches x ON x.id=m.match_id WHERE (x.student_id=?1 OR x.teacher_id=?1) AND m.sender_id IS NOT ?1 AND m.read_at IS NULL"),
+  markRead: db.prepare('UPDATE messages SET read_at=? WHERE match_id=? AND sender_id IS NOT ? AND read_at IS NULL'),
+  slot: db.prepare('SELECT * FROM slots WHERE id=?'),
+  insSlot: db.prepare('INSERT INTO slots(teacher_id,start,dur,created_at) VALUES(?,?,?,?)'),
+  overlap: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start<? AND start+dur*60>?'),
+  futureCount: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start>?'),
+  freeCount: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start>? AND student_id IS NULL'),
+  teacherSlots: db.prepare('SELECT * FROM slots WHERE teacher_id=? AND start+dur*60>? ORDER BY start LIMIT 300'),
+  freeSlots: db.prepare('SELECT * FROM slots WHERE teacher_id=? AND start>? AND student_id IS NULL ORDER BY start LIMIT 300'),
+  delSlot: db.prepare('DELETE FROM slots WHERE id=?'),
+  book: db.prepare('UPDATE slots SET student_id=?,match_id=?,booked_at=? WHERE id=? AND student_id IS NULL'),
+  unbook: db.prepare('UPDATE slots SET student_id=NULL,match_id=NULL,booked_at=NULL,lesson_no=NULL,note=NULL WHERE id=?'),
+  slotInfo: db.prepare('UPDATE slots SET lesson_no=?,note=? WHERE id=?'),
+  schedule: db.prepare('SELECT * FROM slots WHERE (teacher_id=?1 OR student_id=?1) AND student_id IS NOT NULL AND start+dur*60>? ORDER BY start LIMIT 100'),
+  matchFuture: db.prepare('SELECT * FROM slots WHERE match_id=? AND start>?'),
+  nextWith: db.prepare('SELECT start,dur,lesson_no FROM slots WHERE match_id=? AND start+dur*60>? ORDER BY start LIMIT 1'),
 };
 const now = () => Math.floor(Date.now() / 1000);
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
@@ -105,8 +172,12 @@ export async function verifyGoogle(token, aud) {
 /* ---------------- helpers ---------------- */
 const isAdmin = u => !!u && CFG.admins.includes(String(u.email).toLowerCase());
 const view = u => (isAdmin(u) || (u.role === 'teacher' && u.teacher_status === 'approved')) ? 'teacher' : 'student';
+const picture = u => u.avatar ? `/api/avatar/${u.avatar}` : (u.picture || '');
+const testOf = id => { const t = q.lastTest.get(id); return t ? { step: t.step, score: t.score, total: t.total, at: t.at } : null; };
+// 상대방에게 보이는 정보(이메일 제외)
+const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture: picture(u), role: u.role, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '', test: u.role === 'student' ? testOf(u.id) : null }) : { id: 0, name: '—', picture: '' };
 const pub = u => ({
-  id: u.id, email: u.email, name: u.name || u.google_name || '', picture: u.picture || '',
+  id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
   role: u.role, teacherStatus: u.teacher_status, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '',
   profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u),
 });
@@ -132,11 +203,14 @@ function send(res, code, obj, extra = {}) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra });
   res.end(body);
 }
-async function readBody(req, max = 16384) {
+async function readRaw(req, max = 16384) {
   let size = 0; const chunks = [];
-  for await (const c of req) { size += c.length; if (size > max) throw Object.assign(new Error('too large'), { code: 413 }); chunks.push(c); }
-  return Buffer.concat(chunks).toString();
+  // 너무 크면 끝까지 읽고 버린 뒤 413 (도중에 끊으면 클라이언트가 응답을 못 받음). 프록시가 1MB 로 상한
+  for await (const c of req) { size += c.length; if (size <= max) chunks.push(c); else if (size > max * 8) { req.destroy(); break; } }
+  if (size > max) throw Object.assign(new Error('too large'), { code: 413 });
+  return Buffer.concat(chunks);
 }
+const readBody = async (req, max) => (await readRaw(req, max)).toString();
 async function readJson(req) {
   if (!/^application\/json/i.test(req.headers['content-type'] || '')) throw Object.assign(new Error('content-type'), { code: 415 });
   const txt = await readBody(req);
@@ -169,6 +243,51 @@ async function loginWith(credential, res) {
   setCookie(res, tok, CFG.sessionDays * 86400);
   return user;
 }
+
+/* ---------------- 실시간 알림 (SSE) ---------------- */
+const subs = new Map(); // userId -> Set<res>
+function emit(uid, ev) {
+  const set = subs.get(uid); if (!set) return;
+  const line = `data: ${JSON.stringify(ev)}\n\n`;
+  for (const r of set) { try { r.write(line); } catch { } }
+}
+function sse(req, res, me) {
+  const set = subs.get(me.id) || new Set();
+  if (set.size >= 6) { const old = set.values().next().value; set.delete(old); try { old.end(); } catch { } }
+  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', Connection: 'keep-alive' });
+  res.write('retry: 5000\n\n');
+  set.add(res); subs.set(me.id, set);
+  const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch { } }, 25000);
+  req.on('close', () => { clearInterval(ping); set.delete(res); if (!set.size) subs.delete(me.id); });
+}
+
+/* ---------------- 매칭 · 일정 · 채팅 ---------------- */
+const isStudentUser = u => u.role === 'student';
+const isTeacherUser = u => u.role === 'teacher' && u.teacher_status === 'approved';
+const sideOf = (m, me) => m.student_id === me.id ? 'student' : m.teacher_id === me.id ? 'teacher' : null;
+const otherId = (m, me) => m.student_id === me.id ? m.teacher_id : m.student_id;
+const msgOut = x => ({ id: x.id, from: x.sender_id, kind: x.kind, body: x.kind === 'sys' ? JSON.parse(x.body) : x.body, at: x.at, read: !!x.read_at });
+function matchOut(m, me) {
+  const lm = q.lastMsg.get(m.id);
+  return { id: m.id, status: m.status, side: sideOf(m, me), peer: peer(q.userById.get(otherId(m, me))), createdAt: m.created_at, lastAt: m.last_at,
+    unread: q.unread.get(m.id, me.id).n, last: lm ? msgOut(lm) : null, next: q.nextWith.get(m.id, now()) || null };
+}
+function slotOut(s, me) {
+  const mine = s.teacher_id === me.id;
+  return { id: s.id, start: s.start, dur: s.dur, booked: !!s.student_id, mine, matchId: s.match_id || null, lessonNo: s.lesson_no || null, note: s.note || '',
+    with: s.student_id ? peer(q.userById.get(mine ? s.student_id : s.teacher_id)) : null };
+}
+// 시스템 메시지(예약·취소·수락 등)를 대화에 남기고 양쪽에 알림
+function sysMsg(m, actorId, data) {
+  const t = now();
+  const r = q.insMsg.run(m.id, actorId, 'sys', JSON.stringify(data), t);
+  q.touchMatch.run(t, m.id);
+  const ev = { t: 'msg', matchId: m.id, id: Number(r.lastInsertRowid) };
+  emit(m.student_id, ev); emit(m.teacher_id, ev);
+}
+const IMG = [['jpg', 'image/jpeg', b => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff], ['png', 'image/png', b => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))], ['webp', 'image/webp', b => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP']];
+const rmAvatar = f => { if (f && /^[\w.-]+$/.test(f)) try { fs.unlinkSync(path.join(AV_DIR, f)); } catch { } };
+const DAY = 86400;
 
 /* ---------------- routes ---------------- */
 async function handle(req, res) {
@@ -214,6 +333,16 @@ async function handle(req, res) {
     return send(res, 200, { ok: true });
   }
 
+  // 프로필 사진(공개, 파일명에 무작위 값 → 오래 캐시)
+  const av = /^\/api\/avatar\/(\d+-[A-Za-z0-9_-]{8,24}\.(jpg|png|webp))$/.exec(p);
+  if (av && (m === 'GET' || m === 'HEAD')) {
+    const f = path.join(AV_DIR, av[1]);
+    let st; try { st = fs.statSync(f); } catch { return send(res, 404, { error: 'not found' }); }
+    res.writeHead(200, { 'Content-Type': IMG.find(x => x[0] === av[2])[1], 'Content-Length': st.size, 'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' });
+    if (m === 'HEAD') return res.end();
+    return fs.createReadStream(f).pipe(res);
+  }
+
   const me = currentUser(req);
 
   // nginx auth_request 용: 선생님(승인됨)만 204
@@ -250,9 +379,168 @@ async function handle(req, res) {
       q.saveProfile.run(name, role, status, level, str(b.goal, 200), str(b.bio, 200), lang, now(), me.id);
       return send(res, 200, pub(q.userById.get(me.id)));
     }
-    if (m === 'DELETE') { q.delUser.run(me.id); setCookie(res, '', 0); return send(res, 200, { ok: true }); }
+    if (m === 'DELETE') { rmAvatar(me.avatar); q.delUser.run(me.id); setCookie(res, '', 0); return send(res, 200, { ok: true }); }
     return send(res, 405, { error: 'method' });
   }
+
+  if (p.startsWith('/api/') && !me && !p.startsWith('/api/admin/')) return send(res, 401, { error: 'login' });
+
+  // 프로필 사진: 브라우저에서 줄인 jpg/png/webp 를 그대로 올림
+  if (p === '/api/me/avatar') {
+    if (m === 'DELETE') { rmAvatar(me.avatar); q.setAvatar.run(null, now(), me.id); return send(res, 200, pub(q.userById.get(me.id))); }
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    if (limited('av:' + me.id, 20, 3600)) return send(res, 429, { error: 'rate' });
+    const ct = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+    const buf = await readRaw(req, 600 * 1024);
+    const kind = IMG.find(x => x[1] === ct && x[2](buf));
+    if (!kind || buf.length < 100) return send(res, 415, { error: 'image' });
+    const name = `${me.id}-${crypto.randomBytes(9).toString('base64url')}.${kind[0]}`;
+    fs.writeFileSync(path.join(AV_DIR, name), buf);
+    rmAvatar(me.avatar); q.setAvatar.run(name, now(), me.id);
+    return send(res, 200, pub(q.userById.get(me.id)));
+  }
+
+  // 실력 테스트 결과
+  if (p === '/api/me/test' && m === 'POST') {
+    const b = await readJson(req);
+    const step = Math.trunc(+b.step), total = Math.trunc(+b.total), score = Math.trunc(+b.score);
+    if (!(step >= 0 && step <= 6 && total >= 1 && total <= 80 && score >= 0 && score <= total)) return send(res, 400, { error: 'invalid' });
+    if (q.testsToday.get(me.id, now() - DAY).n >= 20) return send(res, 429, { error: 'rate' });
+    q.insTest.run(me.id, step, score, total, now());
+    return send(res, 200, pub(q.userById.get(me.id)));
+  }
+
+  if (p === '/api/events' && m === 'GET') return sse(req, res, me);
+
+  if (p === '/api/summary' && m === 'GET') {
+    const ms = q.myMatches.all(me.id, me.id);
+    return send(res, 200, { unread: q.unreadAll.get(me.id).n, requests: ms.filter(x => x.teacher_id === me.id && x.status === 'pending').length, next: (q.schedule.all(me.id, now())[0] || null) && slotOut(q.schedule.all(me.id, now())[0], me) });
+  }
+
+  // 선생님 찾기
+  if (p === '/api/teachers' && m === 'GET') {
+    const t = now();
+    return send(res, 200, { teachers: q.teachers.all(me.id).map(x => { const am = q.activeMatch.get(me.id, x.id); return { ...peer(x), freeSlots: q.freeCount.get(x.id, t).n, match: am ? { id: am.id, status: am.status } : null }; }) });
+  }
+
+  if (p === '/api/matches') {
+    if (m === 'GET') return send(res, 200, { matches: q.myMatches.all(me.id, me.id).map(x => matchOut(x, me)) });
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    if (!isStudentUser(me)) return send(res, 403, { error: 'students only' });
+    const b = await readJson(req);
+    const teacher = q.userById.get(Math.trunc(+b.teacherId));
+    if (!teacher || !isTeacherUser(teacher) || teacher.id === me.id) return send(res, 404, { error: 'teacher' });
+    const ex = q.activeMatch.get(me.id, teacher.id);
+    if (ex) return send(res, 409, { error: 'exists', match: matchOut(ex, me) });
+    if (q.reqToday.get(me.id, now() - DAY).n >= 10) return send(res, 429, { error: 'rate' });
+    const t = now(), r = q.insMatch.run(me.id, teacher.id, t, t, t), mt = q.match.get(Number(r.lastInsertRowid));
+    const msg = str(b.message, 1000);
+    sysMsg(mt, me.id, { t: 'request' });
+    if (msg) { q.insMsg.run(mt.id, me.id, 'text', msg, t); }
+    emit(teacher.id, { t: 'match', matchId: mt.id });
+    return send(res, 201, matchOut(q.match.get(mt.id), me));
+  }
+
+  const mm0 = /^\/api\/matches\/(\d+)(\/messages)?$/.exec(p);
+  if (mm0) {
+    const mt = q.match.get(+mm0[1]), side = mt && sideOf(mt, me);
+    if (!side) return send(res, 404, { error: 'not found' });
+    if (mm0[2]) {
+      if (m === 'GET') {
+        const after = Math.max(0, Math.trunc(+u.searchParams.get('after') || 0));
+        const list = after ? q.msgsAfter.all(mt.id, after) : q.msgsLast.all(mt.id);
+        if (q.markRead.run(now(), mt.id, me.id).changes) emit(otherId(mt, me), { t: 'read', matchId: mt.id });
+        return send(res, 200, { match: matchOut(mt, me), messages: list.map(msgOut) });
+      }
+      if (m !== 'POST') return send(res, 405, { error: 'method' });
+      if (!['pending', 'accepted'].includes(mt.status)) return send(res, 409, { error: 'closed' });
+      if (limited('msg:' + me.id, 40, 60)) return send(res, 429, { error: 'rate' });
+      const b = await readJson(req), body = String(b.body ?? '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, 1000);
+      if (!body) return send(res, 400, { error: 'empty' });
+      const t = now(), r = q.insMsg.run(mt.id, me.id, 'text', body, t);
+      q.touchMatch.run(t, mt.id);
+      emit(otherId(mt, me), { t: 'msg', matchId: mt.id, id: Number(r.lastInsertRowid) });
+      return send(res, 201, msgOut(q.msgsAfter.get(mt.id, Number(r.lastInsertRowid) - 1)));
+    }
+    if (m === 'GET') return send(res, 200, matchOut(mt, me));
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    const b = await readJson(req);
+    const rules = { accept: ['teacher', 'pending', 'accepted'], decline: ['teacher', 'pending', 'declined'], cancel: ['student', 'pending', 'canceled'], end: [null, 'accepted', 'ended'] };
+    const rule = rules[b.action];
+    if (!rule) return send(res, 400, { error: 'action' });
+    if ((rule[0] && rule[0] !== side) || mt.status !== rule[1]) return send(res, 409, { error: 'state' });
+    const t = now();
+    q.setMatch.run(rule[2], t, t, mt.id);
+    if (rule[2] === 'ended') for (const s of q.matchFuture.all(mt.id, t)) q.unbook.run(s.id);
+    sysMsg(mt, me.id, { t: rule[2] });
+    emit(otherId(mt, me), { t: 'match', matchId: mt.id });
+    return send(res, 200, matchOut(q.match.get(mt.id), me));
+  }
+
+  // 일정: 선생님이 가능한 시간을 열고, 매칭된 학생이 예약
+  if (p === '/api/slots') {
+    if (m === 'GET') {
+      const tid = Math.trunc(+u.searchParams.get('teacher') || 0) || me.id, t = now();
+      if (tid === me.id) { if (!isTeacherUser(me)) return send(res, 403, { error: 'teachers only' }); return send(res, 200, { slots: q.teacherSlots.all(me.id, t).map(s => slotOut(s, me)) }); }
+      const am = q.activeMatch.get(me.id, tid);
+      if (!am || am.status !== 'accepted') return send(res, 403, { error: 'not matched' });
+      return send(res, 200, { slots: q.freeSlots.all(tid, t).map(s => slotOut(s, me)) });
+    }
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    if (!isTeacherUser(me)) return send(res, 403, { error: 'teachers only' });
+    const b = await readJson(req), list = Array.isArray(b.slots) ? b.slots.slice(0, 40) : [], t = now();
+    let made = 0, skipped = 0;
+    for (const x of list) {
+      const start = Math.trunc(+x.start), dur = Math.trunc(+x.dur);
+      if (!(start > t && start < t + 120 * DAY && dur >= 20 && dur <= 180 && start % 60 === 0)) { skipped++; continue; }
+      if (q.overlap.get(me.id, start + dur * 60, start).n || q.futureCount.get(me.id, t).n >= 300) { skipped++; continue; }
+      q.insSlot.run(me.id, start, dur, t); made++;
+    }
+    return send(res, made ? 201 : 400, { made, skipped, slots: q.teacherSlots.all(me.id, t).map(s => slotOut(s, me)) });
+  }
+  const sm = /^\/api\/slots\/(\d+)(?:\/(book|cancel))?$/.exec(p);
+  if (sm) {
+    const s = q.slot.get(+sm[1]);
+    if (!s) return send(res, 404, { error: 'not found' });
+    const t = now(), mine = s.teacher_id === me.id, booker = s.student_id === me.id;
+    if (sm[2] === 'book' && m === 'POST') {
+      const am = q.activeMatch.get(me.id, s.teacher_id);
+      if (!am || am.status !== 'accepted') return send(res, 403, { error: 'not matched' });
+      if (s.start <= t) return send(res, 409, { error: 'past' });
+      if (!q.book.run(me.id, am.id, t, s.id).changes) return send(res, 409, { error: 'taken' });
+      sysMsg(am, me.id, { t: 'book', start: s.start, dur: s.dur });
+      emit(s.teacher_id, { t: 'slot', slotId: s.id });
+      return send(res, 200, slotOut(q.slot.get(s.id), me));
+    }
+    if (sm[2] === 'cancel' && m === 'POST') {
+      if (!(mine || booker) || !s.student_id) return send(res, 409, { error: 'state' });
+      if (s.start <= t) return send(res, 409, { error: 'past' });
+      const mt = s.match_id && q.match.get(s.match_id);
+      q.unbook.run(s.id);
+      if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
+      emit(mine ? s.student_id : s.teacher_id, { t: 'slot', slotId: s.id });
+      return send(res, 200, slotOut(q.slot.get(s.id), me));
+    }
+    if (!mine || sm[2]) return send(res, 403, { error: 'owner only' });
+    if (m === 'PUT') {
+      const b = await readJson(req), no = Math.trunc(+b.lessonNo) || null;
+      q.slotInfo.run(no && no >= 1 && no <= 290 ? no : null, str(b.note, 200), s.id);
+      if (s.student_id) emit(s.student_id, { t: 'slot', slotId: s.id });
+      return send(res, 200, slotOut(q.slot.get(s.id), me));
+    }
+    if (m === 'DELETE') {
+      if (s.student_id && s.start > t) {
+        const mt = s.match_id && q.match.get(s.match_id);
+        if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
+        emit(s.student_id, { t: 'slot', slotId: s.id });
+      }
+      q.delSlot.run(s.id);
+      return send(res, 200, { ok: true });
+    }
+    return send(res, 405, { error: 'method' });
+  }
+
+  if (p === '/api/schedule' && m === 'GET') return send(res, 200, { lessons: q.schedule.all(me.id, now()).map(s => slotOut(s, me)) });
 
   if (p.startsWith('/api/admin/')) {
     if (!me) return send(res, 401, { error: 'login' });

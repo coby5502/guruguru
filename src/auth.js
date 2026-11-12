@@ -35,7 +35,7 @@ async function api(m,p,body){
   return j;
 }
 const withTO=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
-function setMe(u){ME=u;store.set('me',u);AUTH=!u?'out':u.profileDone?'in':'profile'}
+function setMe(u){ME=u;store.set('me',u);AUTH=!u?'out':u.profileDone?'in':'profile';if(!u&&typeof sseStop==='function'){sseStop();SOC.matches=null;SOC.sum={unread:0,requests:0,next:null}}}
 
 async function authBoot(){
   const cached=store.get('me',null);
@@ -129,15 +129,15 @@ let editMe=false,delArm=0;
 function vMe(){
   const a=A(),u=ME;if(!u)return '';
   return `<div class="h2 first"><span>${a.profile}</span>${editMe?'':`<button class="btn sm" id="meEdit">${a.edit}</button>`}</div>
-    <section class="card mecard">${avatar(u,'lg')}<div><b class="mn">${esc(u.name)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}</div></div></section>
+    <section class="card mecard">${avatarEdit(u)}<div><b class="mn">${esc(u.name)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}</div>${u.customPicture?`<button class="lnk" id="avDel">${S_().photoDel}</button>`:`<small class="avh">📷 ${S_().photo}</small>`}</div></section>
     ${statusBanner()}
     ${editMe?`<section class="card">${profileForm(u,false)}</section>`:`<section class="card mekv">
-      ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div>`}</section>`}
+      ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div>`}</section>`}
     ${u.admin?`<a class="btn block yellow" href="#/admin">🛡 ${a.admin}</a>`:''}
     <div class="mebtns"><button class="btn block" id="meOut">${a.logout}</button><button class="btn block ghost" id="meDel">${a.del}</button></div>`;
 }
 function bindMe(){
-  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};
+  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();
   bindProfileForm(()=>{editMe=false;render(false)});
   $('#meOut').onclick=logout;
   $('#meDel').onclick=async ev=>{if(Date.now()-delArm>4000){delArm=Date.now();ev.target.textContent=A().delC;return}
@@ -184,7 +184,7 @@ function authGate(r){
   if(AUTH==='boot'){topbar('main');tabbar(null);$('#app').innerHTML=`<div class="auth"><div class="auth-m">${mascotSVG(3,'big')}</div></div>`;return true}
   if(AUTH==='out'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vLogin(r.v==='login-error')}</div>`;mountGoogle($('#gbtn'));return true}
   if(AUTH==='profile'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vOnboard()}</div>`;bindProfileForm(()=>{location.hash='#/';render(false)});return true}
-  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')){location.replace('#/');return true}
+  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')||((r.v==='lessons'||r.v==='chat'||r.v==='book')&&!lessonsOn())){location.replace('#/');return true}
   return false;
 }
 /* 앱으로 돌아올 때 역할 변경(승인 등)을 반영 */
