@@ -213,3 +213,61 @@ function vTeacher(id){
   ${x.match?`<a class="btn block pink" href="#/chat/${x.match.id}">💬 ${o.chat} · ${o.st[x.match.status]}</a>`:isStudentMe()?`<form class="apf card" data-id="${x.id}" style="padding:14px"><textarea name="message" maxlength="1000" rows="3" placeholder="${esc(o.applyPh)}"></textarea><button class="btn pink block" type="submit">${o.apply}</button></form>`:''}`;
 }
 function bindTeacher(){if(TP.d)miniMap($('#tpMap'),TP.d.places||[]);bindLessons()}
+
+/* ---------- 푸시 알림 설정 ---------- */
+const NT={ja:{t:'通知',on:'プッシュ通知をオンにする',off:'通知をオフにする',onS:'メッセージ・予約・レッスン前のリマインダーをお知らせします',enabled:'通知はオンです 🔔',denied:'通知がブロックされています。ブラウザの設定から許可してください',ios:'iPhoneでは「ホーム画面に追加」したアプリから通知をオンにできます',unsup:'このブラウザは通知に対応していません'},
+ ko:{t:'알림',on:'푸시 알림 켜기',off:'알림 끄기',onS:'메시지·예약·레슨 전 리마인더를 알려 드려요',enabled:'알림이 켜져 있어요 🔔',denied:'알림이 차단돼 있어요. 브라우저 설정에서 허용해 주세요',ios:'iPhone에서는 "홈 화면에 추가"한 앱에서 알림을 켤 수 있어요',unsup:'이 브라우저는 알림을 지원하지 않아요'}};
+const NX=()=>NT[LANG];
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+let PUSHST=null;
+async function pushState(){if(!pushOK())return 'unsup';if(Notification.permission==='denied')return 'denied';try{const r=await navigator.serviceWorker.getRegistration();const s=r&&await r.pushManager.getSubscription();return s?'on':'off'}catch(e){return 'off'}}
+function pushCard(){if(!lessonsOn())return '';const o=NX(),st=PUSHST;
+  if(st===null){pushState().then(v=>{PUSHST=v;const el=$('#pushBox');if(el)el.outerHTML=pushCard();bindPush()});return '<div id="pushBox"></div>'}
+  const ios=isIOS&&!standalone();
+  return `<div class="card pushc ${st}" id="pushBox"><span class="ic">🔔</span><div><b>${st==='on'?o.enabled:o.t}</b><small>${st==='denied'?o.denied:st==='unsup'?(ios?o.ios:o.unsup):o.onS}</small></div>
+    ${st==='off'?`<button class="btn sm pink" id="pushOn">${o.on}</button>`:st==='on'?`<button class="lnk" id="pushOff">${o.off}</button>`:''}</div>`}
+const b64ab=s=>{const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+function bindPush(){
+  const on=$('#pushOn');if(on)on.onclick=async()=>{on.disabled=true;try{
+    if(await Notification.requestPermission()!=='granted'){PUSHST='denied';render(true);return}
+    const reg=await navigator.serviceWorker.ready,{key}=await api('GET','/push');
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ab(key)});
+    await api('POST','/push',{...sub.toJSON(),test:LANG});PUSHST='on';render(true)}catch(e){on.disabled=false;toast(A().err)}};
+  const off=$('#pushOff');if(off)off.onclick=async()=>{try{const r=await navigator.serviceWorker.ready,s=await r.pushManager.getSubscription();if(s){await api('DELETE','/push',{endpoint:s.endpoint});await s.unsubscribe()}PUSHST='off';render(true)}catch(e){toast(A().err)}};
+}
+
+/* ---------- 수업 기록 · 숙제 ---------- */
+const NO={ja:{t:'レッスン記録',empty:'まだ終わったレッスンはありません',summary:'今日やったこと',good:'よかった点',hw:'宿題',write:'記録を書く',save:'保存',hwSubmit:'宿題を提出',hwPh:'宿題の答えを書いてください',photo:'📷 写真を添付',fb:'先生からのフィードバック',fbPh:'フィードバックを書く',fbSave:'フィードバックを送る',noNote:'先生の記録を待っています',submitted:'提出済み',todoT:'記録を書くレッスン',todoS:'提出する宿題',todoFb:'フィードバック待ち',open:'記録を見る',sent:'送信しました',upcoming:'予定'},
+ ko:{t:'수업 기록',empty:'아직 끝난 레슨이 없어요',summary:'오늘 한 내용',good:'잘한 점',hw:'숙제',write:'기록 쓰기',save:'저장',hwSubmit:'숙제 제출',hwPh:'숙제 답을 써 주세요',photo:'📷 사진 첨부',fb:'선생님 피드백',fbPh:'피드백 쓰기',fbSave:'피드백 보내기',noNote:'선생님 기록을 기다리고 있어요',submitted:'제출함',todoT:'기록을 쓸 레슨',todoS:'제출할 숙제',todoFb:'피드백 대기',open:'기록 보기',sent:'보냈어요',upcoming:'예정'}};
+const NOX=()=>NO[LANG];
+let NTS={id:0,d:null,err:false};
+async function loadNotes(id){try{NTS={id,d:await api('GET',`/matches/${id}/notes`),err:false}}catch(e){NTS={id,d:null,err:true}}if(route().v==='notes')render(true)}
+function vNotes(id){
+  const o=NOX();if(NTS.id!==id){NTS={id,d:null,err:false};loadNotes(id)}
+  if(NTS.err)return emptyCard(S_().err);if(!NTS.d)return '<div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>';
+  const t=NTS.d.match.side==='teacher',ns=NTS.d.notes.filter(n=>n.booked);
+  return `<div class="card bkh">${peerHead(NTS.d.match.peer,`<a class="btn sm" href="#/chat/${id}">💬</a>`)}</div>
+  ${ns.length?ns.map(n=>{const fut=n.start>Date.now()/1000;return `<div class="card note" data-id="${n.id}">
+    <div class="lw"><b>${fDay(n.start)}</b><span>${fTime(n.start)} · ${n.dur}${S_().min}</span>${modeChip(n)}${n.lessonNo?`<a class="mchip" href="#/l/${n.lessonNo}">📖 ${T().no(n.lessonNo)}</a>`:''}</div>
+    ${t?`<form class="ntf" data-id="${n.id}"><label>${o.summary}<textarea name="summary" rows="2" maxlength="2000">${esc(n.summary)}</textarea></label><label>${o.good}<textarea name="good" rows="2" maxlength="1000">${esc(n.good)}</textarea></label><label>${o.hw}<textarea name="homework" rows="2" maxlength="1000">${esc(n.homework)}</textarea></label><button class="btn sm sky" type="submit">${o.save}</button></form>`
+      :n.noteAt?`<dl class="ndl">${n.summary?`<dt>${o.summary}</dt><dd>${esc(n.summary)}</dd>`:''}${n.good?`<dt>${o.good}</dt><dd>${esc(n.good)}</dd>`:''}${n.homework?`<dt>✏️ ${o.hw}</dt><dd>${esc(n.homework)}</dd>`:''}</dl>`:`<p class="note">${fut?o.upcoming:o.noNote}</p>`}
+    ${n.homework||n.hwAt?`<div class="hwb"><b>✏️ ${o.hw}${n.hwAt?` · ${o.submitted}`:''}</b>
+      ${t?`${n.hwText?`<p>${esc(n.hwText).replace(/\n/g,'<br>')}</p>`:''}${n.hwImage?`<img class="hwimg" src="${n.hwImage}" alt="">`:''}${!n.hwAt?`<p class="note">—</p>`:''}`
+        :`<form class="hwf" data-id="${n.id}"><textarea name="text" rows="3" maxlength="3000" placeholder="${o.hwPh}">${esc(n.hwText)}</textarea>${n.hwImage?`<img class="hwimg" src="${n.hwImage}" alt="">`:''}<div class="hwa"><label class="btn sm">${o.photo}<input type="file" accept="image/*" hidden data-hwimg="${n.id}"></label><button class="btn sm pink" type="submit">${o.hwSubmit}</button></div></form>`}</div>`:''}
+    ${n.noteAt&&(n.hwAt||n.fbText)?`<div class="fbb"><b>💮 ${o.fb}</b>${t?`<form class="fbf" data-id="${n.id}"><textarea name="text" rows="2" maxlength="2000" placeholder="${o.fbPh}">${esc(n.fbText)}</textarea><button class="btn sm mint" type="submit">${o.fbSave}</button></form>`:n.fbText?`<p>${esc(n.fbText).replace(/\n/g,'<br>')}</p>`:''}</div>`:''}
+  </div>`}).join(''):emptyCard(o.empty)}`;
+}
+async function shrinkImage(file,max=1600){const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();let w=img.naturalWidth,h=img.naturalHeight;const r=Math.min(1,max/Math.max(w,h));w=Math.round(w*r);h=Math.round(h*r);
+  const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,w,h);g.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);return new Promise(r2=>c.toBlob(r2,'image/jpeg',.85))}
+function bindNotes(id){
+  const o=NOX(),done=()=>{toast(o.sent);loadNotes(id);sumSoon()};
+  $$('.ntf').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('PUT',`/slots/${f.dataset.id}/note`,{summary:f.summary.value,good:f.good.value,homework:f.homework.value});done()}catch(err){toast(A().err)}});
+  $$('.hwf').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('POST',`/slots/${f.dataset.id}/homework`,{text:f.text.value});done()}catch(err){toast(A().err)}});
+  $$('.fbf').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('PUT',`/slots/${f.dataset.id}/feedback`,{text:f.text.value});done()}catch(err){toast(A().err)}});
+  $$('[data-hwimg]').forEach(i=>i.onchange=async()=>{const f=i.files[0];if(!f)return;toast(S_().uploading);try{const ta=i.closest('form').text;if(ta&&ta.value.trim())await api('POST',`/slots/${i.dataset.hwimg}/homework`,{text:ta.value});const b=await shrinkImage(f);const r=await fetch(`/api/slots/${i.dataset.hwimg}/hwimage`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'image/jpeg'},body:b});if(!r.ok)throw 0;done()}catch(e){toast(S_().photoErr)}});
+}
+let TODO=null;
+async function loadTodo(){if(!lessonsOn())return;try{TODO=await api('GET','/todo');if(route().v==='lessons')render(true)}catch(e){}}
+function todoBlock(){
+  if(!TODO){return ''}const o=NOX(),t=isTeacherMe(),list=t?TODO.teacher:TODO.student;if(!list.length)return '';
+  return `<div class="h2"><span>📒 ${t?o.todoT:o.todoS}</span><span class="tag">${list.length}</span></div>${list.map(s=>`<a class="card mrow todo" href="#/notes/${s.matchId}">${peerHead(s.with)}<p class="mn2">📅 ${esc(fWhen(s.start,s.dur))} · ${o.open} ›</p></a>`).join('')}`}

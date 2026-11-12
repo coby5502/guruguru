@@ -137,11 +137,12 @@ function vMe(){
     ${statusBanner()}
     ${editMe?`<section class="card">${profileForm(u,false)}</section>`:`<section class="card mekv">
       ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div><div><span>${PX().modeQ}</span><b>${PX()[u.modes||'online']}</b></div>${u.view==='teacher'?`<div><span>${PX().profile}</span><b><a class="btn sm" href="#/teacher/${u.id}">👀</a></b></div>`:''}`}</section>`}
+    ${pushCard()}
     ${u.admin?`<a class="btn block yellow" href="#/admin">🛡 ${a.admin}</a>`:''}
     <div class="mebtns"><button class="btn block" id="meOut">${a.logout}</button><button class="btn block ghost" id="meDel">${a.del}</button></div>`;
 }
 function bindMe(){
-  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();
+  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();bindPush();
   bindProfileForm(()=>{editMe=false;render(false)});
   $('#meOut').onclick=logout;
   $('#meDel').onclick=async ev=>{if(Date.now()-delArm>4000){delArm=Date.now();ev.target.textContent=A().delC;return}
@@ -188,7 +189,7 @@ function authGate(r){
   if(AUTH==='boot'){topbar('main');tabbar(null);$('#app').innerHTML=`<div class="auth"><div class="auth-m">${mascotSVG(3,'big')}</div></div>`;return true}
   if(AUTH==='out'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vLogin(r.v==='login-error')}</div>`;mountGoogle($('#gbtn'));return true}
   if(AUTH==='profile'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vOnboard()}</div>`;bindProfileForm(()=>{location.hash='#/';render(false)});return true}
-  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')||((r.v==='lessons'||r.v==='chat'||r.v==='book'||r.v==='student'||r.v==='teacher')&&!lessonsOn())){location.replace('#/');return true}
+  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')||((r.v==='lessons'||r.v==='chat'||r.v==='book'||r.v==='student'||r.v==='teacher'||r.v==='notes')&&!lessonsOn())){location.replace('#/');return true}
   return false;
 }
 /* 앱으로 돌아올 때 역할 변경(승인 등)을 반영 */
