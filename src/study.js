@@ -205,14 +205,15 @@ async function loadTP(id){TP={id,d:null,err:false};try{TP.d=await api('GET','/te
 function vTeacher(id){
   const o=S_(),p=PX();if(TP.id!==id)loadTP(id);if(TP.err)return emptyCard(o.err);if(!TP.d)return '<div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>';
   const x=TP.d,by={};(x.upcoming||[]).forEach(s=>{const k=fDay(s.start);(by[k]=by[k]||[]).push(s)});
-  return `<section class="card tpro">${avatar(x,'xl')}<b class="mn">${esc(x.name)}</b><small>${esc(x.bio||'')}</small><div class="mchips">${modesBadges(x.modes)}</div>
+  return `<section class="card tpro">${avatar(x,'xl')}<b class="mn">${esc(x.name)}</b>${x.rating!=null?`<span>${stars(x.rating)} ${x.rating} · ${BX().revN(x.reviews)}</span>`:''}<small>${esc(x.bio||'')}</small><div class="mchips">${modesBadges(x.modes)}</div>
     ${x.tags&&x.tags.length?`<div class="tags">${x.tags.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}</section>
   ${x.intro?`<div class="card tintro">${esc(x.intro).replace(/\n/g,'<br>')}</div>`:''}
   ${x.places&&x.places.length?`<div class="h2"><span>📍 ${p.places}</span></div><div class="card tmap"><div class="mapbox" id="tpMap"></div>${x.places.map(pl=>`<a class="plrow" href="${gmap(pl)}" target="_blank" rel="noopener"><b>${esc(pl.name)}</b><small>${esc(pl.addr||'')}</small></a>`).join('')}</div>`:''}
   ${Object.keys(by).length?`<div class="h2"><span>🗓 ${o.free(x.freeSlots)}</span></div><div class="card sll">${Object.entries(by).slice(0,7).map(([k,ls])=>`<div class="sld"><b>${k}</b><div>${ls.map(s=>`<span class="slc ${s.mode}">${fTime(s.start)}<small>${s.mode==='offline'&&s.place?'📍'+esc(s.place.name):'💻'}</small></span>`).join('')}</div></div>`).join('')}</div>`:''}
+  ${revBlock(x.id)}
   ${x.match?`<a class="btn block pink" href="#/chat/${x.match.id}">💬 ${o.chat} · ${o.st[x.match.status]}</a>`:isStudentMe()?`<form class="apf card" data-id="${x.id}" style="padding:14px"><textarea name="message" maxlength="1000" rows="3" placeholder="${esc(o.applyPh)}"></textarea><button class="btn pink block" type="submit">${o.apply}</button></form>`:''}`;
 }
-function bindTeacher(){if(TP.d)miniMap($('#tpMap'),TP.d.places||[]);bindLessons()}
+function bindTeacher(){if(TP.d)miniMap($('#tpMap'),TP.d.places||[]);bindLessons();bindRev()}
 
 /* ---------- 푸시 알림 설정 ---------- */
 const NT={ja:{t:'通知',on:'プッシュ通知をオンにする',off:'通知をオフにする',onS:'メッセージ・予約・レッスン前のリマインダーをお知らせします',enabled:'通知はオンです 🔔',denied:'通知がブロックされています。ブラウザの設定から許可してください',ios:'iPhoneでは「ホーム画面に追加」したアプリから通知をオンにできます',unsup:'このブラウザは通知に対応していません'},
@@ -271,3 +272,92 @@ async function loadTodo(){if(!lessonsOn())return;try{TODO=await api('GET','/todo
 function todoBlock(){
   if(!TODO){return ''}const o=NOX(),t=isTeacherMe(),list=t?TODO.teacher:TODO.student;if(!list.length)return '';
   return `<div class="h2"><span>📒 ${t?o.todoT:o.todoS}</span><span class="tag">${list.length}</span></div>${list.map(s=>`<a class="card mrow todo" href="#/notes/${s.matchId}">${peerHead(s.with)}<p class="mn2">📅 ${esc(fWhen(s.start,s.dur))} · ${o.open} ›</p></a>`).join('')}`}
+
+/* ======================= 배치3: 음성 · 말하기 연습 · 수강권 · 신고/차단 · 후기 · 관리자 · 캘린더 ======================= */
+const B3={ja:{rec:'録音',stop:'停止',send:'送信',recNo:'マイクを使えません',voice:'音声',speak:'話す練習',speakS:'お手本を聞いて、まねして録音してみましょう',mine:'自分の声',model:'お手本',toT:'先生に送る',sentT:'先生に送りました',pick:'文をえらぶ',
+  credits:n=>n==null?'回数券なし':`🎫 残り ${n}回`,cSet:'回数券',cOff:'使わない',cOn:'回数券を使う',noCredit:'回数券が残っていません。先生に相談してください',sysC:n=>`🎫 回数券：残り${n}回`,
+  more:'その他',report:'通報する',reportPh:'理由を書いてください',reportSend:'通報して送信',block:'ブロック',unblock:'ブロック解除',blockedT:'ブロック中のため送れません',reported:'通報しました。運営が確認します',
+  rev:'レビュー',revN:n=>`${n}件`,revW:'レビューを書く',revPh:'レッスンの感想（任意）',revSave:'投稿する',revDone:'レビューを投稿しました',noRev:'まだレビューはありません',
+  ics:'カレンダーに追加',icsAll:'すべての予定をカレンダーへ',
+  stats:'サービス状況',st:{users:'ユーザー',students:'学生',teachers:'先生',pending:'承認待ち',active7:'7日アクティブ',matches:'マッチング中',upcoming:'予定レッスン',done:'実施レッスン',msgs7:'7日メッセージ',reports:'未対応の通報',tests:'実力テスト'},
+  reps:'通報',resolve:'対応済みにする',suspend:'利用停止',unsuspend:'停止解除',suspended:'停止中'},
+ ko:{rec:'녹음',stop:'정지',send:'보내기',recNo:'마이크를 사용할 수 없어요',voice:'음성',speak:'말하기 연습',speakS:'원어민 음성을 듣고 따라 말해 녹음해 보세요',mine:'내 목소리',model:'원어민',toT:'선생님께 보내기',sentT:'선생님께 보냈어요',pick:'문장 고르기',
+  credits:n=>n==null?'수강권 없음':`🎫 남은 ${n}회`,cSet:'수강권',cOff:'사용 안 함',cOn:'수강권 사용',noCredit:'남은 수강권이 없어요. 선생님과 상의해 주세요',sysC:n=>`🎫 수강권: 남은 ${n}회`,
+  more:'더보기',report:'신고하기',reportPh:'이유를 적어 주세요',reportSend:'신고 보내기',block:'차단',unblock:'차단 해제',blockedT:'차단 중이라 보낼 수 없어요',reported:'신고했어요. 운영자가 확인할게요',
+  rev:'후기',revN:n=>`${n}개`,revW:'후기 쓰기',revPh:'레슨 소감 (선택)',revSave:'올리기',revDone:'후기를 올렸어요',noRev:'아직 후기가 없어요',
+  ics:'캘린더에 추가',icsAll:'모든 일정을 캘린더로',
+  stats:'서비스 현황',st:{users:'사용자',students:'학생',teachers:'선생님',pending:'승인 대기',active7:'7일 활성',matches:'매칭 중',upcoming:'예정 레슨',done:'진행한 레슨',msgs7:'7일 메시지',reports:'미처리 신고',tests:'실력 테스트'},
+  reps:'신고',resolve:'처리 완료',suspend:'이용 정지',unsuspend:'정지 해제',suspended:'정지됨'}};
+const BX=()=>B3[LANG];
+const stars=r=>r==null?'':`<span class="stars2">${'★'.repeat(Math.round(r))}${'☆'.repeat(5-Math.round(r))}</span>`;
+
+/* ---------- 녹음기 ---------- */
+let REC=null;
+async function recStart(onTick){
+  const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+  const mt=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+  const mr=new MediaRecorder(st,mt?{mimeType:mt}:{}),chunks=[];mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const t0=Date.now(),iv=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);onTick&&onTick(s);if(s>=120)recStop()},250);
+  REC={mr,st,iv,t0,done:new Promise(res=>mr.onstop=()=>{clearInterval(iv);st.getTracks().forEach(t=>t.stop());const type=(mr.mimeType||'audio/webm').split(';')[0];res({blob:new Blob(chunks,{type}),sec:Math.round((Date.now()-t0)/1000),type})})};
+  mr.start(250);return REC}
+function recStop(){if(REC&&REC.mr.state!=='inactive')REC.mr.stop();const d=REC&&REC.done;REC=null;return d}
+async function sendVoice(matchId,rec,text){const r=await fetch(`/api/matches/${matchId}/voice?sec=${rec.sec}${text?'&text='+encodeURIComponent(text):''}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':rec.type},body:rec.blob});if(!r.ok)throw Object.assign(new Error('voice'),{status:r.status})}
+
+/* ---------- 채팅 확장: 음성 메시지 · 녹음 버튼 · 더보기(신고/차단) · 수강권 ---------- */
+function voiceHTML(x){const me=x.from===ME.id,b=x.body||{};return `<div class="cm ${me?'me':''} ${me&&x.read?'rd':''}" data-id="${x.id}"><div class="cb vb">${b.text?`<small lang="ko">🎙 ${esc(b.text)}</small>`:`<small>🎙 ${BX().voice} · ${b.sec||0}s</small>`}<audio controls preload="none" src="/api/voice/${esc(b.f)}"></audio></div><time>${fTime(x.at)}${me?`<i class="rk">${S_().read}</i>`:''}</time></div>`}
+function chatExtras(){
+  const m=CH.m,o=BX(),t=m.side==='teacher';if(!m)return '';
+  const cr=m.status==='accepted'?(t?`<div class="crd"><span>🎫 ${o.cSet}</span>${m.credits==null?`<button class="btn sm" data-cr="5">${o.cOn}</button>`:`<button class="btn sm" data-cr="${m.credits-1}" ${m.credits?'':'disabled'}>−</button><b>${m.credits}</b><button class="btn sm" data-cr="${m.credits+1}">＋</button><button class="lnk" data-cr="null">${o.cOff}</button>`}</div>`:m.credits!=null?`<div class="crd"><b>${o.credits(m.credits)}</b></div>`:''):'';
+  return `${cr}<details class="more"><summary>⋯ ${o.more}</summary><div class="morein">${m.blocked?`<button class="btn sm" data-blk="0">${o.unblock}</button>`:`<button class="btn sm" data-blk="1">🚫 ${o.block}</button>`}
+    <form class="repf"><textarea name="r" rows="2" maxlength="1000" placeholder="${o.reportPh}"></textarea><button class="btn sm" type="submit">⚠️ ${o.reportSend}</button></form></div></details>`}
+function bindChatExtras(){
+  const m=CH.m;if(!m)return;
+  $$('#chead [data-cr]').forEach(b=>b.onclick=async()=>{const v=b.dataset.cr==='null'?null:+b.dataset.cr;try{CH.m=await api('PUT',`/matches/${m.id}/credits`,{credits:v});chatHead();chatPull()}catch(e){toast(A().err)}});
+  $$('#chead [data-blk]').forEach(b=>b.onclick=async()=>{try{await api(b.dataset.blk==='1'?'POST':'DELETE','/block',{userId:m.peer.id});chatPull(true)}catch(e){toast(A().err)}});
+  const rf=$('#chead .repf');if(rf)rf.onsubmit=async e=>{e.preventDefault();try{await api('POST','/report',{userId:m.peer.id,matchId:m.id,reason:rf.r.value});toast(BX().reported);rf.reset()}catch(err){toast(A().err)}};
+}
+function recButtonBind(){
+  const f=$('#cin');if(!f||f.querySelector('.recb')||!navigator.mediaDevices||!window.MediaRecorder||!CH.m||CH.m.status!=='accepted')return;
+  const b=document.createElement('button');b.type='button';b.className='btn recb';b.textContent='🎙';b.setAttribute('aria-label',BX().rec);f.insertBefore(b,f.firstChild);
+  b.onclick=async()=>{if(REC){b.disabled=true;const r=await recStop();b.disabled=false;b.classList.remove('on');b.textContent='🎙';if(r.sec<1)return;try{await sendVoice(CH.id,r);chatPull()}catch(e){toast(A().err)}return}
+    try{await recStart(s=>{b.textContent='⏹ '+s+'s'});b.classList.add('on')}catch(e){toast(BX().recNo)}};
+}
+
+/* ---------- 레슨 안 말하기 연습 ---------- */
+function pSpeak(l){const p=PL(l.no);if(!p||!p.d||teachView())return '';const o=BX();
+  return `<div class="blk"><h3>🎙 ${o.speak}</h3><div class="card spk" id="spk"><p class="note" style="margin:0">${o.speakS}</p><select id="spkSel" aria-label="${o.pick}">${p.d.map((x,i)=>`<option value="${i}">${esc(x[1])}</option>`).join('')}</select>
+    <div class="spkb"><button class="btn sky" id="spkModel">▶ ${o.model}</button><button class="btn pink" id="spkRec">🎙 ${o.rec}</button></div><div id="spkOut"></div></div></div>`}
+let SPK=null;
+function bindSpeak(l){const sel=$('#spkSel');if(!sel)return;const o=BX(),p=PL(l.no),line=()=>p.d[+sel.value][1];
+  $('#spkModel').onclick=e=>say(line(),e.currentTarget);
+  const rb=$('#spkRec');rb.onclick=async()=>{if(REC){const r=await recStop();rb.textContent='🎙 '+o.rec;rb.classList.remove('on');SPK={...r,url:URL.createObjectURL(r.blob),text:line()};paint();return}
+    try{await recStart(s=>{rb.textContent='⏹ '+o.stop+' '+s+'s'});rb.classList.add('on')}catch(e){toast(o.recNo)}};
+  const paint=async()=>{const out=$('#spkOut');if(!out||!SPK)return;let ms=SOC.matches;if(lessonsOn()&&!ms){try{ms=SOC.matches=(await api('GET','/matches')).matches}catch(e){ms=[]}}
+    const acc=(ms||[]).filter(m=>m.status==='accepted');
+    out.innerHTML=`<div class="spkr"><span>${o.mine}</span><audio controls src="${SPK.url}"></audio></div>${acc.length?`<div class="spks">${acc.length>1?`<select id="spkTo">${acc.map(m=>`<option value="${m.id}">${esc(m.peer.name)}</option>`).join('')}</select>`:''}<button class="btn mint" id="spkSend">📤 ${o.toT}</button></div>`:''}`;
+    const sb=$('#spkSend');if(sb)sb.onclick=async()=>{sb.disabled=true;try{await sendVoice(+(($('#spkTo')||{}).value||acc[0].id),SPK,SPK.text);toast(o.sentT)}catch(e){toast(A().err);sb.disabled=false}}};
+}
+
+/* ---------- 후기 ---------- */
+let RVW={id:0,d:null};
+async function loadRev(id){try{RVW={id,d:await api('GET',`/teachers/${id}/reviews`)}}catch(e){RVW={id,d:{reviews:[],canWrite:false}}}const el=$('#revBox');if(el){el.innerHTML=revInner();bindRev()}}
+function revBlock(id){if(RVW.id!==id){RVW={id,d:null};loadRev(id)}return `<div class="h2"><span>⭐ ${BX().rev}</span></div><div id="revBox">${revInner()}</div>`}
+function revInner(){const o=BX(),d=RVW.d;if(!d)return '<div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>';const mine=d.reviews.find(r=>r.mine);
+  return `${d.canWrite?`<form class="card revf" id="revf"><div class="rstars">${[1,2,3,4,5].map(n=>`<label><input type="radio" name="rating" value="${n}" ${mine&&mine.rating===n?'checked':''} required><span>★</span></label>`).join('')}</div><textarea name="text" rows="2" maxlength="1000" placeholder="${o.revPh}">${esc(mine?mine.text:'')}</textarea><button class="btn sm pink" type="submit">${o.revSave}</button></form>`:''}
+  ${d.reviews.length?d.reviews.map(r=>`<div class="card revi">${stars(r.rating)}<b>${esc(r.name)}</b><small>${new Date(r.at*1000).toLocaleDateString(loc())}</small>${r.text?`<p>${esc(r.text)}</p>`:''}</div>`).join(''):emptyCard(o.noRev)}`}
+function bindRev(){const f=$('#revf');if(f)f.onsubmit=async e=>{e.preventDefault();const r=(f.querySelector('[name=rating]:checked')||{}).value;if(!r)return;try{await api('POST',`/teachers/${RVW.id}/reviews`,{rating:+r,text:f.text.value});toast(BX().revDone);loadRev(RVW.id)}catch(err){toast(A().err)}}}
+
+/* ---------- 캘린더(.ics) ---------- */
+function icsFor(list){const z=d=>new Date(d*1000).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,''),e=t=>String(t||'').replace(/[\;,]/g,m=>'\\'+m).replace(/\n/g,'\\n');
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//guruguru//lessons//JA',...list.flatMap(s=>['BEGIN:VEVENT',`UID:gg-slot-${s.id}@guruguru.app`,`DTSTAMP:${z(Date.now()/1000)}`,`DTSTART:${z(s.start)}`,`DTEND:${z(s.start+s.dur*60)}`,
+    `SUMMARY:${e((LANG==='ko'?'한국어 레슨':'韓国語レッスン')+(s.with?' · '+s.with.name:''))}`,s.place?`LOCATION:${e(s.place.name+(s.place.addr?' '+s.place.addr:''))}`:s.url?`LOCATION:${e(s.url)}`:'',s.url?`URL:${s.url}`:'','BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Lesson','END:VALARM','END:VEVENT'].filter(Boolean)),'END:VCALENDAR'].join('\r\n')}
+function dlICS(list,name){const b=new Blob([icsFor(list)],{type:'text/calendar'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+
+/* ---------- 관리자 확장 ---------- */
+let ADM={stats:null,reports:null};
+async function loadAdm(){try{const [s,r]=await Promise.all([api('GET','/admin/stats'),api('GET','/admin/reports')]);ADM={stats:s,reports:r.reports}}catch(e){}if(route().v==='admin'){const el=$('#admX');if(el){el.innerHTML=admInner();bindAdm()}}}
+function adminExtra(){if(!ADM.stats)loadAdm();return `<div id="admX">${admInner()}</div>`}
+function admInner(){const o=BX();if(!ADM.stats)return '';const s=ADM.stats;
+  return `<div class="h2 first"><span>📊 ${o.stats}</span></div><div class="stg">${Object.keys(o.st).map(k=>`<div class="card ${k==='reports'&&s[k]?'warn':''}"><b>${s[k]}</b><small>${o.st[k]}</small></div>`).join('')}</div>
+  ${ADM.reports&&ADM.reports.length?`<div class="h2"><span>⚠️ ${o.reps}</span></div>${ADM.reports.slice(0,20).map(r=>`<div class="card rep ${r.resolved?'ok':''}"><small>${new Date(r.at*1000).toLocaleString(loc())}</small><b>${esc(r.reporter.name||'—')} → ${esc(r.target.name||'—')} <small>${esc(r.target.email||'')}</small></b><p>${esc(r.reason||'—')}</p>${r.resolved?'':`<button class="btn sm" data-rres="${r.id}">${o.resolve}</button>`}</div>`).join('')}`:''}`}
+function bindAdm(){$$('[data-rres]').forEach(b=>b.onclick=async()=>{try{await api('POST','/admin/reports/'+b.dataset.rres,{});loadAdm()}catch(e){toast(A().err)}})}

@@ -82,7 +82,7 @@ function lessonItem(s){const o=S_(),t=isTeacherMe(),soon=s.start-Date.now()/1000
     ${peerHead(s.with,`${t&&s.with?`<a class="btn sm" href="#/student/${s.with.id}" aria-label="${S2().sp}">📊</a>`:''}${s.matchId?`<a class="btn sm" href="#/chat/${s.matchId}">💬</a>`:''}`)}
     ${t?`<form class="lno" data-id="${s.id}"><label>${o.lessonNo}<input name="no" type="number" min="1" max="290" inputmode="numeric" value="${s.lessonNo||''}" placeholder="${o.noPh}"></label><button class="btn sm" type="submit">${o.save}</button></form>`
        :s.lessonNo?`<a class="btn sm mint block" href="#/l/${s.lessonNo}">📖 ${o.prep(s.lessonNo)}</a>`:''}
-    <button class="lnk danger" data-cancel="${s.id}">${o.cancel}</button></div>`}
+    <div class="lsf"><button class="lnk" data-ics="${s.id}">📆 ${BX().ics}</button><button class="lnk danger" data-cancel="${s.id}">${o.cancel}</button></div></div>`}
 function emptyCard(txt){return `<div class="card empty2">${txt}</div>`}
 
 /* ---------- 레슨 허브 ---------- */
@@ -99,7 +99,7 @@ function vLessons(){
     h+=pend.length?pend.map(m=>`<div class="card req">${peerHead(m.peer)}${m.last&&m.last.kind!=='sys'?`<p class="ml q">${esc(m.last.body)}</p>`:''}
       <div class="rbtn"><button class="btn mint" data-act="accept" data-id="${m.id}">${o.accept}</button><button class="btn" data-act="decline" data-id="${m.id}">${o.decline}</button><a class="btn sm" href="#/chat/${m.id}">💬</a></div></div>`).join(''):emptyCard(o.noReqs);
   }
-  h+=`<div class="h2"><span>📅 ${o.next}</span></div>`+(SOC.schedule.length?SOC.schedule.map(lessonItem).join(''):emptyCard(o.noNext));
+  h+=`<div class="h2"><span>📅 ${o.next}</span>${SOC.schedule.length>1?`<button class="lnk" data-ics="all">📆 ${BX().icsAll}</button>`:''}</div>`+(SOC.schedule.length?SOC.schedule.map(lessonItem).join(''):emptyCard(o.noNext));
   h+=`<div class="h2"><span>${t?'🎒 '+o.myS:'🧑‍🏫 '+o.myT}</span></div>`;
   const mine=t?act:[...act,...pend];
   h+=mine.length?mine.map(m=>mrow(m)+(!t&&m.status==='accepted'?`<a class="btn block sky bk" href="#/book/${m.id}">📅 ${o.book}</a>`:t?`<a class="btn block bk" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:'')).join(''):emptyCard(t?(LANG==='ko'?'아직 매칭된 학생이 없어요':'まだマッチングした生徒はいません'):o.noMine);
@@ -111,7 +111,7 @@ function vLessons(){
       <div class="fchips tfil">${[['all',p.all],['online','💻 '+p.online],['offline','📍 '+p.offline]].map(([k,v])=>`<button data-tf="${k}" class="${fl===k?'on':''}">${v}</button>`).join('')}</div>`;
     h+=tl.length?tl.map(x=>`<div class="card tcard">${peerHead(x,x.freeSlots?`<span class="spill s-free">${o.free(x.freeSlots)}</span>`:'')}
       <div class="mchips">${modesBadges(x.modes)}${(x.places||[]).slice(0,2).map(pl=>`<span class="mchip pl">📍 ${esc(pl.name)}</span>`).join('')}${(x.tags||[]).slice(0,3).map(t=>`<span class="mchip tg">#${esc(t)}</span>`).join('')}</div>
-      <a class="lnk" href="#/teacher/${x.id}">${p.profile} ›</a>
+      <a class="lnk" href="#/teacher/${x.id}">${x.rating!=null?stars(x.rating)+' '+x.rating+' ('+x.reviews+') · ':''}${p.profile} ›</a>
       ${x.match?`<a class="btn block" href="#/chat/${x.match.id}">💬 ${o.chat} · ${o.st[x.match.status]}</a>`
         :`<details class="apply"><summary class="btn pink block">${o.apply}</summary><form class="apf" data-id="${x.id}"><textarea name="message" maxlength="1000" rows="3" placeholder="${esc(o.applyPh)}"></textarea><button class="btn pink block" type="submit">${o.send}</button></form></details>`}</div>`).join(''):emptyCard(o.noTeachers);
   }
@@ -137,6 +137,7 @@ function armed(key,el,msg){if(arm[key]&&Date.now()-arm[key]<4000){delete arm[key
 function bindLessons(){
   const o=S_(),app=$('#app');bindPush();
   const rb=$('#hubRetry');if(rb)rb.onclick=()=>loadHub();
+  app.querySelectorAll('[data-ics]').forEach(b=>b.onclick=()=>{const l=b.dataset.ics==='all'?SOC.schedule:SOC.schedule.filter(s=>s.id===+b.dataset.ics);dlICS(l,'guruguru-lessons.ics')});
   app.querySelectorAll('[data-act]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('POST','/matches/'+b.dataset.id,{action:b.dataset.act});if(b.dataset.act==='accept')location.hash='#/chat/'+b.dataset.id;else loadHub()}catch(e){toast(A().err);b.disabled=false}});
   app.querySelectorAll('.apf').forEach(f=>f.onsubmit=async e=>{e.preventDefault();const btn=f.querySelector('button');btn.disabled=true;
     try{const m=await api('POST','/matches',{teacherId:+f.dataset.id,message:f.message.value});toast(o.applied);location.hash='#/chat/'+m.id}
@@ -181,13 +182,14 @@ function bindBook(id){
   $$('.slb').forEach(b=>b.onclick=()=>{BK.sel=+b.dataset.s;render(true)});
   const sel=BK.slots&&BK.slots.find(s=>s.id===BK.sel);if(sel&&sel.place&&$('#bkMap'))miniMap($('#bkMap'),[sel.place]);
   const g=$('#bkGo');if(g)g.onclick=async()=>{g.disabled=true;try{await api('POST',`/slots/${BK.sel}/book`);toast(S_().bookedT);confetti(innerWidth/2,innerHeight-120,16);SOC.matches=null;location.hash='#/chat/'+id}
-    catch(e){toast(S_().taken);loadBook(id)}};
+    catch(e){toast(e.status===402?BX().noCredit:S_().taken);loadBook(id)}};
 }
 
 /* ---------- 채팅 ---------- */
 let CH={id:0,last:0,m:null,busy:false};
-function sysText(b){const s=S_().sys;if(!b)return '';if(b.t==='book'||b.t==='unbook')return s[b.t](fWhen(b.start,b.dur));return s[b.t]||''}
+function sysText(b){const s=S_().sys;if(!b)return '';if(b.t==='credits')return BX().sysC(b.n);if(b.t==='book'||b.t==='unbook')return s[b.t](fWhen(b.start,b.dur));return s[b.t]||''}
 function msgHTML(x){
+  if(x.kind==='voice')return voiceHTML(x);
   if(x.kind==='sys')return `<div class="cs">${esc(sysText(x.body))}</div>`;
   const me=x.from===ME.id;
   return `<div class="cm ${me?'me':''} ${me&&x.read?'rd':''}" data-id="${x.id}"><div class="cb">${esc(x.body).replace(/\n/g,'<br>')}</div><time>${fTime(x.at)}${me?`<i class="rk">${S_().read}</i>`:''}</time></div>`}
@@ -201,12 +203,14 @@ function chatHead(){
     ${m.status==='accepted'?`<div class="cact">${t?`<a class="btn sm sky" href="#/lessons">🕒 ${o.openSlots}</a><a class="btn sm" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:`<a class="btn sm sky" href="#/book/${m.id}">📅 ${o.book}</a>`}${m.next?`<span class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</span>`:''}<a class="btn sm" href="#/notes/${m.id}">📒 ${NOX().t}</a><button class="lnk danger" id="chEnd">${o.end}</button></div>`:''}
     ${m.status==='ended'?`<div class="cact"><a class="btn sm" href="#/notes/${m.id}">📒 ${NOX().t}</a></div>`:''}
     ${m.status==='pending'&&t?`<div class="cact"><b class="rq">📨 ${o.reqBanner}</b><button class="btn sm mint" data-ca="accept">${o.accept}</button><button class="btn sm" data-ca="decline">${o.decline}</button></div>`:''}
-    ${m.status==='pending'&&!t?`<div class="cact"><span class="mn2">⏳ ${o.waitT}</span><button class="lnk danger" data-ca="cancel">${o.cancelReq}</button></div>`:''}</div>`;
+    ${m.status==='pending'&&!t?`<div class="cact"><span class="mn2">⏳ ${o.waitT}</span><button class="lnk danger" data-ca="cancel">${o.cancelReq}</button></div>`:''}${chatExtras()}</div>`;
   $$('#chead [data-ca]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('POST','/matches/'+m.id,{action:b.dataset.ca});SOC.matches=null;chatPull(true)}catch(e){toast(A().err);b.disabled=false}});
   const e=$('#chEnd');if(e)e.onclick=async()=>{if(!armed('end'+m.id,e,o.endC))return;try{await api('POST','/matches/'+m.id,{action:'end'});SOC.matches=null;chatPull(true)}catch(err){toast(A().err)}};
-  const open=['pending','accepted'].includes(m.status),f=$('#cfoot');
-  if(!open)f.innerHTML=`<p class="cclosed">${o.closed}</p>`;
+  bindChatExtras();
+  const open=['pending','accepted'].includes(m.status)&&!m.blocked,f=$('#cfoot');
+  if(!open)f.innerHTML=`<p class="cclosed">${m.blocked?BX().blockedT:o.closed}</p>`;
   else if(!f.querySelector('form')){f.innerHTML=`<form class="cin" id="cin"><textarea name="b" rows="1" maxlength="1000" placeholder="${o.chatPh}" enterkeyhint="send"></textarea><button class="btn pink" type="submit" aria-label="${o.send}">➤</button></form>`;bindChatInput()}
+  recButtonBind();
 }
 async function chatPull(full){
   const r=route();if(r.v!=='chat'||CH.busy)return;const id=r.id;CH.busy=true;
