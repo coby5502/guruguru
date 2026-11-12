@@ -99,6 +99,116 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   rr = await form({ credential: tok({ sub: 'r1', email: 'r@x.com' }, other), g_csrf_token: 'abc' }, 'abc');
   assert.equal(rr.headers.get('location'), '/#/login-error');
 }
+
+// ===== 프로필 사진 · 실력 테스트 · 매칭 · 일정 · 채팅 =====
+{
+  const raw = async (m, p, cookie, ct, body) => { const r = await fetch(base + p, { method: m, headers: { cookie, origin: 'https://guruguru.app', 'content-type': ct }, body }); const t = await r.text(); return { s: r.status, j: t && /json/.test(r.headers.get('content-type') || '') ? JSON.parse(t) : null }; };
+  const s1 = await login('ss1', 'ss1@example.com', 'Yui');
+  await call('PUT', '/api/me', { cookie: s1.cookie, body: { name: 'ゆい', role: 'student', level: 'beginner' } });
+  const t1 = await login('tt1', 'tt1@example.com', 'Lee');
+  await call('PUT', '/api/me', { cookie: t1.cookie, body: { name: '이선생', role: 'teacher', bio: '회화 전문' } });
+  await call('POST', `/api/admin/users/${t1.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
+  const s2 = await login('ss2', 'ss2@example.com', 'Ken');
+  await call('PUT', '/api/me', { cookie: s2.cookie, body: { name: 'けん', role: 'student' } });
+
+  // 사진
+  const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(300, 1)]);
+  let x = await raw('POST', '/api/me/avatar', s1.cookie, 'image/jpeg', jpg);
+  assert.equal(x.s, 200); assert.match(x.j.picture, /^\/api\/avatar\/\d+-[\w-]+\.jpg$/);
+  const pic = x.j.picture;
+  { const g = await fetch(base + pic); assert.equal(g.status, 200); assert.equal(g.headers.get('content-type'), 'image/jpeg'); assert.equal((await g.arrayBuffer()).byteLength, jpg.length); }
+  assert.equal((await raw('POST', '/api/me/avatar', s1.cookie, 'image/png', jpg)).s, 415);
+  assert.equal((await raw('POST', '/api/me/avatar', s1.cookie, 'image/jpeg', Buffer.from('<svg onload=alert(1)>'.repeat(10)))).s, 415);
+  assert.equal((await raw('POST', '/api/me/avatar', s1.cookie, 'image/jpeg', Buffer.alloc(700 * 1024, 0xff))).s, 413);
+  assert.equal((await raw('POST', '/api/me/avatar', '', 'image/jpeg', jpg)).s, 401);
+  x = await raw('POST', '/api/me/avatar', s1.cookie, 'image/jpeg', jpg);
+  assert.equal((await fetch(base + pic)).status, 404, 'old avatar removed');
+  assert.notEqual((await fetch(base + '/api/avatar/..%2Ft.db')).status, 200);
+
+  // 실력 테스트
+  r = await call('POST', '/api/me/test', { cookie: s1.cookie, body: { step: 2, score: 10, total: 14 } });
+  assert.equal(r.s, 200); assert.equal(r.j.test.step, 2);
+  assert.equal((await call('POST', '/api/me/test', { cookie: s1.cookie, body: { step: 9, score: 1, total: 1 } })).s, 400);
+  assert.equal((await call('POST', '/api/me/test', { cookie: s1.cookie, body: { step: 1, score: 5, total: 3 } })).s, 400);
+
+  // 이벤트 스트림
+  const es = await fetch(base + '/api/events', { headers: { cookie: t1.cookie } });
+  assert.equal(es.headers.get('content-type'), 'text/event-stream; charset=utf-8');
+  const rd = es.body.getReader(); let evText = '';
+  const pump = (async () => { for (;;) { const { value, done } = await rd.read(); if (done) break; evText += Buffer.from(value).toString(); } })();
+
+  // 선생님 목록 · 신청
+  r = await call('GET', '/api/teachers', { cookie: s1.cookie });
+  const lee = r.j.teachers.find(t => t.id === t1.j.id);
+  assert.ok(lee); assert.equal(lee.name, '이선생'); assert.equal(lee.email, undefined);
+  assert.ok(!r.j.teachers.some(t => t.id === te.j.id), 'rejected teacher hidden');
+  assert.equal((await call('POST', '/api/matches', { cookie: t1.cookie, body: { teacherId: t1.j.id } })).s, 403);
+  assert.equal((await call('POST', '/api/matches', { cookie: s1.cookie, body: { teacherId: te.j.id } })).s, 404);
+  r = await call('POST', '/api/matches', { cookie: s1.cookie, body: { teacherId: t1.j.id, message: 'よろしくお願いします' } });
+  assert.equal(r.s, 201); assert.equal(r.j.status, 'pending');
+  const mid = r.j.id;
+  assert.equal((await call('POST', '/api/matches', { cookie: s1.cookie, body: { teacherId: t1.j.id } })).s, 409);
+  r = await call('GET', '/api/summary', { cookie: t1.cookie }); assert.equal(r.j.requests, 1); assert.equal(r.j.unread, 2);
+  r = await call('GET', '/api/matches', { cookie: t1.cookie });
+  assert.equal(r.j.matches[0].peer.name, 'ゆい'); assert.equal(r.j.matches[0].peer.test.step, 2); assert.equal(r.j.matches[0].peer.email, undefined); assert.equal(r.j.matches[0].side, 'teacher');
+  // 남의 대화 접근 불가
+  assert.equal((await call('GET', `/api/matches/${mid}/messages`, { cookie: s2.cookie })).s, 404);
+  assert.equal((await call('POST', `/api/matches/${mid}`, { cookie: s1.cookie, body: { action: 'accept' } })).s, 409);
+  r = await call('POST', `/api/matches/${mid}`, { cookie: t1.cookie, body: { action: 'accept' } });
+  assert.equal(r.j.status, 'accepted');
+
+  // 채팅
+  r = await call('POST', `/api/matches/${mid}/messages`, { cookie: t1.cookie, body: { body: '안녕하세요! 반가워요 <b>' } });
+  assert.equal(r.s, 201); assert.equal(r.j.body, '안녕하세요! 반가워요 <b>');
+  assert.equal((await call('POST', `/api/matches/${mid}/messages`, { cookie: s1.cookie, body: { body: '   ' } })).s, 400);
+  r = await call('GET', '/api/summary', { cookie: s1.cookie }); assert.ok(r.j.unread >= 2);
+  r = await call('GET', `/api/matches/${mid}/messages`, { cookie: s1.cookie });
+  assert.ok(r.j.messages.some(m => m.kind === 'sys' && m.body.t === 'accepted'));
+  const lastId = r.j.messages.at(-1).id;
+  r = await call('GET', '/api/summary', { cookie: s1.cookie }); assert.equal(r.j.unread, 0);
+  await call('POST', `/api/matches/${mid}/messages`, { cookie: s1.cookie, body: { body: 'はい！' } });
+  r = await call('GET', `/api/matches/${mid}/messages?after=${lastId}`, { cookie: t1.cookie });
+  assert.equal(r.j.messages.length, 1); assert.equal(r.j.messages[0].body, 'はい！');
+
+  // 일정
+  const H = 3600, base0 = Math.floor(Date.now() / 1000 / 3600) * 3600 + 48 * H;
+  assert.equal((await call('POST', '/api/slots', { cookie: s1.cookie, body: { slots: [{ start: base0, dur: 60 }] } })).s, 403);
+  r = await call('POST', '/api/slots', { cookie: t1.cookie, body: { slots: [{ start: base0, dur: 60 }, { start: base0 + 30 * 60, dur: 60 }, { start: base0 + 2 * H, dur: 50 }, { start: 100, dur: 60 }] } });
+  assert.equal(r.j.made, 2); assert.equal(r.j.skipped, 2);
+  const [sa, sb] = r.j.slots;
+  assert.equal((await call('GET', `/api/slots?teacher=${t1.j.id}`, { cookie: s2.cookie })).s, 403);
+  r = await call('GET', `/api/slots?teacher=${t1.j.id}`, { cookie: s1.cookie }); assert.equal(r.j.slots.length, 2);
+  assert.equal((await call('POST', `/api/slots/${sa.id}/book`, { cookie: s2.cookie })).s, 403);
+  r = await call('POST', `/api/slots/${sa.id}/book`, { cookie: s1.cookie }); assert.equal(r.s, 200); assert.equal(r.j.booked, true);
+  assert.equal((await call('POST', `/api/slots/${sa.id}/book`, { cookie: s1.cookie })).s, 409);
+  r = await call('GET', `/api/slots?teacher=${t1.j.id}`, { cookie: s1.cookie }); assert.equal(r.j.slots.length, 1);
+  r = await call('PUT', `/api/slots/${sa.id}`, { cookie: t1.cookie, body: { lessonNo: 12, note: '교재 준비' } }); assert.equal(r.j.lessonNo, 12);
+  assert.equal((await call('PUT', `/api/slots/${sa.id}`, { cookie: s1.cookie, body: { lessonNo: 1 } })).s, 403);
+  r = await call('GET', '/api/schedule', { cookie: s1.cookie }); assert.equal(r.j.lessons.length, 1); assert.equal(r.j.lessons[0].with.name, '이선생'); assert.equal(r.j.lessons[0].lessonNo, 12);
+  r = await call('GET', '/api/schedule', { cookie: t1.cookie }); assert.equal(r.j.lessons[0].with.name, 'ゆい');
+  r = await call('GET', '/api/matches', { cookie: s1.cookie }); assert.equal(r.j.matches[0].next.start, base0);
+  r = await call('POST', `/api/slots/${sa.id}/cancel`, { cookie: s1.cookie }); assert.equal(r.j.booked, false);
+  await call('POST', `/api/slots/${sb.id}/book`, { cookie: s1.cookie });
+  r = await call('GET', `/api/matches/${mid}/messages`, { cookie: t1.cookie });
+  assert.deepEqual(r.j.messages.filter(m => m.kind === 'sys').map(m => m.body.t), ['request', 'accepted', 'book', 'unbook', 'book']);
+  // 매칭 종료 → 예약 해제, 채팅 닫힘
+  r = await call('POST', `/api/matches/${mid}`, { cookie: s1.cookie, body: { action: 'end' } }); assert.equal(r.j.status, 'ended');
+  r = await call('GET', '/api/schedule', { cookie: s1.cookie }); assert.equal(r.j.lessons.length, 0);
+  assert.equal((await call('POST', `/api/matches/${mid}/messages`, { cookie: s1.cookie, body: { body: 'x' } })).s, 409);
+  assert.equal((await call('POST', `/api/slots/${sa.id}/book`, { cookie: s1.cookie })).s, 403);
+  // 다시 신청 가능
+  assert.equal((await call('POST', '/api/matches', { cookie: s1.cookie, body: { teacherId: t1.j.id } })).s, 201);
+  assert.equal((await call('DELETE', `/api/slots/${sb.id}`, { cookie: t1.cookie })).s, 200);
+
+  await new Promise(r => setTimeout(r, 100));
+  assert.match(evText, /"t":"match"/); assert.match(evText, /"t":"msg"/); assert.match(evText, /"t":"slot"/);
+  rd.cancel().catch(() => {}); await pump.catch(() => {});
+
+  // 탈퇴 시 사진 삭제
+  const pic2 = (await call('GET', '/api/me', { cookie: s1.cookie })).j.picture;
+  await call('DELETE', '/api/me', { cookie: s1.cookie });
+  assert.equal((await fetch(base + pic2)).status, 404);
+}
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });
 process.exit(0);
