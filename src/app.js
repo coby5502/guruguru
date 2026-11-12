@@ -480,7 +480,7 @@ function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
   if(h[0]==='words')return {v:'words'};if(h[0]==='prints'||(h[0]==='guide'&&h[1]==='prints'&&teachView()))return {v:'prints'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
   if(h[0]==='lessons')return {v:'lessons'};if((h[0]==='chat'||h[0]==='book')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};if(h[0]==='test')return {v:'test'};if(h[0]==='review')return {v:'review'};if(h[0]==='mock')return {v:'mock'};if(h[0]==='notes'&&/^\d+$/.test(h[1]||''))return {v:'notes',id:+h[1]};if((h[0]==='student'||h[0]==='teacher')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};
-  if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin'};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
+  if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin',sub:h[1]||'',id:+(h[2]||0)};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
   const r=route();if(authGate(r))return;socialTick();

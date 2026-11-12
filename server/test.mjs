@@ -311,15 +311,8 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: t5.cookie } })).status, 200);
   assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: te.cookie } })).status, 404);
   assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: t5.cookie, range: 'bytes=0-9' } })).status, 206);
-  // 수강권
-  assert.equal((await call('PUT', `/api/matches/${mt.id}/credits`, { cookie: s5.cookie, body: { credits: 9 } })).s, 404);
-  x = await call('PUT', `/api/matches/${mt.id}/credits`, { cookie: t5.cookie, body: { credits: 1 } }); assert.equal(x.j.credits, 1);
   const H = 3600, b0 = Math.floor(Date.now() / 1000 / H) * H + 50 * H;
   const sl = (await call('POST', '/api/slots', { cookie: t5.cookie, body: { slots: [{ start: b0, dur: 60 }, { start: b0 + 2 * H, dur: 60 }] } })).j.slots;
-  assert.equal((await call('POST', `/api/slots/${sl[0].id}/book`, { cookie: s5.cookie })).s, 200);
-  assert.equal((await call('POST', `/api/slots/${sl[1].id}/book`, { cookie: s5.cookie })).s, 402);
-  await call('POST', `/api/slots/${sl[0].id}/cancel`, { cookie: s5.cookie });
-  x = await call('GET', `/api/matches/${mt.id}`, { cookie: s5.cookie }); assert.equal(x.j.credits, 1, 'refunded (>24h)');
   // 후기: 지난 수업 없으면 403
   assert.equal((await call('POST', `/api/teachers/${t5.j.id}/reviews`, { cookie: s5.cookie, body: { rating: 5 } })).s, 403);
   await call('POST', `/api/slots/${sl[1].id}/book`, { cookie: s5.cookie });
@@ -362,6 +355,26 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   x = await call('PUT', '/api/me', { cookie: s6.cookie, body: { name: 'あおい', role: 'student', ptags: 'kpop,drama', sns: { instagram: 'aoi' } } });
   assert.deepEqual(x.j.ptags, ['kpop', 'drama']); assert.deepEqual(x.j.sns, undefined);
   assert.equal((await fetch(base + '/api/me/gallery', { method: 'POST', headers: { cookie: s6.cookie, origin: 'https://guruguru.app', 'content-type': 'image/jpeg' }, body: jpg })).status, 403);
+}
+
+// ===== 관리자 콘솔 =====
+{
+  const u7 = await login('ss7', 'ss7@example.com', 'Nao'); await call('PUT', '/api/me', { cookie: u7.cookie, body: { name: 'なお', role: 'student' } });
+  let x = await call('GET', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie }); assert.equal(x.j.user.name, 'なお'); assert.ok(x.j.logins.length >= 1);
+  x = await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'grade', grade: 'gold' } }); assert.equal(x.j.grade, 'gold');
+  assert.equal((await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'grade', grade: 'king' } })).s, 400);
+  x = await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'memo', memo: '体験レッスン希望' } }); assert.equal(x.j.memo, '体験レッスン希望');
+  x = await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'makeAdmin' } }); assert.equal(x.j.admin, true);
+  // 부관리자: 콘솔 접근 가능, 관리자 임명은 불가
+  assert.equal((await call('GET', '/api/admin/stats', { cookie: u7.cookie })).s, 200);
+  assert.equal((await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: u7.cookie, body: { action: 'removeAdmin' } })).s, 403);
+  assert.equal((await call('POST', `/api/admin/users/${ad.j.id}`, { cookie: ad.cookie, body: { action: 'removeAdmin' } })).s, 400);
+  x = await call('GET', '/api/admin/logs', { cookie: ad.cookie }); assert.ok(x.j.logs.some(l => l.action === 'grade' && l.detail === 'gold')); assert.ok(x.j.logins.length > 3);
+  x = await call('GET', '/api/admin/matches', { cookie: ad.cookie }); assert.ok(x.j.matches.length > 0);
+  x = await call('GET', '/api/admin/lessons', { cookie: ad.cookie }); assert.ok(Array.isArray(x.j.lessons));
+  x = await call('GET', '/api/admin/stats', { cookie: ad.cookie }); assert.ok(Array.isArray(x.j.signups));
+  await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'removeAdmin' } });
+  assert.equal((await call('GET', '/api/admin/stats', { cookie: u7.cookie })).s, 403);
 }
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });

@@ -101,7 +101,12 @@ CREATE TABLE IF NOT EXISTS notes(
   hw_text TEXT, hw_image TEXT, hw_at INTEGER, fb_text TEXT, fb_at INTEGER
 );`);
 addCol('users', 'suspended', 'INTEGER');
-for (const c of ['gallery', 'video', 'sns', 'ptags']) addCol('users', c, 'TEXT'); addCol('matches', 'credits', 'INTEGER');
+for (const c of ['gallery', 'video', 'sns', 'ptags', 'grade', 'memo']) addCol('users', c, 'TEXT');
+addCol('users', 'is_admin', 'INTEGER');
+db.exec(`
+CREATE TABLE IF NOT EXISTS logins(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, at INTEGER NOT NULL, ip TEXT, ua TEXT);
+CREATE INDEX IF NOT EXISTS logins_u ON logins(user_id, at);
+CREATE TABLE IF NOT EXISTS admin_log(id INTEGER PRIMARY KEY, admin_id INTEGER, admin_name TEXT, action TEXT NOT NULL, target_id INTEGER, target_name TEXT, detail TEXT, at INTEGER NOT NULL);`); addCol('matches', 'credits', 'INTEGER');
 db.exec(`
 CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, rating INTEGER NOT NULL, text TEXT, at INTEGER NOT NULL, UNIQUE(teacher_id, student_id));
 CREATE TABLE IF NOT EXISTS blocks(user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, at INTEGER NOT NULL, PRIMARY KEY(user_id, blocked_id));
@@ -154,7 +159,6 @@ const q = {
   reports: db.prepare('SELECT r.*, a.name rname, a.email remail, b.name tname, b.email temail FROM reports r LEFT JOIN users a ON a.id=r.reporter_id LEFT JOIN users b ON b.id=r.target_id ORDER BY r.resolved IS NOT NULL, r.at DESC LIMIT 100'),
   resolveRep: db.prepare('UPDATE reports SET resolved=? WHERE id=?'),
   suspend: db.prepare('UPDATE users SET suspended=?,updated_at=? WHERE id=?'), killSess: db.prepare('DELETE FROM sessions WHERE user_id=?'),
-  setCredits: db.prepare('UPDATE matches SET credits=? WHERE id=?'), useCredit: db.prepare('UPDATE matches SET credits=credits-1 WHERE id=? AND credits>0'), refund: db.prepare('UPDATE matches SET credits=credits+1 WHERE id=? AND credits IS NOT NULL'),
   voiceOwner: db.prepare("SELECT x.student_id, x.teacher_id FROM messages m JOIN matches x ON x.id=m.match_id WHERE m.kind='voice' AND m.body LIKE ?"),
   stats: db.prepare(`SELECT (SELECT COUNT(*) FROM users) users, (SELECT COUNT(*) FROM users WHERE role='student') students, (SELECT COUNT(*) FROM users WHERE role='teacher' AND teacher_status='approved') teachers,
     (SELECT COUNT(*) FROM users WHERE teacher_status='pending') pending, (SELECT COUNT(*) FROM users WHERE last_login>?1) active7, (SELECT COUNT(*) FROM matches WHERE status='accepted') matches,
@@ -163,6 +167,20 @@ const q = {
   setGallery: db.prepare('UPDATE users SET gallery=?,updated_at=? WHERE id=?'),
   setVideo: db.prepare('UPDATE users SET video=?,updated_at=? WHERE id=?'),
   setSns: db.prepare('UPDATE users SET sns=?,ptags=?,updated_at=? WHERE id=?'),
+  insLogin: db.prepare('INSERT INTO logins(user_id,at,ip,ua) VALUES(?,?,?,?)'),
+  loginsOf: db.prepare('SELECT at,ip,ua FROM logins WHERE user_id=? ORDER BY at DESC LIMIT 30'),
+  loginsAll: db.prepare('SELECT l.at,l.ip,l.ua,u.id uid,u.name,u.email FROM logins l JOIN users u ON u.id=l.user_id ORDER BY l.at DESC LIMIT 200'),
+  insLog: db.prepare('INSERT INTO admin_log(admin_id,admin_name,action,target_id,target_name,detail,at) VALUES(?,?,?,?,?,?,?)'),
+  logs: db.prepare('SELECT * FROM admin_log ORDER BY at DESC LIMIT 300'),
+  setGrade: db.prepare('UPDATE users SET grade=?,updated_at=? WHERE id=?'), setMemo: db.prepare('UPDATE users SET memo=?,updated_at=? WHERE id=?'), setAdminFlag: db.prepare('UPDATE users SET is_admin=?,updated_at=? WHERE id=?'),
+  testsOf: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC LIMIT 30'),
+  matchesAll: db.prepare('SELECT x.*, s.name sname, t.name tname FROM matches x JOIN users s ON s.id=x.student_id JOIN users t ON t.id=x.teacher_id ORDER BY x.last_at DESC LIMIT 300'),
+  lessonsAll: db.prepare('SELECT s.*, a.name sname, b.name tname FROM slots s JOIN users a ON a.id=s.student_id JOIN users b ON b.id=s.teacher_id WHERE s.student_id IS NOT NULL ORDER BY s.start DESC LIMIT 300'),
+  lessonsOf: db.prepare('SELECT s.*, a.name sname, b.name tname FROM slots s JOIN users a ON a.id=s.student_id JOIN users b ON b.id=s.teacher_id WHERE s.student_id=?1 OR (s.teacher_id=?1 AND s.student_id IS NOT NULL) ORDER BY s.start DESC LIMIT 100'),
+  matchCount: db.prepare('SELECT COUNT(*) n FROM messages WHERE match_id=?'),
+  revsBy: db.prepare('SELECT r.*, t.name tname FROM reviews r JOIN users t ON t.id=r.teacher_id WHERE r.student_id=? ORDER BY r.at DESC'),
+  repsOf: db.prepare('SELECT r.*, a.name rname, b.name tname FROM reports r LEFT JOIN users a ON a.id=r.reporter_id LEFT JOIN users b ON b.id=r.target_id WHERE r.target_id=?1 OR r.reporter_id=?1 ORDER BY r.at DESC LIMIT 50'),
+  signups: db.prepare('SELECT date(created_at,\'unixepoch\',\'+9 hours\') d, COUNT(*) n FROM users WHERE created_at>? GROUP BY d ORDER BY d'),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
@@ -231,7 +249,9 @@ export async function verifyGoogle(token, aud) {
 }
 
 /* ---------------- helpers ---------------- */
-const isAdmin = u => !!u && CFG.admins.includes(String(u.email).toLowerCase());
+const isSuper = u => !!u && CFG.admins.includes(String(u.email).toLowerCase());
+const isAdmin = u => !!u && (isSuper(u) || !!u.is_admin);
+const GRADES = ['normal', 'silver', 'gold', 'vip'];
 const view = u => (isAdmin(u) || (u.role === 'teacher' && u.teacher_status === 'approved')) ? 'teacher' : 'student';
 const picture = u => u.avatar ? `/api/avatar/${u.avatar}` : (u.picture || '');
 const testOf = id => { const t = q.lastTest.get(id); return t ? { step: t.step, score: t.score, total: t.total, at: t.at } : null; };
@@ -243,9 +263,9 @@ const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture:
 const pub = u => ({
   id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
   role: u.role, teacherStatus: u.teacher_status, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '',
-  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), meetUrl: u.meet_url || '', ...teachInfo(u),
+  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), superAdmin: isSuper(u), grade: u.grade || 'normal', meetUrl: u.meet_url || '', ...teachInfo(u),
 });
-const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login, suspended: !!u.suspended });
+const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login, suspended: !!u.suspended, grade: u.grade || 'normal', memo: u.memo || '', superAdmin: isSuper(u) });
 
 function cookies(req) {
   const o = {};
@@ -302,6 +322,7 @@ async function loginWith(credential, res) {
   if (!user) { q.insUser.run(g.sub, g.email, str(g.name, 80), str(g.picture, 500), null, t, t, t); user = q.userBySub.get(g.sub); }
   else { q.loginUser.run(g.email, str(g.name, 80), str(g.picture, 500), t, user.id); user = q.userById.get(user.id); }
   if (user.suspended) throw new Error('suspended');
+  if (loginWith.req) { const rq = loginWith.req; q.insLogin.run(user.id, t, sha(ip(rq) + 'gg').slice(0, 10), String(rq.headers['user-agent'] || '').replace(/[^\x20-\x7e]/g, '').slice(0, 160)); }
   const tok = crypto.randomBytes(32).toString('base64url');
   q.insSess.run(sha(tok), user.id, t, t + CFG.sessionDays * 86400);
   if (Math.random() < 0.05) q.gcSess.run(t);
@@ -389,7 +410,7 @@ const msgOut = x => ({ id: x.id, from: x.sender_id, kind: x.kind, body: x.kind =
 const AUD = [['webm', 'audio/webm'], ['m4a', 'audio/mp4'], ['ogg', 'audio/ogg'], ['mp3', 'audio/mpeg']];
 function matchOut(m, me) {
   const lm = q.lastMsg.get(m.id);
-  return { id: m.id, status: m.status, side: sideOf(m, me), peer: peer(q.userById.get(otherId(m, me))), createdAt: m.created_at, lastAt: m.last_at, credits: m.credits ?? null, blocked: !!q.blocked.get(m.student_id, m.teacher_id).n,
+  return { id: m.id, status: m.status, side: sideOf(m, me), peer: peer(q.userById.get(otherId(m, me))), createdAt: m.created_at, lastAt: m.last_at, blocked: !!q.blocked.get(m.student_id, m.teacher_id).n,
     unread: q.unread.get(m.id, me.id).n, last: lm ? msgOut(lm) : null, next: q.nextWith.get(m.id, now()) || null };
 }
 function slotOut(s, me) {
@@ -421,6 +442,7 @@ function cleanPlace(p) {
 
 /* ---------------- routes ---------------- */
 async function handle(req, res) {
+  loginWith.req = req;
   const u = new URL(req.url, 'http://x');
   const p = u.pathname.replace(/\/+$/, '') || '/';
   const m = req.method;
@@ -722,9 +744,7 @@ async function handle(req, res) {
       const am = q.activeMatch.get(me.id, s.teacher_id);
       if (!am || am.status !== 'accepted') return send(res, 403, { error: 'not matched' });
       if (s.start <= t) return send(res, 409, { error: 'past' });
-      if (am.credits !== null && am.credits !== undefined && am.credits <= 0) return send(res, 402, { error: 'credits' });
       if (!q.book.run(me.id, am.id, t, s.id).changes) return send(res, 409, { error: 'taken' });
-      if (am.credits !== null && am.credits !== undefined) q.useCredit.run(am.id);
       sysMsg(am, me.id, { t: 'book', start: s.start, dur: s.dur });
       emit(s.teacher_id, { t: 'slot', slotId: s.id });
       return send(res, 200, slotOut(q.slot.get(s.id), me));
@@ -734,7 +754,6 @@ async function handle(req, res) {
       if (s.start <= t) return send(res, 409, { error: 'past' });
       const mt = s.match_id && q.match.get(s.match_id);
       q.unbook.run(s.id);
-      if (mt && (mine || s.start - t > DAY)) q.refund.run(mt.id); // 선생님 취소·24시간 전 취소는 환불
       if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
       emit(mine ? s.student_id : s.teacher_id, { t: 'slot', slotId: s.id });
       return send(res, 200, slotOut(q.slot.get(s.id), me));
@@ -749,7 +768,6 @@ async function handle(req, res) {
     if (m === 'DELETE') {
       if (s.student_id && s.start > t) {
         const mt = s.match_id && q.match.get(s.match_id);
-        if (mt) q.refund.run(mt.id);
         if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
         emit(s.student_id, { t: 'slot', slotId: s.id });
       }
@@ -862,17 +880,6 @@ async function handle(req, res) {
     res.writeHead(200, { 'Content-Type': type, 'Content-Length': st.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
     return fs.createReadStream(f).pipe(res);
   }
-  // 수강권(회수권): 선생님이 매칭별로 남은 횟수를 관리. null = 사용 안 함
-  const cm = /^\/api\/matches\/(\d+)\/credits$/.exec(p);
-  if (cm && m === 'PUT') {
-    const mt = q.match.get(+cm[1]);
-    if (!mt || mt.teacher_id !== me.id) return send(res, 404, { error: 'not found' });
-    const b = await readJson(req), v = b.credits === null ? null : Math.max(0, Math.min(500, Math.trunc(+b.credits)));
-    if (v !== null && Number.isNaN(v)) return send(res, 400, { error: 'credits' });
-    q.setCredits.run(v, mt.id);
-    if (v !== null && v !== mt.credits) sysMsg(mt, me.id, { t: 'credits', n: v });
-    return send(res, 200, matchOut(q.match.get(mt.id), me));
-  }
   // 신고 · 차단
   if (p === '/api/report' && m === 'POST') {
     if (limited('rp:' + me.id, 10, 3600)) return send(res, 429, { error: 'rate' });
@@ -907,24 +914,47 @@ async function handle(req, res) {
     if (!me) return send(res, 401, { error: 'login' });
     if (!isAdmin(me)) return send(res, 403, { error: 'admin only' });
     if (p === '/api/admin/users' && m === 'GET') return send(res, 200, { users: q.allUsers.all().map(adminRow) });
-    if (p === '/api/admin/stats' && m === 'GET') return send(res, 200, q.stats.get(now() - 7 * DAY, now()));
+    if (p === '/api/admin/stats' && m === 'GET') return send(res, 200, { ...q.stats.get(now() - 7 * DAY, now()), signups: q.signups.all(now() - 30 * DAY) });
+    const ud = /^\/api\/admin\/users\/(\d+)$/.exec(p);
+    if (ud && m === 'GET') {
+      const x = q.userById.get(+ud[1]); if (!x) return send(res, 404, { error: 'not found' });
+      const pr = q.getProg.get(x.id), pd = pr ? js(pr.data, {}) : {};
+      return send(res, 200, { user: { ...adminRow(x), googleName: x.google_name || '' }, tests: q.testsOf.all(x.id), logins: q.loginsOf.all(x.id),
+        progress: { done: (pd.done || []).length, days: (pd.days || []).length, srs: Object.keys(pd.srs || {}).length, mocks: (pd.mocks || []).slice(-5), updatedAt: pr ? pr.updated_at : 0 },
+        matches: q.myMatches.all(x.id, x.id).map(mm => ({ id: mm.id, status: mm.status, side: mm.student_id === x.id ? 'student' : 'teacher', peer: peer(q.userById.get(mm.student_id === x.id ? mm.teacher_id : mm.student_id)), at: mm.created_at, msgs: q.matchCount.get(mm.id).n })),
+        lessons: q.lessonsOf.all(x.id).map(l => ({ id: l.id, start: l.start, dur: l.dur, mode: l.mode || 'online', student: l.sname, teacher: l.tname })),
+        reviewsGot: x.role === 'teacher' ? q.revOf.all(x.id).map(r => ({ rating: r.rating, text: r.text, at: r.at, name: r.sname })) : [],
+        reviewsGave: q.revsBy.all(x.id).map(r => ({ rating: r.rating, text: r.text, at: r.at, name: r.tname })),
+        reports: q.repsOf.all(x.id).map(r => ({ id: r.id, at: r.at, reason: r.reason, from: r.rname, to: r.tname, resolved: !!r.resolved })) });
+    }
+    if (p === '/api/admin/matches' && m === 'GET') return send(res, 200, { matches: q.matchesAll.all().map(x => ({ id: x.id, status: x.status, student: { id: x.student_id, name: x.sname }, teacher: { id: x.teacher_id, name: x.tname }, at: x.created_at, lastAt: x.last_at, msgs: q.matchCount.get(x.id).n })) });
+    if (p === '/api/admin/lessons' && m === 'GET') return send(res, 200, { lessons: q.lessonsAll.all().map(l => ({ id: l.id, start: l.start, dur: l.dur, mode: l.mode || 'online', place: js(l.place, null), student: { id: l.student_id, name: l.sname }, teacher: { id: l.teacher_id, name: l.tname }, lessonNo: l.lesson_no })) });
+    if (p === '/api/admin/logs' && m === 'GET') return send(res, 200, { logs: q.logs.all(), logins: q.loginsAll.all() });
     if (p === '/api/admin/reports' && m === 'GET') return send(res, 200, { reports: q.reports.all().map(r => ({ id: r.id, at: r.at, reason: r.reason || '', resolved: !!r.resolved, matchId: r.match_id, reporter: { id: r.reporter_id, name: r.rname, email: r.remail }, target: { id: r.target_id, name: r.tname, email: r.temail } })) });
     const rr = /^\/api\/admin\/reports\/(\d+)$/.exec(p);
-    if (rr && m === 'POST') { q.resolveRep.run(now(), +rr[1]); return send(res, 200, { ok: true }); }
+    if (rr && m === 'POST') { q.resolveRep.run(now(), +rr[1]); q.insLog.run(me.id, me.name || me.email, 'resolveReport', null, '', '#' + rr[1], now()); return send(res, 200, { ok: true }); }
     const mm = /^\/api\/admin\/users\/(\d+)$/.exec(p);
     if (mm && m === 'POST') {
       const target = q.userById.get(+mm[1]);
       if (!target) return send(res, 404, { error: 'not found' });
       const b = await readJson(req);
+      const log = (detail) => q.insLog.run(me.id, me.name || me.email, b.action, target.id, target.name || target.email, detail || '', now());
       if (b.action === 'suspend' || b.action === 'unsuspend') {
         if (isAdmin(target)) return send(res, 400, { error: 'admin' });
         q.suspend.run(b.action === 'suspend' ? 1 : null, now(), target.id); if (b.action === 'suspend') q.killSess.run(target.id);
-        return send(res, 200, adminRow(q.userById.get(target.id)));
+        log(); return send(res, 200, adminRow(q.userById.get(target.id)));
+      }
+      if (b.action === 'grade') { if (!GRADES.includes(b.grade)) return send(res, 400, { error: 'grade' }); q.setGrade.run(b.grade, now(), target.id); log(b.grade); return send(res, 200, adminRow(q.userById.get(target.id))); }
+      if (b.action === 'memo') { q.setMemo.run(str(b.memo, 2000), now(), target.id); log(); return send(res, 200, adminRow(q.userById.get(target.id))); }
+      if (b.action === 'makeAdmin' || b.action === 'removeAdmin') {
+        if (!isSuper(me)) return send(res, 403, { error: 'super admin only' });
+        if (isSuper(target)) return send(res, 400, { error: 'super' });
+        q.setAdminFlag.run(b.action === 'makeAdmin' ? 1 : null, now(), target.id); log(); return send(res, 200, adminRow(q.userById.get(target.id)));
       }
       const map = { approve: ['teacher', 'approved'], reject: [target.role || 'student', 'rejected'], student: ['student', 'none'] };
       const v = map[b.action];
       if (!v) return send(res, 400, { error: 'action' });
-      q.setStatus.run(v[0], v[1], now(), target.id);
+      q.setStatus.run(v[0], v[1], now(), target.id); log();
       return send(res, 200, adminRow(q.userById.get(target.id)));
     }
     return send(res, 404, { error: 'not found' });
