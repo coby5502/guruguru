@@ -308,12 +308,11 @@ async function sendVoice(matchId,rec,text){const r=await fetch(`/api/matches/${m
 function voiceHTML(x){const me=x.from===ME.id,b=x.body||{};return `<div class="cm ${me?'me':''} ${me&&x.read?'rd':''}" data-id="${x.id}"><div class="cb vb">${b.text?`<small lang="ko">🎙 ${esc(b.text)}</small>`:`<small>🎙 ${BX().voice} · ${b.sec||0}s</small>`}<audio controls preload="none" src="/api/voice/${esc(b.f)}"></audio></div><time>${fTime(x.at)}${me?`<i class="rk">${S_().read}</i>`:''}</time></div>`}
 function chatExtras(){
   const m=CH.m,o=BX(),t=m.side==='teacher';if(!m)return '';
-  const cr=m.status==='accepted'?(t?`<div class="crd"><span>🎫 ${o.cSet}</span>${m.credits==null?`<button class="btn sm" data-cr="5">${o.cOn}</button>`:`<button class="btn sm" data-cr="${m.credits-1}" ${m.credits?'':'disabled'}>−</button><b>${m.credits}</b><button class="btn sm" data-cr="${m.credits+1}">＋</button><button class="lnk" data-cr="null">${o.cOff}</button>`}</div>`:m.credits!=null?`<div class="crd"><b>${o.credits(m.credits)}</b></div>`:''):'';
+  const cr='';
   return `${cr}<details class="more"><summary>⋯ ${o.more}</summary><div class="morein">${m.blocked?`<button class="btn sm" data-blk="0">${o.unblock}</button>`:`<button class="btn sm" data-blk="1">🚫 ${o.block}</button>`}
     <form class="repf"><textarea name="r" rows="2" maxlength="1000" placeholder="${o.reportPh}"></textarea><button class="btn sm" type="submit">⚠️ ${o.reportSend}</button></form></div></details>`}
 function bindChatExtras(){
   const m=CH.m;if(!m)return;
-  $$('#chead [data-cr]').forEach(b=>b.onclick=async()=>{const v=b.dataset.cr==='null'?null:+b.dataset.cr;try{CH.m=await api('PUT',`/matches/${m.id}/credits`,{credits:v});chatHead();chatPull()}catch(e){toast(A().err)}});
   $$('#chead [data-blk]').forEach(b=>b.onclick=async()=>{try{await api(b.dataset.blk==='1'?'POST':'DELETE','/block',{userId:m.peer.id});chatPull(true)}catch(e){toast(A().err)}});
   const rf=$('#chead .repf');if(rf)rf.onsubmit=async e=>{e.preventDefault();try{await api('POST','/report',{userId:m.peer.id,matchId:m.id,reason:rf.r.value});toast(BX().reported);rf.reset()}catch(err){toast(A().err)}};
 }
