@@ -91,6 +91,17 @@ const addCol = (t, c, d) => { if (!db.prepare(`PRAGMA table_info(${t})`).all().s
 addCol('users', 'avatar', 'TEXT');
 for (const c of ['meet_url', 'modes', 'places', 'intro', 'tags']) addCol('users', c, 'TEXT');
 for (const c of ['mode', 'place', 'url']) addCol('slots', c, 'TEXT');
+for (const c of ['rem24', 'rem1']) addCol('slots', c, 'INTEGER');
+db.exec(`
+CREATE TABLE IF NOT EXISTS push_subs(id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS push_user ON push_subs(user_id);
+CREATE TABLE IF NOT EXISTS notes(
+  slot_id INTEGER PRIMARY KEY REFERENCES slots(id) ON DELETE CASCADE,
+  summary TEXT, good TEXT, homework TEXT, note_at INTEGER,
+  hw_text TEXT, hw_image TEXT, hw_at INTEGER, fb_text TEXT, fb_at INTEGER
+);`);
+const MEDIA_DIR = path.join(path.dirname(CFG.db), 'media');
+fs.mkdirSync(MEDIA_DIR, { recursive: true });
 const AV_DIR = path.join(path.dirname(CFG.db), 'avatars');
 fs.mkdirSync(AV_DIR, { recursive: true });
 const q = {
@@ -111,6 +122,21 @@ const q = {
   saveTeach: db.prepare('UPDATE users SET meet_url=?,modes=?,intro=?,tags=?,updated_at=? WHERE id=?'),
   savePlaces: db.prepare('UPDATE users SET places=?,updated_at=? WHERE id=?'),
   anyMatch: db.prepare("SELECT * FROM matches WHERE student_id=? AND teacher_id=? AND status IN ('accepted','ended') ORDER BY id DESC LIMIT 1"),
+  addSub: db.prepare('INSERT INTO push_subs(user_id,endpoint,p256dh,auth,created_at) VALUES(?,?,?,?,?) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,p256dh=excluded.p256dh,auth=excluded.auth'),
+  delSub: db.prepare('DELETE FROM push_subs WHERE endpoint=?'),
+  subsOf: db.prepare('SELECT * FROM push_subs WHERE user_id=?'),
+  dueRem24: db.prepare('SELECT * FROM slots WHERE student_id IS NOT NULL AND rem24 IS NULL AND start>? AND start<=?'),
+  dueRem1: db.prepare('SELECT * FROM slots WHERE student_id IS NOT NULL AND rem1 IS NULL AND start>? AND start<=?'),
+  setRem24: db.prepare('UPDATE slots SET rem24=1 WHERE id=?'), setRem1: db.prepare('UPDATE slots SET rem1=1 WHERE id=?'),
+  note: db.prepare('SELECT * FROM notes WHERE slot_id=?'),
+  upNote: db.prepare('INSERT INTO notes(slot_id,summary,good,homework,note_at) VALUES(?,?,?,?,?) ON CONFLICT(slot_id) DO UPDATE SET summary=excluded.summary,good=excluded.good,homework=excluded.homework,note_at=excluded.note_at'),
+  upHw: db.prepare('INSERT INTO notes(slot_id,hw_text,hw_at) VALUES(?,?,?) ON CONFLICT(slot_id) DO UPDATE SET hw_text=excluded.hw_text,hw_at=excluded.hw_at'),
+  upHwImg: db.prepare('INSERT INTO notes(slot_id,hw_image,hw_at) VALUES(?,?,?) ON CONFLICT(slot_id) DO UPDATE SET hw_image=excluded.hw_image,hw_at=excluded.hw_at'),
+  upFb: db.prepare('UPDATE notes SET fb_text=?,fb_at=? WHERE slot_id=?'),
+  matchSlots: db.prepare('SELECT s.*, n.summary, n.good, n.homework, n.note_at, n.hw_text, n.hw_image, n.hw_at, n.fb_text, n.fb_at FROM slots s LEFT JOIN notes n ON n.slot_id=s.id WHERE s.match_id=? AND s.start<? ORDER BY s.start DESC LIMIT 100'),
+  todoT: db.prepare('SELECT s.* FROM slots s LEFT JOIN notes n ON n.slot_id=s.id WHERE s.teacher_id=? AND s.student_id IS NOT NULL AND s.start+s.dur*60<? AND s.start>? AND (n.note_at IS NULL OR (n.hw_at IS NOT NULL AND n.fb_at IS NULL)) ORDER BY s.start DESC LIMIT 30'),
+  todoS: db.prepare("SELECT s.* FROM slots s JOIN notes n ON n.slot_id=s.id WHERE s.student_id=? AND n.homework IS NOT NULL AND n.homework<>'' AND n.hw_at IS NULL AND s.start>? ORDER BY s.start DESC LIMIT 30"),
+  mediaOwner: db.prepare('SELECT s.teacher_id, s.student_id FROM notes n JOIN slots s ON s.id=n.slot_id WHERE n.hw_image=?'),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
@@ -272,6 +298,60 @@ function sse(req, res, me) {
   req.on('close', () => { clearInterval(ping); set.delete(res); if (!set.size) subs.delete(me.id); });
 }
 
+/* ---------------- 웹 푸시 (RFC 8291 aes128gcm + VAPID, 의존성 없음) ---------------- */
+const VAPID = (() => {
+  const f = path.join(path.dirname(CFG.db), 'vapid.json');
+  try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { }
+  const { privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const jwk = privateKey.export({ format: 'jwk' });
+  const v = { jwk, pub: Buffer.concat([Buffer.from([4]), b64u(jwk.x), b64u(jwk.y)]).toString('base64url') };
+  fs.writeFileSync(f, JSON.stringify(v), { mode: 0o600 });
+  return v;
+})();
+const vapidKey = crypto.createPrivateKey({ key: VAPID.jwk, format: 'jwk' });
+function vapidAuth(endpoint) {
+  const aud = new URL(endpoint).origin, enc = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const data = enc({ typ: 'JWT', alg: 'ES256' }) + '.' + enc({ aud, exp: now() + 12 * 3600, sub: env('VAPID_SUBJECT', 'https://guruguru.app') });
+  const sig = crypto.sign('sha256', Buffer.from(data), { key: vapidKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+  return `vapid t=${data}.${sig}, k=${VAPID.pub}`;
+}
+export function encryptPush(payload, p256dh, auth) {
+  const ua = b64u(p256dh), secret = b64u(auth);
+  const ecdh = crypto.createECDH('prime256v1'); ecdh.generateKeys();
+  const as = ecdh.getPublicKey(), shared = ecdh.computeSecret(ua);
+  const ikm = Buffer.from(crypto.hkdfSync('sha256', shared, secret, Buffer.concat([Buffer.from('WebPush: info\0'), ua, as]), 32));
+  const salt = crypto.randomBytes(16);
+  const cek = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: aes128gcm\0'), 16));
+  const nonce = Buffer.from(crypto.hkdfSync('sha256', ikm, salt, Buffer.from('Content-Encoding: nonce\0'), 12));
+  const c = crypto.createCipheriv('aes-128-gcm', cek, nonce);
+  const body = Buffer.concat([c.update(Buffer.concat([Buffer.from(payload), Buffer.from([2])])), c.final(), c.getAuthTag()]);
+  const head = Buffer.alloc(21); salt.copy(head, 0); head.writeUInt32BE(4096, 16); head[20] = 65;
+  return Buffer.concat([head, as, body]);
+}
+async function pushTo(uid, msg) {
+  for (const sub of q.subsOf.all(uid)) {
+    try {
+      const r = await fetch(sub.endpoint, { method: 'POST', headers: { TTL: '86400', Urgency: 'high', 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', Authorization: vapidAuth(sub.endpoint) }, body: encryptPush(JSON.stringify(msg), sub.p256dh, sub.auth) });
+      if (r.status === 404 || r.status === 410) q.delSub.run(sub.endpoint);
+    } catch (e) { }
+  }
+}
+// 실시간(SSE) + 앱이 닫혀 있으면 푸시
+function notify(uid, ev, msg) { emit(uid, ev); if (msg && !(subs.get(uid) || new Set()).size) pushTo(uid, msg).catch(() => { }); }
+const nameOf = id => { const u = q.userById.get(id); return u ? (u.name || u.google_name || '') : ''; };
+const PUSHT = {
+  msg: (n, b) => ({ title: n, body: b.slice(0, 120) }), request: n => ({ title: '📨 ' + n, body: 'レッスンの申し込み / 레슨 신청' }),
+  accepted: n => ({ title: '🎉 ' + n, body: 'マッチングしました / 매칭됐어요' }), book: (n, w) => ({ title: '📅 ' + n, body: w }), unbook: (n, w) => ({ title: '🗓 ' + n, body: '× ' + w }),
+};
+const whenJa = (s) => new Date(s * 1000).toLocaleString('ja-JP', { timeZone: env('TZ_DISPLAY', 'Asia/Tokyo'), month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+// 레슨 리마인더: 24시간 전 · 1시간 전
+function remind() {
+  const t = now();
+  for (const s of q.dueRem24.all(t + 3600 * 23, t + 3600 * 24)) { q.setRem24.run(s.id); for (const u of [s.teacher_id, s.student_id]) pushTo(u, { title: '⏰ ' + whenJa(s.start), body: (u === s.teacher_id ? nameOf(s.student_id) : nameOf(s.teacher_id)) + ' · あすのレッスン / 내일 레슨', url: '/#/lessons', tag: 'r24-' + s.id }).catch(() => { }); }
+  for (const s of q.dueRem1.all(t, t + 3600)) { q.setRem1.run(s.id); q.setRem24.run(s.id); for (const u of [s.teacher_id, s.student_id]) pushTo(u, { title: '⏰ ' + whenJa(s.start), body: (u === s.teacher_id ? nameOf(s.student_id) : nameOf(s.teacher_id)) + ' · まもなくレッスン / 곧 레슨', url: '/#/lessons', tag: 'r1-' + s.id }).catch(() => { }); }
+}
+export const remindNow = remind;
+
 /* ---------------- 매칭 · 일정 · 채팅 ---------------- */
 const isStudentUser = u => u.role === 'student';
 const isTeacherUser = u => u.role === 'teacher' && u.teacher_status === 'approved';
@@ -296,7 +376,8 @@ function sysMsg(m, actorId, data) {
   const r = q.insMsg.run(m.id, actorId, 'sys', JSON.stringify(data), t);
   q.touchMatch.run(t, m.id);
   const ev = { t: 'msg', matchId: m.id, id: Number(r.lastInsertRowid) };
-  emit(m.student_id, ev); emit(m.teacher_id, ev);
+  const other = actorId === m.student_id ? m.teacher_id : m.student_id, p = PUSHT[data.t], w = data.start ? whenJa(data.start) : '';
+  emit(actorId, ev); notify(other, ev, p ? { ...p(nameOf(actorId), w), url: '/#/chat/' + m.id, tag: 'm' + m.id } : null);
 }
 const IMG = [['jpg', 'image/jpeg', b => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff], ['png', 'image/png', b => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))], ['webp', 'image/webp', b => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP']];
 const rmAvatar = f => { if (f && /^[\w.-]+$/.test(f)) try { fs.unlinkSync(path.join(AV_DIR, f)); } catch { } };
@@ -472,7 +553,8 @@ async function handle(req, res) {
 
   if (p === '/api/summary' && m === 'GET') {
     const ms = q.myMatches.all(me.id, me.id);
-    return send(res, 200, { unread: q.unreadAll.get(me.id).n, requests: ms.filter(x => x.teacher_id === me.id && x.status === 'pending').length, next: (q.schedule.all(me.id, now())[0] || null) && slotOut(q.schedule.all(me.id, now())[0], me) });
+    const td = { t: q.todoT.all(me.id, now(), now() - 60 * DAY).length, s: q.todoS.all(me.id, now() - 60 * DAY).length };
+    return send(res, 200, { todo: td.t + td.s, unread: q.unreadAll.get(me.id).n, requests: ms.filter(x => x.teacher_id === me.id && x.status === 'pending').length, next: (q.schedule.all(me.id, now())[0] || null) && slotOut(q.schedule.all(me.id, now())[0], me) });
   }
 
   // 선생님 찾기
@@ -517,7 +599,7 @@ async function handle(req, res) {
       if (!body) return send(res, 400, { error: 'empty' });
       const t = now(), r = q.insMsg.run(mt.id, me.id, 'text', body, t);
       q.touchMatch.run(t, mt.id);
-      emit(otherId(mt, me), { t: 'msg', matchId: mt.id, id: Number(r.lastInsertRowid) });
+      notify(otherId(mt, me), { t: 'msg', matchId: mt.id, id: Number(r.lastInsertRowid) }, { ...PUSHT.msg(me.name || '', body), url: '/#/chat/' + mt.id, tag: 'm' + mt.id });
       return send(res, 201, msgOut(q.msgsAfter.get(mt.id, Number(r.lastInsertRowid) - 1)));
     }
     if (m === 'GET') return send(res, 200, matchOut(mt, me));
@@ -602,6 +684,79 @@ async function handle(req, res) {
     return send(res, 405, { error: 'method' });
   }
 
+  if (p === '/api/push' ) {
+    if (m === 'GET') return send(res, 200, { key: VAPID.pub, subscribed: q.subsOf.all(me.id).length });
+    const b = await readJson(req), ep = str(b.endpoint, 800);
+    if (!/^https:\/\//.test(ep)) return send(res, 400, { error: 'endpoint' });
+    if (m === 'DELETE') { q.delSub.run(ep); return send(res, 200, { ok: true }); }
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    const k = b.keys || {};
+    if (!/^[\w-]{80,100}$/.test(k.p256dh || '') || !/^[\w-]{16,30}$/.test(k.auth || '')) return send(res, 400, { error: 'keys' });
+    if (q.subsOf.all(me.id).length >= 10) { const old = q.subsOf.all(me.id)[0]; q.delSub.run(old.endpoint); }
+    q.addSub.run(me.id, ep, k.p256dh, k.auth, now());
+    if (b.test) pushTo(me.id, { title: 'ぐるぐる', body: b.test === 'ko' ? '알림이 켜졌어요 🔔' : '通知がオンになりました 🔔', url: '/#/me' }).catch(() => { });
+    return send(res, 200, { ok: true });
+  }
+
+  // 수업 기록 · 숙제
+  const nm = /^\/api\/slots\/(\d+)\/(note|homework|feedback|hwimage)$/.exec(p);
+  if (nm) {
+    const s = q.slot.get(+nm[1]);
+    if (!s || !s.student_id || (s.teacher_id !== me.id && s.student_id !== me.id)) return send(res, 404, { error: 'not found' });
+    const tch = s.teacher_id === me.id, other = tch ? s.student_id : s.teacher_id, t = now();
+    const ping = (title, body) => notify(other, { t: 'note', slotId: s.id, matchId: s.match_id }, { title, body: body.slice(0, 120), url: '/#/notes/' + s.match_id, tag: 'n' + s.id });
+    if (nm[2] === 'note' && m === 'PUT') {
+      if (!tch) return send(res, 403, { error: 'teacher only' });
+      const b = await readJson(req);
+      q.upNote.run(s.id, str(b.summary, 2000), str(b.good, 1000), str(b.homework, 1000), t);
+      ping('📒 ' + nameOf(me.id), str(b.summary, 120) || 'レッスン記録 / 수업 기록');
+      return send(res, 200, { ok: true });
+    }
+    if (nm[2] === 'homework' && m === 'POST') {
+      if (tch) return send(res, 403, { error: 'student only' });
+      const b = await readJson(req); q.upHw.run(s.id, str(b.text, 3000), t);
+      ping('✏️ ' + nameOf(me.id), str(b.text, 120) || '宿題 / 숙제');
+      return send(res, 200, { ok: true });
+    }
+    if (nm[2] === 'hwimage' && m === 'POST') {
+      if (tch) return send(res, 403, { error: 'student only' });
+      if (limited('hw:' + me.id, 30, 3600)) return send(res, 429, { error: 'rate' });
+      const ct = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase(), buf = await readRaw(req, 2.5 * 1024 * 1024);
+      const kind = IMG.find(x => x[1] === ct && x[2](buf));
+      if (!kind) return send(res, 415, { error: 'image' });
+      const old = q.note.get(s.id); if (old && old.hw_image) try { fs.unlinkSync(path.join(MEDIA_DIR, old.hw_image)); } catch { }
+      const name = `${s.id}-${crypto.randomBytes(12).toString('base64url')}.${kind[0]}`;
+      fs.writeFileSync(path.join(MEDIA_DIR, name), buf); q.upHwImg.run(s.id, name, t);
+      ping('✏️ ' + nameOf(me.id), '📷');
+      return send(res, 200, { ok: true, image: '/api/media/' + name });
+    }
+    if (nm[2] === 'feedback' && m === 'PUT') {
+      if (!tch) return send(res, 403, { error: 'teacher only' });
+      if (!q.note.get(s.id)) return send(res, 409, { error: 'no note' });
+      const b = await readJson(req); q.upFb.run(str(b.text, 2000), t, s.id);
+      ping('💮 ' + nameOf(me.id), str(b.text, 120));
+      return send(res, 200, { ok: true });
+    }
+    return send(res, 405, { error: 'method' });
+  }
+  const mdm = /^\/api\/media\/(\d+-[A-Za-z0-9_-]{8,24}\.(jpg|png|webp))$/.exec(p);
+  if (mdm && m === 'GET') {
+    const o = q.mediaOwner.get(mdm[1]);
+    if (!o || (o.teacher_id !== me.id && o.student_id !== me.id && !isAdmin(me))) return send(res, 404, { error: 'not found' });
+    const f = path.join(MEDIA_DIR, mdm[1]); let st; try { st = fs.statSync(f); } catch { return send(res, 404, { error: 'not found' }); }
+    res.writeHead(200, { 'Content-Type': IMG.find(x => x[0] === mdm[2])[1], 'Content-Length': st.size, 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    return fs.createReadStream(f).pipe(res);
+  }
+  const nl = /^\/api\/matches\/(\d+)\/notes$/.exec(p);
+  if (nl && m === 'GET') {
+    const mt = q.match.get(+nl[1]); if (!mt || !sideOf(mt, me)) return send(res, 404, { error: 'not found' });
+    return send(res, 200, { match: matchOut(mt, me), notes: q.matchSlots.all(mt.id, now() + 3600).map(x => ({ ...slotOut(x, me), summary: x.summary || '', good: x.good || '', homework: x.homework || '', noteAt: x.note_at || 0, hwText: x.hw_text || '', hwImage: x.hw_image ? '/api/media/' + x.hw_image : '', hwAt: x.hw_at || 0, fbText: x.fb_text || '', fbAt: x.fb_at || 0 })) });
+  }
+  if (p === '/api/todo' && m === 'GET') {
+    const t = now();
+    return send(res, 200, { teacher: q.todoT.all(me.id, t, t - 60 * DAY).map(s => slotOut(s, me)), student: q.todoS.all(me.id, t - 60 * DAY).map(s => slotOut(s, me)) });
+  }
+
   if (p === '/api/schedule' && m === 'GET') return send(res, 200, { lessons: q.schedule.all(me.id, now()).map(s => slotOut(s, me)) });
 
   if (p.startsWith('/api/admin/')) {
@@ -633,6 +788,7 @@ export const server = http.createServer((req, res) => {
 });
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
   if (!CFG.clientId) console.warn('[guruguru-api] GOOGLE_CLIENT_ID 가 비어 있습니다 — 로그인 비활성');
+  setInterval(remind, 60000).unref();
   server.listen(CFG.port, () => console.log(`[guruguru-api] :${CFG.port} db=${CFG.db} admins=${CFG.admins.length}`));
   const stop = () => { server.close(); db.close(); process.exit(0); };
   process.on('SIGTERM', stop); process.on('SIGINT', stop);
