@@ -209,6 +209,42 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   await call('DELETE', '/api/me', { cookie: s1.cookie });
   assert.equal((await fetch(base + pic2)).status, 404);
 }
+
+// ===== 진도 · 대면/온라인 · 장소 · 선생님 프로필 =====
+{
+  const s3 = await login('ss3', 'ss3@example.com', 'Mio');
+  await call('PUT', '/api/me', { cookie: s3.cookie, body: { name: 'みお', role: 'student' } });
+  let x = await call('PUT', '/api/progress', { cookie: s3.cookie, body: { data: { done: [1, 2], srs: { 'w:가': { b: 1, d: 1, n: 0, t: 1 } } } } });
+  assert.equal(x.s, 200);
+  x = await call('GET', '/api/progress', { cookie: s3.cookie }); assert.deepEqual(x.j.data.done, [1, 2]);
+  assert.equal((await call('PUT', '/api/progress', { cookie: s3.cookie, body: { data: [1] } })).s, 400);
+  const t2 = await login('tt2', 'tt2@example.com', 'Park');
+  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', modes: 'both', meetUrl: 'javascript:alert(1)', intro: '안녕하세요', tags: '회화, 발음' } });
+  assert.equal(x.j.meetUrl, ''); assert.equal(x.j.modes, 'both'); assert.deepEqual(x.j.tags, ['회화', '발음']);
+  assert.equal((await call('PUT', '/api/me/places', { cookie: t2.cookie, body: { places: [] } })).s, 403, 'pending teacher');
+  await call('POST', `/api/admin/users/${t2.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
+  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', modes: 'both', meetUrl: 'https://zoom.us/j/123' } });
+  assert.equal(x.j.meetUrl, 'https://zoom.us/j/123');
+  x = await call('PUT', '/api/me/places', { cookie: t2.cookie, body: { places: [{ name: '博多駅', addr: '福岡市', lat: 33.5902, lng: 130.4207 }, { name: 'bad', lat: 999, lng: 0 }, { name: '', lat: 1, lng: 1 }] } });
+  assert.equal(x.j.places.length, 1);
+  const H = 3600, b0 = Math.floor(Date.now() / 1000 / H) * H + 30 * H;
+  assert.equal((await call('POST', '/api/slots', { cookie: t2.cookie, body: { mode: 'offline', slots: [{ start: b0, dur: 60 }] } })).s, 400);
+  x = await call('POST', '/api/slots', { cookie: t2.cookie, body: { mode: 'offline', place: x.j.places[0], slots: [{ start: b0, dur: 60 }] } });
+  assert.equal(x.j.slots[0].mode, 'offline'); assert.equal(x.j.slots[0].place.name, '博多駅');
+  x = await call('POST', '/api/slots', { cookie: t2.cookie, body: { mode: 'online', slots: [{ start: b0 + 2 * H, dur: 60 }] } });
+  const on = x.j.slots.find(s => s.mode === 'online'); assert.equal(on.url, 'https://zoom.us/j/123');
+  x = await call('GET', `/api/teachers/${t2.j.id}`, { cookie: s3.cookie });
+  assert.equal(x.j.places[0].name, '博多駅'); assert.equal(x.j.upcoming.length, 2); assert.equal(x.j.upcoming[0].url, undefined); assert.equal(x.j.email, undefined);
+  // 학생 진도: 매칭 전 403, 수락 후 200
+  assert.equal((await call('GET', `/api/students/${s3.j.id}/progress`, { cookie: t2.cookie })).s, 403);
+  const mm = await call('POST', '/api/matches', { cookie: s3.cookie, body: { teacherId: t2.j.id } });
+  await call('POST', `/api/matches/${mm.j.id}`, { cookie: t2.cookie, body: { action: 'accept' } });
+  x = await call('GET', `/api/students/${s3.j.id}/progress`, { cookie: t2.cookie }); assert.equal(x.s, 200); assert.deepEqual(x.j.data.done, [1, 2]);
+  // 예약한 학생만 온라인 링크를 봄
+  x = await call('GET', `/api/slots?teacher=${t2.j.id}`, { cookie: s3.cookie }); assert.equal(x.j.slots.find(s => s.mode === 'online').url, '');
+  await call('POST', `/api/slots/${on.id}/book`, { cookie: s3.cookie });
+  x = await call('GET', '/api/schedule', { cookie: s3.cookie }); assert.equal(x.j.lessons[0].url, 'https://zoom.us/j/123');
+}
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });
 process.exit(0);

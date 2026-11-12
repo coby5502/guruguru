@@ -138,8 +138,8 @@ const icon={
 };
 
 /* ---------- 선생님 모드 문구 ---------- */
-const TM={ja:{mode:'授業モード',prints:'授業資料',cur:'カリキュラム',plan:'授業プラン',learn:'学習内容',key:'クイズ・解答',preview:'👀 生徒が見る画面のプレビューです',next:'最初の授業',recent:'前回開いた授業',prep:'授業プランを開く',guidePdf:'指導案',lessonsN:n=>`全${n}回`,docs:'教材4種＋指導案',board:'板書ポイント',script:'会話スクリプト',drillKey:'文型練習の解答',tipT:'文化・表現の指導ポイント',forSt:'生徒向けの説明',play:'▶ 出題モード',keyMode:'← 解答一覧',printsLead:'すべての回の教科書・ワークシート・宿題・指導案をまとめてダウンロードできます。',goal:'授業目標'},
- ko:{mode:'수업 모드',prints:'수업 자료',cur:'커리큘럼',plan:'수업안',learn:'학습 내용',key:'퀴즈·정답',preview:'👀 학생에게 보이는 화면 미리보기예요',next:'첫 수업',recent:'지난번에 연 수업',prep:'수업안 열기',guidePdf:'지도안',lessonsN:n=>`전 ${n}회`,docs:'교재 4종＋지도안',board:'판서 포인트',script:'회화 대본',drillKey:'문형 연습 정답',tipT:'문화·표현 지도 포인트',forSt:'학생용 설명',play:'▶ 출제 모드',keyMode:'← 정답 목록',printsLead:'모든 회차의 교재·워크시트·숙제·지도안을 한곳에서 내려받을 수 있어요.',goal:'수업 목표'}};
+const TM={ja:{mode:'授業モード',prints:'授業資料',tprints:'資料',cur:'カリキュラム',tcur:'ガイド',plan:'授業プラン',learn:'学習内容',key:'解答',preview:'👀 生徒が見る画面のプレビューです',next:'最初の授業',recent:'前回開いた授業',prep:'授業プランを開く',guidePdf:'指導案',lessonsN:n=>`全${n}回`,docs:'教材4種＋指導案',board:'板書ポイント',script:'会話スクリプト',drillKey:'文型練習の解答',tipT:'文化・表現の指導ポイント',forSt:'生徒向けの説明',play:'▶ 出題モード',keyMode:'← 解答一覧',printsLead:'すべての回の教科書・ワークシート・宿題・指導案をまとめてダウンロードできます。',goal:'授業目標'},
+ ko:{mode:'수업 모드',prints:'수업 자료',tprints:'자료',cur:'커리큘럼',tcur:'커리큘럼',plan:'수업안',learn:'학습 내용',key:'퀴즈·정답',preview:'👀 학생에게 보이는 화면 미리보기예요',next:'첫 수업',recent:'지난번에 연 수업',prep:'수업안 열기',guidePdf:'지도안',lessonsN:n=>`전 ${n}회`,docs:'교재 4종＋지도안',board:'판서 포인트',script:'회화 대본',drillKey:'문형 연습 정답',tipT:'문화·표현 지도 포인트',forSt:'학생용 설명',play:'▶ 출제 모드',keyMode:'← 정답 목록',printsLead:'모든 회차의 교재·워크시트·숙제·지도안을 한곳에서 내려받을 수 있어요.',goal:'수업 목표'}};
 const TMx=()=>TM[LANG];
 
 /* ======================= chrome ======================= */
@@ -156,7 +156,7 @@ function topbar(mode,l){
 }
 function tabbar(active){
   const t=T(),tv=teachView();document.body.classList.toggle('hide-tab',!active);
-  const lb=k=>k==='me'?A().me:k==='prints'?TMx().prints:k==='lessons'?S_().tab:k==='guide'&&tv?TMx().cur:t[k];
+  const lb=k=>k==='me'?A().me:k==='prints'?TMx().tprints:k==='lessons'?S_().tab:k==='guide'&&tv?TMx().tcur:k==='words'&&LANG==='ja'?'単語':t[k];
   $('#tabs').innerHTML=[['home','#/'],tv?['prints','#/prints']:['words','#/words'],...(lessonsOn()?[['lessons','#/lessons']]:[]),['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${lb(k)}</span></a>`).join('');
   paintBadge();
 }
@@ -221,7 +221,7 @@ function vHome(){
     <div class="prog"><div class="prog-top"><span>${t.stepOf(stepOfLesson(nl.no))} · ${esc(ST(stepOfLesson(nl.no)).name)}</span><span>${stepStat(stepOfLesson(nl.no)).done} / ${t.lessonsN(stepStat(stepOfLesson(nl.no)).total)}</span></div><div class="bar"><i style="width:${stepStat(stepOfLesson(nl.no)).done/stepStat(stepOfLesson(nl.no)).total*100}%"></i></div></div>
     <a href="#/l/${nl.no}" class="btn pink block cta"><span class="play">▶</span><span class="ctat">${all?t.again:cnt?t.cont:t.start}<small>${esc(t.lessonQ(nl.no,nl.title))}</small></span></a>
   </section>`}
-  ${nextLessonCard()}${tv?'':testCard()}
+  ${nextLessonCard()}${tv?'':reviewCard()+testCard()+mockCard()}
   ${inst?`<div class="card install"><span class="ic">📲</span><p><b>${t.instT}</b>${deferredPrompt?t.instA:t.instI}</p>${deferredPrompt?`<button class="btn sm mint" id="instBtn">${t.instB}</button>`:''}<button class="ibtn sm" id="instX" aria-label="${t.close}">${icon.x}</button></div>`:''}
   <div class="h2"><span>${t.stepsT}</span><small>${t.stepsSub}</small></div>
   <div class="steps">${[0,1,2,3,4,5,6].map(stepCard).join('')}</div>
@@ -243,7 +243,7 @@ let fcState={i:0,flip:false,got:new Set()},qState=null;
 function vLesson(no,tab){
   const i=L.findIndex(x=>x.no===no);const l=V(L[i]),c=COL[i%COL.length],t=T();
   const tv=teachView(),TK=tv?['plan','learn','quiz']:TABK,TL=tv?[TMx().plan,TMx().learn,TMx().key]:t.tabs;
-  if(tv)store.set('tlast',no);else{visited[no]=visited[no]||{};visited[no][tab]=1;store.set('visited',visited)}
+  if(tv)store.set('tlast',no);else{if(!(visited[no]&&visited[no][tab])){visited[no]=visited[no]||{};visited[no][tab]=1;store.set('visited',visited)}markDay()}
   const v=visited[no]||{},ok=k=>!tv&&(k==='quiz'?done.includes(no):!!v[k]);
   let h=`<section class="card lhero" style="--c:${cv(c)}"><span class="g" lang="ko">${l.big}</span><span class="no">${t.noOf(l.no)}</span><h1>${esc(l.title)}</h1><div class="sub">${esc(l.sub)}</div>
     ${tab==='learn'||tab==='plan'?`<div class="goals">${l.goals.map(g=>`<div>🎯 ${esc(g)}</div>`).join('')}</div>`:''}</section>
@@ -364,7 +364,7 @@ function bindLesson(no,tab){
     let busy=false;
     $('#fGot').onclick=e=>{if(busy)return;const k=ws[f.i].k,btn=e.currentTarget;
       if(f.got.has(k)){f.got.delete(k);store.set('got-'+no,[...f.got]);re();return}
-      busy=true;f.got.add(k);store.set('got-'+no,[...f.got]);buzz(15);
+      busy=true;f.got.add(k);store.set('got-'+no,[...f.got]);buzz(15);srsAdd('w:'+k,1);markDay();
       btn.classList.add('mint');btn.textContent=t.got;
       const sp=$('#fc .stamp');if(sp)sp.classList.add('on','pop');
       const di=$$('.dots i')[f.i];if(di)di.classList.add('got');
@@ -380,10 +380,12 @@ function bindLesson(no,tab){
     const q=qState;
     $$('.opt').forEach(o=>o.onclick=()=>{
       const j=+o.dataset.j,it=l.quiz[q.i];q.ans=j;
-      if(j===it.a){q.score++;buzz(20);const r=o.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2)}else buzz([40,60,40]);
+      if(j===it.a){q.score++;buzz(20);const r=o.getBoundingClientRect();confetti(r.left+r.width/2,r.top+r.height/2)}else{buzz([40,60,40]);if(!teachView())srsAdd(`q:${no}:${q.i}`)}
+      if(!teachView())markDay();
       if(isKo(it.o[it.a]))say(it.o[it.a]);
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);const nb=$('#qNext');if(nb)nb.scrollIntoView({block:'nearest',behavior:'smooth'})});
     const nb=$('#qNext');if(nb)nb.onclick=()=>{q.i++;q.ans=null;
+      if(q.i>=l.quiz.length&&!teachView()){const qb=store.get('qbest',{});qb[no]=Math.max(qb[no]||0,Math.round(q.score/l.quiz.length*100)/100);store.set('qbest',qb);srsAddWords(no)}
       if(q.i>=l.quiz.length&&!done.includes(no)&&!teachView()){const s0=evoStage(done.length);done.push(no);store.set('done',done);const s1=evoStage(done.length);if(s1>s0)setTimeout(()=>showEvolution(s0,s1),1400)}
       panel.innerHTML=pQuiz(l);bindLesson(no,tab);
       const seg=$('.seg');if(seg)window.scrollTo({top:Math.max(0,seg.getBoundingClientRect().top+scrollY-70),behavior:'smooth'});
@@ -477,7 +479,7 @@ function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='print'&&h[1])return {v:'print',no:+h[1],t:h[2]||'text'};
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
   if(h[0]==='words')return {v:'words'};if(h[0]==='prints'||(h[0]==='guide'&&h[1]==='prints'&&teachView()))return {v:'prints'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
-  if(h[0]==='lessons')return {v:'lessons'};if((h[0]==='chat'||h[0]==='book')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};if(h[0]==='test')return {v:'test'};
+  if(h[0]==='lessons')return {v:'lessons'};if((h[0]==='chat'||h[0]==='book')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};if(h[0]==='test')return {v:'test'};if(h[0]==='review')return {v:'review'};if(h[0]==='mock')return {v:'mock'};if((h[0]==='student'||h[0]==='teacher')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};
   if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin'};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
@@ -490,14 +492,14 @@ function render(keep){
   }
   document.body.classList.toggle('pmode',r.v==='print');document.body.classList.toggle('tmode',teachView());document.body.classList.toggle('chatmode',r.v==='chat');
   document.body.dataset.view=r.v;
-  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='prints'?vPrints():r.v==='lessons'?vLessons():r.v==='chat'?vChat(r.id):r.v==='book'?vBook(r.id):r.v==='test'?vTest():r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
+  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='prints'?vPrints():r.v==='lessons'?vLessons():r.v==='chat'?vChat(r.id):r.v==='book'?vBook(r.id):r.v==='test'?vTest():r.v==='review'?vReview():r.v==='mock'?vMock():r.v==='student'?vStudent(r.id):r.v==='teacher'?vTeacher(r.id):r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
   if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);
-  else if(r.v==='chat'||r.v==='book')topbar('sub',{back:'#/lessons',title:r.v==='book'?S_().book:S_().chat});else if(r.v==='test')topbar('sub',{back:'#/',title:TT().title});else topbar('main');
-  tabbar(r.v==='lesson'||r.v==='print'||r.v==='chat'||r.v==='test'||r.v==='book'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
+  else if(r.v==='chat'||r.v==='book')topbar('sub',{back:'#/lessons',title:r.v==='book'?S_().book:S_().chat});else if(r.v==='test')topbar('sub',{back:'#/',title:TT().title});else if(r.v==='review')topbar('sub',{back:'#/',title:S2().revT});else if(r.v==='mock')topbar('sub',{back:'#/',title:S2().mock});else if(r.v==='student')topbar('sub',{back:'#/lessons',title:S2().sp});else if(r.v==='teacher')topbar('sub',{back:'#/lessons',title:PX().profile.replace(/を見る|보기/,'')});else topbar('main');
+  tabbar(r.v==='lesson'||r.v==='print'||r.v==='chat'||r.v==='test'||r.v==='book'||r.v==='review'||r.v==='mock'?null:r.v==='student'||r.v==='teacher'?'lessons':r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
   fitTables();
   if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print();(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>fitPages())}
-  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='lessons')bindLessons();else if(r.v==='chat')bindChat(r.id);else if(r.v==='book')bindBook(r.id);else if(r.v==='test')bindTest();else if(r.v==='admin')bindAdmin();
+  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='lessons')bindLessons();else if(r.v==='chat')bindChat(r.id);else if(r.v==='book')bindBook(r.id);else if(r.v==='test')bindTest();else if(r.v==='review')bindReview();else if(r.v==='mock')bindMock();else if(r.v==='teacher')bindTeacher();else if(r.v==='admin')bindAdmin();
   if(r.v==='guide'&&r.open==='prints'&&!keep){const d=$('#printsAcc');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({block:'start'}),30)}}
   if(keep){}else if(r.v==='lesson'&&last&&last.startsWith(`l${r.no}-`)){const seg=$('.seg');const y=seg?seg.getBoundingClientRect().top+scrollY-60:0;if(scrollY>y)scrollTo(0,y)}
   else scrollTo(0,scrollMem[key]&&r.v!=='lesson'?scrollMem[key]:0);
