@@ -206,7 +206,8 @@ function vTeacher(id){
   const o=S_(),p=PX();if(TP.id!==id)loadTP(id);if(TP.err)return emptyCard(o.err);if(!TP.d)return '<div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>';
   const x=TP.d,by={};(x.upcoming||[]).forEach(s=>{const k=fDay(s.start);(by[k]=by[k]||[]).push(s)});
   return `<section class="card tpro">${avatar(x,'xl')}<b class="mn">${esc(x.name)}</b>${x.rating!=null?`<span>${stars(x.rating)} ${x.rating} · ${BX().revN(x.reviews)}</span>`:''}<small>${esc(x.bio||'')}</small><div class="mchips">${modesBadges(x.modes)}</div>
-    ${x.tags&&x.tags.length?`<div class="tags">${x.tags.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}</section>
+    ${x.tags&&x.tags.length?`<div class="tags">${x.tags.map(t=>`<span>#${esc(t)}</span>`).join('')}</div>`:''}${tagChips(x.ptags)}${commonN(x.ptags)&&ME.id!==x.id?`<span class="cmn">💞 ${PFX().common(commonN(x.ptags))}</span>`:''}${snsLinks(x.sns)}</section>
+  ${mediaBlock(x)}
   ${x.intro?`<div class="card tintro">${esc(x.intro).replace(/\n/g,'<br>')}</div>`:''}
   ${x.places&&x.places.length?`<div class="h2"><span>📍 ${p.places}</span></div><div class="card tmap"><div class="mapbox" id="tpMap"></div>${x.places.map(pl=>`<a class="plrow" href="${gmap(pl)}" target="_blank" rel="noopener"><b>${esc(pl.name)}</b><small>${esc(pl.addr||'')}</small></a>`).join('')}</div>`:''}
   ${Object.keys(by).length?`<div class="h2"><span>🗓 ${o.free(x.freeSlots)}</span></div><div class="card sll">${Object.entries(by).slice(0,7).map(([k,ls])=>`<div class="sld"><b>${k}</b><div>${ls.map(s=>`<span class="slc ${s.mode}">${fTime(s.start)}<small>${s.mode==='offline'&&s.place?'📍'+esc(s.place.name):'💻'}</small></span>`).join('')}</div></div>`).join('')}</div>`:''}
@@ -361,3 +362,42 @@ function admInner(){const o=BX();if(!ADM.stats)return '';const s=ADM.stats;
   return `<div class="h2 first"><span>📊 ${o.stats}</span></div><div class="stg">${Object.keys(o.st).map(k=>`<div class="card ${k==='reports'&&s[k]?'warn':''}"><b>${s[k]}</b><small>${o.st[k]}</small></div>`).join('')}</div>
   ${ADM.reports&&ADM.reports.length?`<div class="h2"><span>⚠️ ${o.reps}</span></div>${ADM.reports.slice(0,20).map(r=>`<div class="card rep ${r.resolved?'ok':''}"><small>${new Date(r.at*1000).toLocaleString(loc())}</small><b>${esc(r.reporter.name||'—')} → ${esc(r.target.name||'—')} <small>${esc(r.target.email||'')}</small></b><p>${esc(r.reason||'—')}</p>${r.resolved?'':`<button class="btn sm" data-rres="${r.id}">${o.resolve}</button>`}</div>`).join('')}`:''}`}
 function bindAdm(){$$('[data-rres]').forEach(b=>b.onclick=async()=>{try{await api('POST','/admin/reports/'+b.dataset.rres,{});loadAdm()}catch(e){toast(A().err)}})}
+
+/* ======================= 배치4: 태그(매칭앱식) · 소개 사진/영상 · SNS ======================= */
+const TAGC=[['personality',{ja:'性格',ko:'성격'},[['cheerful','明るい','밝은'],['calm','落ち着いた','차분한'],['talkative','おしゃべり','수다쟁이'],['listener','聞き上手','잘 들어주는'],['kind','やさしい','다정한'],['funny','ユーモア','유머러스'],['passion','熱血','열정적'],['careful','しっかり者','꼼꼼한'],['mypace','マイペース','마이페이스'],['shy','人見知り','낯가림']]],
+ ['interest',{ja:'好きなこと',ko:'관심사'},[['kpop','K-POP','K-POP'],['drama','ドラマ','드라마'],['movie','映画','영화'],['anime','アニメ','애니'],['webtoon','ウェブトゥーン','웹툰'],['music','音楽','음악'],['food','グルメ','맛집'],['cooking','料理','요리'],['travel','旅行','여행'],['cafe','カフェ巡り','카페 투어'],['game','ゲーム','게임'],['sports','スポーツ','스포츠'],['books','読書','독서'],['photo','写真','사진'],['fashion','ファッション','패션'],['beauty','美容','뷰티']]],
+ ['style',{ja:'学び方',ko:'배우는 방식'},[['slow','ゆっくり丁寧','천천히 차근차근'],['talk','たくさん話したい','말을 많이'],['grammar','文法しっかり','문법 탄탄'],['pron','発音重視','발음 중시'],['chat','楽しく雑談','즐거운 수다'],['hw','宿題ほしい','숙제 좋아요'],['topik','TOPIK対策','TOPIK 대비'],['biz','ビジネス','비즈니스'],['kids','子ども向け','어린이']]],
+ ['time',{ja:'都合のいい時間',ko:'편한 시간'},[['morning','朝','아침'],['daytime','昼間','낮'],['evening','平日の夜','평일 저녁'],['weekend','週末','주말']]]];
+const TAGL={};TAGC.forEach(c=>c[2].forEach(t=>TAGL[t[0]]={ja:t[1],ko:t[2],cat:c[0]}));
+const tagName=id=>TAGL[id]?TAGL[id][LANG]:id;
+const PF={ja:{tags:'わたしのタグ',tagsS:'性格・好きなこと・学び方をえらぶと、相性のいい相手が見つかりやすくなります',common:n=>`共通 ${n}`,photos:'紹介写真',photosS:'授業の様子や自分らしい写真（最大6枚）',addPhoto:'＋ 写真',video:'自己紹介動画',videoS:'60秒以内のショート動画（任意）',addVideo:'＋ 動画をアップロード',delVideo:'動画を削除',tooLong:'60秒以内の動画にしてください',tooBig:'ファイルが大きすぎます（40MBまで）',sns:'SNS',snsS:'Instagram などのリンク（任意）',web:'ブログ・サイト（https://）',yt:'YouTube（https://）',media:'写真・動画'},
+ ko:{tags:'나의 태그',tagsS:'성격·관심사·배우는 방식을 고르면 잘 맞는 상대를 찾기 쉬워져요',common:n=>`공통 ${n}`,photos:'소개 사진',photosS:'수업 모습이나 나다운 사진 (최대 6장)',addPhoto:'＋ 사진',video:'자기소개 영상',videoS:'60초 이내 짧은 영상 (선택)',addVideo:'＋ 영상 올리기',delVideo:'영상 삭제',tooLong:'60초 이내 영상으로 해 주세요',tooBig:'파일이 너무 커요 (40MB까지)',sns:'SNS',snsS:'Instagram 등 링크 (선택)',web:'블로그·사이트 (https://)',yt:'YouTube (https://)',media:'사진·영상'}};
+const PFX=()=>PF[LANG];
+const myTags=()=>new Set((ME&&ME.ptags)||[]);
+const commonN=tags=>{const m=myTags();return (tags||[]).filter(t=>m.has(t)).length};
+function tagChips(tags,max=99){const m=myTags();const ts=[...(tags||[])].sort((a,b)=>m.has(b)-m.has(a)).slice(0,max);return ts.length?`<div class="ptags">${ts.map(t=>`<span class="pt ${m.has(t)&&ME&&ME.ptags!==tags?'same':''} c-${TAGL[t]?TAGL[t].cat:''}">${esc(tagName(t))}</span>`).join('')}${(tags||[]).length>max?`<span class="pt more">+${tags.length-max}</span>`:''}</div>`:''}
+function tagPicker(sel){const s=new Set(sel||[]);return `<div class="fl"><span>🏷 ${PFX().tags}</span><small class="fls">${PFX().tagsS}</small>${TAGC.map(c=>`<div class="tpg"><b>${c[1][LANG]}</b><div class="tpc">${c[2].map(t=>`<label class="tpk c-${c[0]}"><input type="checkbox" name="ptags" value="${t[0]}" ${s.has(t[0])?'checked':''}><span>${LANG==='ko'?t[2]:t[1]}</span></label>`).join('')}</div></div>`).join('')}</div>`}
+function snsFields(sn){sn=sn||{};const p=PFX();return `<div class="fl"><span>🔗 ${p.sns}</span><small class="fls">${p.snsS}</small><div class="snsf">
+  <label><i>Instagram @</i><input name="sns_instagram" maxlength="30" value="${esc(sn.instagram||'')}" autocapitalize="off"></label>
+  <label><i>X @</i><input name="sns_x" maxlength="15" value="${esc(sn.x||'')}" autocapitalize="off"></label>
+  <label><i>TikTok @</i><input name="sns_tiktok" maxlength="24" value="${esc(sn.tiktok||'')}" autocapitalize="off"></label>
+  <label><i>${p.yt}</i><input name="sns_youtube" type="url" maxlength="200" value="${esc(sn.youtube||'')}"></label>
+  <label><i>${p.web}</i><input name="sns_web" type="url" maxlength="200" value="${esc(sn.web||'')}"></label></div></div>`}
+const SNSI={instagram:['📸','Instagram',h=>`https://www.instagram.com/${h}/`],x:['𝕏','X',h=>`https://x.com/${h}`],tiktok:['🎵','TikTok',h=>`https://www.tiktok.com/@${h}`],youtube:['▶️','YouTube',u=>u],web:['🌐','Web',u=>u]};
+function snsLinks(sn){sn=sn||{};const ks=Object.keys(SNSI).filter(k=>sn[k]);return ks.length?`<div class="snsl">${ks.map(k=>`<a class="btn sm" href="${esc(SNSI[k][2](sn[k]))}" target="_blank" rel="noopener nofollow">${SNSI[k][0]} ${SNSI[k][1]}</a>`).join('')}</div>`:''}
+function mediaBlock(x){const g=x.gallery||[];return `${x.video?`<div class="card tvid"><video src="${esc(x.video)}" controls playsinline preload="metadata"></video></div>`:''}${g.length?`<div class="gal">${g.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`:''}`}
+function mediaEditor(u){if(u.role!=='teacher')return '';const p=PFX(),g=u.gallery||[];
+  return `<div class="h2"><span>🖼 ${p.media}</span></div><section class="card medit">
+    <b>${p.photos}</b><small>${p.photosS}</small><div class="gal ed">${g.map(x=>`<span><img src="${esc(x)}" alt=""><button data-gdel="${esc(x.split('/').pop())}" aria-label="del">×</button></span>`).join('')}${g.length<6?`<label class="gadd">${p.addPhoto}<input type="file" accept="image/*" multiple hidden id="galIn"></label>`:''}</div>
+    <b>${p.video}</b><small>${p.videoS}</small>${u.video?`<video src="${esc(u.video)}" controls playsinline preload="metadata"></video><button class="lnk danger" id="vidDel">${p.delVideo}</button>`:''}<label class="btn sm">${p.addVideo}<input type="file" accept="video/mp4,video/quicktime,video/webm" hidden id="vidIn"></label>
+  </section>`}
+function bindMedia(){
+  const gi=$('#galIn');if(gi)gi.onchange=async()=>{for(const f of [...gi.files].slice(0,6-((ME.gallery||[]).length))){toast(S_().uploading);try{const b=await shrinkImage(f,1280);const r=await fetch('/api/me/gallery',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'image/jpeg'},body:b});if(!r.ok)throw 0;setMe(await r.json())}catch(e){toast(S_().photoErr)}}render(true)};
+  $$('[data-gdel]').forEach(b=>b.onclick=async()=>{try{setMe(await api('DELETE','/me/gallery/'+b.dataset.gdel));render(true)}catch(e){toast(A().err)}});
+  const vd=$('#vidDel');if(vd)vd.onclick=async()=>{try{setMe(await api('DELETE','/me/video'));render(true)}catch(e){toast(A().err)}};
+  const vi=$('#vidIn');if(vi)vi.onchange=async()=>{const f=vi.files[0];if(!f)return;const p=PFX();if(f.size>40*1024*1024)return toast(p.tooBig);
+    const dur=await new Promise(res=>{const v=document.createElement('video');v.preload='metadata';v.onloadedmetadata=()=>{res(v.duration);URL.revokeObjectURL(v.src)};v.onerror=()=>res(0);v.src=URL.createObjectURL(f)});
+    if(dur>61)return toast(p.tooLong);toast(S_().uploading);
+    const type=/quicktime|\.mov$/i.test(f.type||f.name)?'video/quicktime':/webm/.test(f.type)?'video/webm':'video/mp4';
+    try{const r=await fetch('/api/me/video',{method:'POST',credentials:'same-origin',headers:{'Content-Type':type},body:f});if(!r.ok)throw 0;setMe(await r.json());toast(A().saved);render(true)}catch(e){toast(A().err)}};
+}
