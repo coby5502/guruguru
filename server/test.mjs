@@ -294,6 +294,56 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   assert.equal(x.j.notes[0].summary, '자기소개 연습'); assert.equal(x.j.notes[0].fbText, '잘했어요!'); assert.equal(x.j.notes[0].hwText, '저는 린입니다.');
   assert.equal((await call('GET', `/api/matches/${mt.j.id}/notes`, { cookie: te.cookie })).s, 404);
 }
+
+// ===== 음성 · 수강권 · 신고/차단 · 후기 · 관리자 =====
+{
+  const s5 = await login('ss5', 'ss5@example.com', 'Sora'); await call('PUT', '/api/me', { cookie: s5.cookie, body: { name: 'そら', role: 'student' } });
+  const t5 = await login('tt5', 'tt5@example.com', 'Han'); await call('PUT', '/api/me', { cookie: t5.cookie, body: { name: '한선생', role: 'teacher' } });
+  await call('POST', `/api/admin/users/${t5.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
+  const mt = (await call('POST', '/api/matches', { cookie: s5.cookie, body: { teacherId: t5.j.id } })).j;
+  const v0 = await fetch(base + `/api/matches/${mt.id}/voice?sec=3`, { method: 'POST', headers: { cookie: s5.cookie, origin: 'https://guruguru.app', 'content-type': 'audio/webm' }, body: Buffer.alloc(500, 1) });
+  assert.equal(v0.status, 409, 'voice needs accepted');
+  await call('POST', `/api/matches/${mt.id}`, { cookie: t5.cookie, body: { action: 'accept' } });
+  const v1 = await fetch(base + `/api/matches/${mt.id}/voice?sec=3&text=${encodeURIComponent('안녕하세요')}`, { method: 'POST', headers: { cookie: s5.cookie, origin: 'https://guruguru.app', 'content-type': 'audio/webm' }, body: Buffer.alloc(500, 1) });
+  assert.equal(v1.status, 201);
+  let x = await call('GET', `/api/matches/${mt.id}/messages`, { cookie: t5.cookie });
+  const vm = x.j.messages.find(m => m.kind === 'voice'); assert.equal(vm.body.text, '안녕하세요');
+  assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: t5.cookie } })).status, 200);
+  assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: te.cookie } })).status, 404);
+  assert.equal((await fetch(base + '/api/voice/' + vm.body.f, { headers: { cookie: t5.cookie, range: 'bytes=0-9' } })).status, 206);
+  // 수강권
+  assert.equal((await call('PUT', `/api/matches/${mt.id}/credits`, { cookie: s5.cookie, body: { credits: 9 } })).s, 404);
+  x = await call('PUT', `/api/matches/${mt.id}/credits`, { cookie: t5.cookie, body: { credits: 1 } }); assert.equal(x.j.credits, 1);
+  const H = 3600, b0 = Math.floor(Date.now() / 1000 / H) * H + 50 * H;
+  const sl = (await call('POST', '/api/slots', { cookie: t5.cookie, body: { slots: [{ start: b0, dur: 60 }, { start: b0 + 2 * H, dur: 60 }] } })).j.slots;
+  assert.equal((await call('POST', `/api/slots/${sl[0].id}/book`, { cookie: s5.cookie })).s, 200);
+  assert.equal((await call('POST', `/api/slots/${sl[1].id}/book`, { cookie: s5.cookie })).s, 402);
+  await call('POST', `/api/slots/${sl[0].id}/cancel`, { cookie: s5.cookie });
+  x = await call('GET', `/api/matches/${mt.id}`, { cookie: s5.cookie }); assert.equal(x.j.credits, 1, 'refunded (>24h)');
+  // 후기: 지난 수업 없으면 403
+  assert.equal((await call('POST', `/api/teachers/${t5.j.id}/reviews`, { cookie: s5.cookie, body: { rating: 5 } })).s, 403);
+  await call('POST', `/api/slots/${sl[1].id}/book`, { cookie: s5.cookie });
+  { const { DatabaseSync } = await import('node:sqlite'); const d = new DatabaseSync(process.env.DB_PATH); d.prepare('UPDATE slots SET start=? WHERE id=?').run(b0 - 9 * 86400, sl[1].id); d.close(); }
+  x = await call('GET', `/api/teachers/${t5.j.id}/reviews`, { cookie: s5.cookie }); assert.equal(x.j.canWrite, true);
+  assert.equal((await call('POST', `/api/teachers/${t5.j.id}/reviews`, { cookie: s5.cookie, body: { rating: 9 } })).s, 400);
+  assert.equal((await call('POST', `/api/teachers/${t5.j.id}/reviews`, { cookie: s5.cookie, body: { rating: 5, text: '최고!' } })).s, 200);
+  x = await call('GET', `/api/teachers/${t5.j.id}`, { cookie: s5.cookie }); assert.equal(x.j.rating, 5); assert.equal(x.j.reviews, 1);
+  // 신고 + 차단
+  assert.equal((await call('POST', '/api/report', { cookie: s5.cookie, body: { userId: t5.j.id, matchId: mt.id, reason: 'spam', block: true } })).s, 200);
+  assert.equal((await call('POST', `/api/matches/${mt.id}/messages`, { cookie: t5.cookie, body: { body: 'hi' } })).s, 409);
+  x = await call('GET', '/api/teachers', { cookie: s5.cookie }); assert.ok(!x.j.teachers.some(t => t.id === t5.j.id));
+  x = await call('DELETE', '/api/block', { cookie: s5.cookie, body: { userId: t5.j.id } }); assert.deepEqual(x.j.blocks, []);
+  // 관리자
+  assert.equal((await call('GET', '/api/admin/stats', { cookie: s5.cookie })).s, 403);
+  x = await call('GET', '/api/admin/stats', { cookie: ad.cookie }); assert.ok(x.j.users > 5); assert.equal(x.j.reports, 1);
+  x = await call('GET', '/api/admin/reports', { cookie: ad.cookie }); assert.equal(x.j.reports[0].reason, 'spam');
+  await call('POST', `/api/admin/reports/${x.j.reports[0].id}`, { cookie: ad.cookie, body: {} });
+  x = await call('POST', `/api/admin/users/${t5.j.id}`, { cookie: ad.cookie, body: { action: 'suspend' } }); assert.equal(x.j.suspended, true);
+  assert.equal((await call('GET', '/api/me', { cookie: t5.cookie })).s, 401);
+  assert.equal((await call('POST', '/api/auth/google', { body: { credential: tok({ sub: 'tt5', email: 'tt5@example.com' }) } })).s, 401);
+  await call('POST', `/api/admin/users/${t5.j.id}`, { cookie: ad.cookie, body: { action: 'unsuspend' } });
+  assert.equal((await call('POST', `/api/admin/users/${ad.j.id}`, { cookie: ad.cookie, body: { action: 'suspend' } })).s, 400);
+}
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });
 process.exit(0);

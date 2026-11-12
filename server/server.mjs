@@ -100,6 +100,11 @@ CREATE TABLE IF NOT EXISTS notes(
   summary TEXT, good TEXT, homework TEXT, note_at INTEGER,
   hw_text TEXT, hw_image TEXT, hw_at INTEGER, fb_text TEXT, fb_at INTEGER
 );`);
+addCol('users', 'suspended', 'INTEGER'); addCol('matches', 'credits', 'INTEGER');
+db.exec(`
+CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, rating INTEGER NOT NULL, text TEXT, at INTEGER NOT NULL, UNIQUE(teacher_id, student_id));
+CREATE TABLE IF NOT EXISTS blocks(user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, at INTEGER NOT NULL, PRIMARY KEY(user_id, blocked_id));
+CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY, reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL, target_id INTEGER REFERENCES users(id) ON DELETE CASCADE, match_id INTEGER, reason TEXT, at INTEGER NOT NULL, resolved INTEGER);`);
 const MEDIA_DIR = path.join(path.dirname(CFG.db), 'media');
 fs.mkdirSync(MEDIA_DIR, { recursive: true });
 const AV_DIR = path.join(path.dirname(CFG.db), 'avatars');
@@ -137,11 +142,28 @@ const q = {
   todoT: db.prepare('SELECT s.* FROM slots s LEFT JOIN notes n ON n.slot_id=s.id WHERE s.teacher_id=? AND s.student_id IS NOT NULL AND s.start+s.dur*60<? AND s.start>? AND (n.note_at IS NULL OR (n.hw_at IS NOT NULL AND n.fb_at IS NULL)) ORDER BY s.start DESC LIMIT 30'),
   todoS: db.prepare("SELECT s.* FROM slots s JOIN notes n ON n.slot_id=s.id WHERE s.student_id=? AND n.homework IS NOT NULL AND n.homework<>'' AND n.hw_at IS NULL AND s.start>? ORDER BY s.start DESC LIMIT 30"),
   mediaOwner: db.prepare('SELECT s.teacher_id, s.student_id FROM notes n JOIN slots s ON s.id=n.slot_id WHERE n.hw_image=?'),
+  revOf: db.prepare('SELECT r.*, u.name sname FROM reviews r JOIN users u ON u.id=r.student_id WHERE r.teacher_id=? ORDER BY r.at DESC LIMIT 30'),
+  revAvg: db.prepare('SELECT AVG(rating) a, COUNT(*) n FROM reviews WHERE teacher_id=?'),
+  upRev: db.prepare('INSERT INTO reviews(teacher_id,student_id,rating,text,at) VALUES(?,?,?,?,?) ON CONFLICT(teacher_id,student_id) DO UPDATE SET rating=excluded.rating,text=excluded.text,at=excluded.at'),
+  pastLesson: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND student_id=? AND start+dur*60<?'),
+  block: db.prepare('INSERT OR IGNORE INTO blocks(user_id,blocked_id,at) VALUES(?,?,?)'), unblock: db.prepare('DELETE FROM blocks WHERE user_id=? AND blocked_id=?'),
+  blocked: db.prepare('SELECT COUNT(*) n FROM blocks WHERE (user_id=?1 AND blocked_id=?2) OR (user_id=?2 AND blocked_id=?1)'),
+  myBlocks: db.prepare('SELECT blocked_id FROM blocks WHERE user_id=?'),
+  insReport: db.prepare('INSERT INTO reports(reporter_id,target_id,match_id,reason,at) VALUES(?,?,?,?,?)'),
+  reports: db.prepare('SELECT r.*, a.name rname, a.email remail, b.name tname, b.email temail FROM reports r LEFT JOIN users a ON a.id=r.reporter_id LEFT JOIN users b ON b.id=r.target_id ORDER BY r.resolved IS NOT NULL, r.at DESC LIMIT 100'),
+  resolveRep: db.prepare('UPDATE reports SET resolved=? WHERE id=?'),
+  suspend: db.prepare('UPDATE users SET suspended=?,updated_at=? WHERE id=?'), killSess: db.prepare('DELETE FROM sessions WHERE user_id=?'),
+  setCredits: db.prepare('UPDATE matches SET credits=? WHERE id=?'), useCredit: db.prepare('UPDATE matches SET credits=credits-1 WHERE id=? AND credits>0'), refund: db.prepare('UPDATE matches SET credits=credits+1 WHERE id=? AND credits IS NOT NULL'),
+  voiceOwner: db.prepare("SELECT x.student_id, x.teacher_id FROM messages m JOIN matches x ON x.id=m.match_id WHERE m.kind='voice' AND m.body LIKE ?"),
+  stats: db.prepare(`SELECT (SELECT COUNT(*) FROM users) users, (SELECT COUNT(*) FROM users WHERE role='student') students, (SELECT COUNT(*) FROM users WHERE role='teacher' AND teacher_status='approved') teachers,
+    (SELECT COUNT(*) FROM users WHERE teacher_status='pending') pending, (SELECT COUNT(*) FROM users WHERE last_login>?1) active7, (SELECT COUNT(*) FROM matches WHERE status='accepted') matches,
+    (SELECT COUNT(*) FROM slots WHERE student_id IS NOT NULL AND start>?2) upcoming, (SELECT COUNT(*) FROM slots WHERE student_id IS NOT NULL AND start<=?2) done,
+    (SELECT COUNT(*) FROM messages WHERE at>?1) msgs7, (SELECT COUNT(*) FROM reports WHERE resolved IS NULL) reports, (SELECT COUNT(*) FROM tests) tests`),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
   testsToday: db.prepare('SELECT COUNT(*) n FROM tests WHERE user_id=? AND at>?'),
-  teachers: db.prepare("SELECT * FROM users WHERE role='teacher' AND teacher_status='approved' AND id<>? ORDER BY last_login DESC LIMIT 200"),
+  teachers: db.prepare("SELECT * FROM users WHERE role='teacher' AND teacher_status='approved' AND suspended IS NULL AND id<>?1 AND id NOT IN (SELECT blocked_id FROM blocks WHERE user_id=?1) AND id NOT IN (SELECT user_id FROM blocks WHERE blocked_id=?1) ORDER BY last_login DESC LIMIT 200"),
   match: db.prepare('SELECT * FROM matches WHERE id=?'),
   activeMatch: db.prepare("SELECT * FROM matches WHERE student_id=? AND teacher_id=? AND status IN ('pending','accepted') ORDER BY id DESC LIMIT 1"),
   myMatches: db.prepare('SELECT * FROM matches WHERE student_id=? OR teacher_id=? ORDER BY last_at DESC LIMIT 200'),
@@ -211,14 +233,14 @@ const picture = u => u.avatar ? `/api/avatar/${u.avatar}` : (u.picture || '');
 const testOf = id => { const t = q.lastTest.get(id); return t ? { step: t.step, score: t.score, total: t.total, at: t.at } : null; };
 // 상대방에게 보이는 정보(이메일 제외)
 const js = (v, d) => { try { return v ? JSON.parse(v) : d; } catch { return d; } };
-const teachInfo = u => u.role === 'teacher' ? { modes: u.modes || 'online', places: js(u.places, []), intro: u.intro || '', tags: (u.tags || '').split(',').filter(Boolean) } : {};
+const teachInfo = u => { if (u.role !== 'teacher') return {}; const r = q.revAvg.get(u.id); return { modes: u.modes || 'online', places: js(u.places, []), intro: u.intro || '', tags: (u.tags || '').split(',').filter(Boolean), rating: r.n ? Math.round(r.a * 10) / 10 : null, reviews: r.n }; };
 const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture: picture(u), role: u.role, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '', test: u.role === 'student' ? testOf(u.id) : null, ...teachInfo(u) }) : { id: 0, name: '—', picture: '' };
 const pub = u => ({
   id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
   role: u.role, teacherStatus: u.teacher_status, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '',
   profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), meetUrl: u.meet_url || '', ...teachInfo(u),
 });
-const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login });
+const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login, suspended: !!u.suspended });
 
 function cookies(req) {
   const o = {};
@@ -232,7 +254,7 @@ function currentUser(req) {
   const tok = cookies(req)[CFG.cookie];
   if (!tok || tok.length > 100) return null;
   const row = q.sess.get(sha(tok));
-  if (!row || row.expires_at < now()) return null;
+  if (!row || row.expires_at < now() || row.suspended) return null;
   return row;
 }
 function send(res, code, obj, extra = {}) {
@@ -274,6 +296,7 @@ async function loginWith(credential, res) {
   let user = q.userBySub.get(g.sub);
   if (!user) { q.insUser.run(g.sub, g.email, str(g.name, 80), str(g.picture, 500), null, t, t, t); user = q.userBySub.get(g.sub); }
   else { q.loginUser.run(g.email, str(g.name, 80), str(g.picture, 500), t, user.id); user = q.userById.get(user.id); }
+  if (user.suspended) throw new Error('suspended');
   const tok = crypto.randomBytes(32).toString('base64url');
   q.insSess.run(sha(tok), user.id, t, t + CFG.sessionDays * 86400);
   if (Math.random() < 0.05) q.gcSess.run(t);
@@ -357,10 +380,11 @@ const isStudentUser = u => u.role === 'student';
 const isTeacherUser = u => u.role === 'teacher' && u.teacher_status === 'approved';
 const sideOf = (m, me) => m.student_id === me.id ? 'student' : m.teacher_id === me.id ? 'teacher' : null;
 const otherId = (m, me) => m.student_id === me.id ? m.teacher_id : m.student_id;
-const msgOut = x => ({ id: x.id, from: x.sender_id, kind: x.kind, body: x.kind === 'sys' ? JSON.parse(x.body) : x.body, at: x.at, read: !!x.read_at });
+const msgOut = x => ({ id: x.id, from: x.sender_id, kind: x.kind, body: x.kind === 'sys' || x.kind === 'voice' ? JSON.parse(x.body) : x.body, at: x.at, read: !!x.read_at });
+const AUD = [['webm', 'audio/webm'], ['m4a', 'audio/mp4'], ['ogg', 'audio/ogg'], ['mp3', 'audio/mpeg']];
 function matchOut(m, me) {
   const lm = q.lastMsg.get(m.id);
-  return { id: m.id, status: m.status, side: sideOf(m, me), peer: peer(q.userById.get(otherId(m, me))), createdAt: m.created_at, lastAt: m.last_at,
+  return { id: m.id, status: m.status, side: sideOf(m, me), peer: peer(q.userById.get(otherId(m, me))), createdAt: m.created_at, lastAt: m.last_at, credits: m.credits ?? null, blocked: !!q.blocked.get(m.student_id, m.teacher_id).n,
     unread: q.unread.get(m.id, me.id).n, last: lm ? msgOut(lm) : null, next: q.nextWith.get(m.id, now()) || null };
 }
 function slotOut(s, me) {
@@ -570,6 +594,7 @@ async function handle(req, res) {
     const b = await readJson(req);
     const teacher = q.userById.get(Math.trunc(+b.teacherId));
     if (!teacher || !isTeacherUser(teacher) || teacher.id === me.id) return send(res, 404, { error: 'teacher' });
+    if (q.blocked.get(me.id, teacher.id).n || teacher.suspended) return send(res, 404, { error: 'teacher' });
     const ex = q.activeMatch.get(me.id, teacher.id);
     if (ex) return send(res, 409, { error: 'exists', match: matchOut(ex, me) });
     if (q.reqToday.get(me.id, now() - DAY).n >= 10) return send(res, 429, { error: 'rate' });
@@ -593,7 +618,7 @@ async function handle(req, res) {
         return send(res, 200, { match: matchOut(mt, me), messages: list.map(msgOut) });
       }
       if (m !== 'POST') return send(res, 405, { error: 'method' });
-      if (!['pending', 'accepted'].includes(mt.status)) return send(res, 409, { error: 'closed' });
+      if (!['pending', 'accepted'].includes(mt.status) || q.blocked.get(mt.student_id, mt.teacher_id).n) return send(res, 409, { error: 'closed' });
       if (limited('msg:' + me.id, 40, 60)) return send(res, 429, { error: 'rate' });
       const b = await readJson(req), body = String(b.body ?? '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, 1000);
       if (!body) return send(res, 400, { error: 'empty' });
@@ -651,7 +676,9 @@ async function handle(req, res) {
       const am = q.activeMatch.get(me.id, s.teacher_id);
       if (!am || am.status !== 'accepted') return send(res, 403, { error: 'not matched' });
       if (s.start <= t) return send(res, 409, { error: 'past' });
+      if (am.credits !== null && am.credits !== undefined && am.credits <= 0) return send(res, 402, { error: 'credits' });
       if (!q.book.run(me.id, am.id, t, s.id).changes) return send(res, 409, { error: 'taken' });
+      if (am.credits !== null && am.credits !== undefined) q.useCredit.run(am.id);
       sysMsg(am, me.id, { t: 'book', start: s.start, dur: s.dur });
       emit(s.teacher_id, { t: 'slot', slotId: s.id });
       return send(res, 200, slotOut(q.slot.get(s.id), me));
@@ -661,6 +688,7 @@ async function handle(req, res) {
       if (s.start <= t) return send(res, 409, { error: 'past' });
       const mt = s.match_id && q.match.get(s.match_id);
       q.unbook.run(s.id);
+      if (mt && (mine || s.start - t > DAY)) q.refund.run(mt.id); // 선생님 취소·24시간 전 취소는 환불
       if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
       emit(mine ? s.student_id : s.teacher_id, { t: 'slot', slotId: s.id });
       return send(res, 200, slotOut(q.slot.get(s.id), me));
@@ -675,6 +703,7 @@ async function handle(req, res) {
     if (m === 'DELETE') {
       if (s.student_id && s.start > t) {
         const mt = s.match_id && q.match.get(s.match_id);
+        if (mt) q.refund.run(mt.id);
         if (mt) sysMsg(mt, me.id, { t: 'unbook', start: s.start, dur: s.dur });
         emit(s.student_id, { t: 'slot', slotId: s.id });
       }
@@ -757,17 +786,95 @@ async function handle(req, res) {
     return send(res, 200, { teacher: q.todoT.all(me.id, t, t - 60 * DAY).map(s => slotOut(s, me)), student: q.todoS.all(me.id, t - 60 * DAY).map(s => slotOut(s, me)) });
   }
 
+  // 음성 메시지(말하기 연습을 선생님께 보내기 등)
+  const vm = /^\/api\/matches\/(\d+)\/voice$/.exec(p);
+  if (vm && m === 'POST') {
+    const mt = q.match.get(+vm[1]);
+    if (!mt || !sideOf(mt, me)) return send(res, 404, { error: 'not found' });
+    if (mt.status !== 'accepted' || q.blocked.get(mt.student_id, mt.teacher_id).n) return send(res, 409, { error: 'closed' });
+    if (limited('vo:' + me.id, 30, 600)) return send(res, 429, { error: 'rate' });
+    const ct = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase(), kind = AUD.find(a => a[1] === ct);
+    if (!kind) return send(res, 415, { error: 'audio' });
+    const buf = await readRaw(req, 2 * 1024 * 1024);
+    if (buf.length < 200) return send(res, 400, { error: 'empty' });
+    const name = `${mt.id}-${crypto.randomBytes(12).toString('base64url')}.${kind[0]}`;
+    fs.writeFileSync(path.join(MEDIA_DIR, name), buf);
+    const sec = Math.max(0, Math.min(600, Math.round(+u.searchParams.get('sec') || 0))), text = str(u.searchParams.get('text'), 200), t = now();
+    const r = q.insMsg.run(mt.id, me.id, 'voice', JSON.stringify({ f: name, sec, text }), t); q.touchMatch.run(t, mt.id);
+    notify(otherId(mt, me), { t: 'msg', matchId: mt.id, id: Number(r.lastInsertRowid) }, { title: me.name || '', body: '🎙 ' + (text || sec + 's'), url: '/#/chat/' + mt.id, tag: 'm' + mt.id });
+    return send(res, 201, { ok: true });
+  }
+  const vf = /^\/api\/voice\/(\d+-[A-Za-z0-9_-]{8,24}\.(webm|m4a|ogg|mp3))$/.exec(p);
+  if (vf && m === 'GET') {
+    const o = q.voiceOwner.get(`{"f":"${vf[1]}"%`);
+    if (!o || (o.student_id !== me.id && o.teacher_id !== me.id && !isAdmin(me))) return send(res, 404, { error: 'not found' });
+    const f = path.join(MEDIA_DIR, vf[1]); let st; try { st = fs.statSync(f); } catch { return send(res, 404, { error: 'not found' }); }
+    const type = AUD.find(a => a[0] === vf[2])[1], rg = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
+    if (rg) { const a = rg[1] ? +rg[1] : 0, b = rg[2] ? Math.min(+rg[2], st.size - 1) : st.size - 1;
+      res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${a}-${b}/${st.size}`, 'Content-Length': b - a + 1, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=86400' });
+      return fs.createReadStream(f, { start: a, end: b }).pipe(res); }
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': st.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    return fs.createReadStream(f).pipe(res);
+  }
+  // 수강권(회수권): 선생님이 매칭별로 남은 횟수를 관리. null = 사용 안 함
+  const cm = /^\/api\/matches\/(\d+)\/credits$/.exec(p);
+  if (cm && m === 'PUT') {
+    const mt = q.match.get(+cm[1]);
+    if (!mt || mt.teacher_id !== me.id) return send(res, 404, { error: 'not found' });
+    const b = await readJson(req), v = b.credits === null ? null : Math.max(0, Math.min(500, Math.trunc(+b.credits)));
+    if (v !== null && Number.isNaN(v)) return send(res, 400, { error: 'credits' });
+    q.setCredits.run(v, mt.id);
+    if (v !== null && v !== mt.credits) sysMsg(mt, me.id, { t: 'credits', n: v });
+    return send(res, 200, matchOut(q.match.get(mt.id), me));
+  }
+  // 신고 · 차단
+  if (p === '/api/report' && m === 'POST') {
+    if (limited('rp:' + me.id, 10, 3600)) return send(res, 429, { error: 'rate' });
+    const b = await readJson(req), tg = q.userById.get(Math.trunc(+b.userId));
+    if (!tg || tg.id === me.id) return send(res, 404, { error: 'user' });
+    q.insReport.run(me.id, tg.id, Math.trunc(+b.matchId) || null, str(b.reason, 1000), now());
+    if (b.block) q.block.run(me.id, tg.id, now());
+    return send(res, 200, { ok: true });
+  }
+  if (p === '/api/block') {
+    const b = await readJson(req), id = Math.trunc(+b.userId);
+    if (!q.userById.get(id) || id === me.id) return send(res, 404, { error: 'user' });
+    if (m === 'POST') q.block.run(me.id, id, now()); else if (m === 'DELETE') q.unblock.run(me.id, id); else return send(res, 405, { error: 'method' });
+    return send(res, 200, { blocks: q.myBlocks.all(me.id).map(x => x.blocked_id) });
+  }
+  // 후기
+  const rv = /^\/api\/teachers\/(\d+)\/reviews$/.exec(p);
+  if (rv) {
+    const tid = +rv[1];
+    if (m === 'GET') return send(res, 200, { reviews: q.revOf.all(tid).map(r => ({ rating: r.rating, text: r.text || '', at: r.at, name: r.sname || '', mine: r.student_id === me.id })), canWrite: !!q.pastLesson.get(tid, me.id, now()).n });
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    if (!q.pastLesson.get(tid, me.id, now()).n) return send(res, 403, { error: 'no lesson' });
+    const b = await readJson(req), rating = Math.trunc(+b.rating);
+    if (!(rating >= 1 && rating <= 5)) return send(res, 400, { error: 'rating' });
+    q.upRev.run(tid, me.id, rating, str(b.text, 1000), now());
+    return send(res, 200, { ok: true });
+  }
+
   if (p === '/api/schedule' && m === 'GET') return send(res, 200, { lessons: q.schedule.all(me.id, now()).map(s => slotOut(s, me)) });
 
   if (p.startsWith('/api/admin/')) {
     if (!me) return send(res, 401, { error: 'login' });
     if (!isAdmin(me)) return send(res, 403, { error: 'admin only' });
     if (p === '/api/admin/users' && m === 'GET') return send(res, 200, { users: q.allUsers.all().map(adminRow) });
+    if (p === '/api/admin/stats' && m === 'GET') return send(res, 200, q.stats.get(now() - 7 * DAY, now()));
+    if (p === '/api/admin/reports' && m === 'GET') return send(res, 200, { reports: q.reports.all().map(r => ({ id: r.id, at: r.at, reason: r.reason || '', resolved: !!r.resolved, matchId: r.match_id, reporter: { id: r.reporter_id, name: r.rname, email: r.remail }, target: { id: r.target_id, name: r.tname, email: r.temail } })) });
+    const rr = /^\/api\/admin\/reports\/(\d+)$/.exec(p);
+    if (rr && m === 'POST') { q.resolveRep.run(now(), +rr[1]); return send(res, 200, { ok: true }); }
     const mm = /^\/api\/admin\/users\/(\d+)$/.exec(p);
     if (mm && m === 'POST') {
       const target = q.userById.get(+mm[1]);
       if (!target) return send(res, 404, { error: 'not found' });
       const b = await readJson(req);
+      if (b.action === 'suspend' || b.action === 'unsuspend') {
+        if (isAdmin(target)) return send(res, 400, { error: 'admin' });
+        q.suspend.run(b.action === 'suspend' ? 1 : null, now(), target.id); if (b.action === 'suspend') q.killSess.run(target.id);
+        return send(res, 200, adminRow(q.userById.get(target.id)));
+      }
       const map = { approve: ['teacher', 'approved'], reject: [target.role || 'student', 'rejected'], student: ['student', 'none'] };
       const v = map[b.action];
       if (!v) return send(res, 400, { error: 'action' });
