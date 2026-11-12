@@ -52,7 +52,7 @@ assert.equal((await call('GET', '/api/admin/users', { cookie: st.cookie })).s, 4
 
 // 선생 신청 → 대기 → 승인
 const te = await login('t1', 'teacher@example.com', 'Kim');
-r = await call('PUT', '/api/me', { cookie: te.cookie, body: { name: '김선생', role: 'teacher', bio: 'hi' } });
+r = await call('PUT', '/api/me', { cookie: te.cookie, body: { name: '김선생', role: 'teacher', career: '韓国語講師歴3年です。', bio: 'hi' } });
 assert.equal(r.j.teacherStatus, 'pending'); assert.equal(r.j.view, 'student');
 assert.equal((await call('GET', '/api/auth/teacher', { cookie: te.cookie })).s, 403);
 
@@ -64,7 +64,7 @@ r = await call('POST', `/api/admin/users/${te.j.id}`, { cookie: ad.cookie, body:
 assert.equal(r.j.view, 'teacher');
 assert.equal((await call('GET', '/api/auth/teacher', { cookie: te.cookie })).s, 204);
 // 선생 본인이 프로필 다시 저장해도 승인 유지
-r = await call('PUT', '/api/me', { cookie: te.cookie, body: { name: '김선생님', role: 'teacher' } });
+r = await call('PUT', '/api/me', { cookie: te.cookie, body: { name: '김선생님', role: 'teacher', career: '韓国語講師歴3年です。' } });
 assert.equal(r.j.teacherStatus, 'approved');
 // 지도안 PDF
 assert.equal((await fetch(base + '/pdf/l1-guide.pdf')).status, 401);
@@ -106,7 +106,7 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   const s1 = await login('ss1', 'ss1@example.com', 'Yui');
   await call('PUT', '/api/me', { cookie: s1.cookie, body: { name: 'ゆい', role: 'student', level: 'beginner' } });
   const t1 = await login('tt1', 'tt1@example.com', 'Lee');
-  await call('PUT', '/api/me', { cookie: t1.cookie, body: { name: '이선생', role: 'teacher', bio: '회화 전문' } });
+  await call('PUT', '/api/me', { cookie: t1.cookie, body: { name: '이선생', role: 'teacher', career: '韓国語講師歴3年です。', bio: '회화 전문' } });
   await call('POST', `/api/admin/users/${t1.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
   const s2 = await login('ss2', 'ss2@example.com', 'Ken');
   await call('PUT', '/api/me', { cookie: s2.cookie, body: { name: 'けん', role: 'student' } });
@@ -219,11 +219,11 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   x = await call('GET', '/api/progress', { cookie: s3.cookie }); assert.deepEqual(x.j.data.done, [1, 2]);
   assert.equal((await call('PUT', '/api/progress', { cookie: s3.cookie, body: { data: [1] } })).s, 400);
   const t2 = await login('tt2', 'tt2@example.com', 'Park');
-  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', modes: 'both', meetUrl: 'javascript:alert(1)', intro: '안녕하세요', tags: '회화, 발음' } });
+  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', career: '韓国語講師歴3年です。', modes: 'both', meetUrl: 'javascript:alert(1)', intro: '안녕하세요', tags: '회화, 발음' } });
   assert.equal(x.j.meetUrl, ''); assert.equal(x.j.modes, 'both'); assert.deepEqual(x.j.tags, ['회화', '발음']);
   assert.equal((await call('PUT', '/api/me/places', { cookie: t2.cookie, body: { places: [] } })).s, 403, 'pending teacher');
   await call('POST', `/api/admin/users/${t2.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
-  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', modes: 'both', meetUrl: 'https://zoom.us/j/123' } });
+  x = await call('PUT', '/api/me', { cookie: t2.cookie, body: { name: '박선생', role: 'teacher', career: '韓国語講師歴3年です。', modes: 'both', meetUrl: 'https://zoom.us/j/123' } });
   assert.equal(x.j.meetUrl, 'https://zoom.us/j/123');
   x = await call('PUT', '/api/me/places', { cookie: t2.cookie, body: { places: [{ name: '博多駅', addr: '福岡市', lat: 33.5902, lng: 130.4207 }, { name: 'bad', lat: 999, lng: 0 }, { name: '', lat: 1, lng: 1 }] } });
   assert.equal(x.j.places.length, 1);
@@ -269,7 +269,7 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   await call('DELETE', '/api/push', { cookie: s4.cookie, body: { endpoint: 'https://push.invalid/abc' } });
 
   // 지난 레슨 하나 만들기(DB 직접): 매칭 → 슬롯 예약 후 시작 시각을 과거로
-  const t3 = await login('tt3', 'tt3@example.com', 'Choi'); await call('PUT', '/api/me', { cookie: t3.cookie, body: { name: '최선생', role: 'teacher' } });
+  const t3 = await login('tt3', 'tt3@example.com', 'Choi'); await call('PUT', '/api/me', { cookie: t3.cookie, body: { name: '최선생', role: 'teacher', career: '韓国語講師歴3年です。' } });
   await call('POST', `/api/admin/users/${t3.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
   const mt = await call('POST', '/api/matches', { cookie: s4.cookie, body: { teacherId: t3.j.id } });
   await call('POST', `/api/matches/${mt.j.id}`, { cookie: t3.cookie, body: { action: 'accept' } });
@@ -298,7 +298,7 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
 // ===== 음성 · 수강권 · 신고/차단 · 후기 · 관리자 =====
 {
   const s5 = await login('ss5', 'ss5@example.com', 'Sora'); await call('PUT', '/api/me', { cookie: s5.cookie, body: { name: 'そら', role: 'student' } });
-  const t5 = await login('tt5', 'tt5@example.com', 'Han'); await call('PUT', '/api/me', { cookie: t5.cookie, body: { name: '한선생', role: 'teacher' } });
+  const t5 = await login('tt5', 'tt5@example.com', 'Han'); await call('PUT', '/api/me', { cookie: t5.cookie, body: { name: '한선생', role: 'teacher', career: '韓国語講師歴3年です。' } });
   await call('POST', `/api/admin/users/${t5.j.id}`, { cookie: ad.cookie, body: { action: 'approve' } });
   const mt = (await call('POST', '/api/matches', { cookie: s5.cookie, body: { teacherId: t5.j.id } })).j;
   const v0 = await fetch(base + `/api/matches/${mt.id}/voice?sec=3`, { method: 'POST', headers: { cookie: s5.cookie, origin: 'https://guruguru.app', 'content-type': 'audio/webm' }, body: Buffer.alloc(500, 1) });
@@ -341,7 +341,7 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
 // ===== 소개 사진·영상·SNS·태그 =====
 {
   const t6 = await login('tt6', 'tt6@example.com', 'Yoon');
-  let x = await call('PUT', '/api/me', { cookie: t6.cookie, body: { name: '윤선생', role: 'teacher', ptags: ['cheerful', 'kpop', 'BAD TAG', 'kpop'], sns: { instagram: '@yoon.korean', x: 'bad handle!!', youtube: 'https://youtu.be/abc', web: 'javascript:1' } } });
+  let x = await call('PUT', '/api/me', { cookie: t6.cookie, body: { name: '윤선생', role: 'teacher', career: '韓国語講師歴3年です。', ptags: ['cheerful', 'kpop', 'BAD TAG', 'kpop'], sns: { instagram: '@yoon.korean', x: 'bad handle!!', youtube: 'https://youtu.be/abc', web: 'javascript:1' } } });
   assert.deepEqual(x.j.ptags, ['cheerful', 'kpop']); assert.deepEqual(x.j.sns, { instagram: 'yoon.korean', youtube: 'https://youtu.be/abc' });
   const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(300, 2)]);
   const up = (p, ct, b) => fetch(base + p, { method: 'POST', headers: { cookie: t6.cookie, origin: 'https://guruguru.app', 'content-type': ct }, body: b });
@@ -375,6 +375,23 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   x = await call('GET', '/api/admin/stats', { cookie: ad.cookie }); assert.ok(Array.isArray(x.j.signups));
   await call('POST', `/api/admin/users/${u7.j.id}`, { cookie: ad.cookie, body: { action: 'removeAdmin' } });
   assert.equal((await call('GET', '/api/admin/stats', { cookie: u7.cookie })).s, 403);
+}
+
+// ===== 선생님 신청 흐름 =====
+{
+  const t8 = await login('tt8', 'tt8@example.com', 'Seo');
+  assert.equal((await call('PUT', '/api/me', { cookie: t8.cookie, body: { name: '서선생', role: 'teacher' } })).s, 400, 'career required');
+  let x = await call('PUT', '/api/me', { cookie: t8.cookie, body: { name: '서선생', role: 'teacher', career: '대학에서 한국어교육 전공, 2년 강의' } });
+  assert.equal(x.j.teacherStatus, 'pending'); assert.ok(x.j.applyAt > 0); assert.equal(x.j.career, '대학에서 한국어교육 전공, 2년 강의');
+  assert.equal((await call('GET', '/api/summary', { cookie: ad.cookie })).j.applies >= 1, true);
+  x = await call('POST', `/api/admin/users/${t8.j.id}`, { cookie: ad.cookie, body: { action: 'reject', reason: '경력 정보를 더 자세히 적어 주세요' } });
+  x = await call('GET', '/api/me', { cookie: t8.cookie }); assert.equal(x.j.teacherStatus, 'rejected'); assert.equal(x.j.rejectReason, '경력 정보를 더 자세히 적어 주세요');
+  x = await call('PUT', '/api/me', { cookie: t8.cookie, body: { name: '서선생', role: 'teacher', career: '대학에서 한국어교육 전공, 2년 강의, TOPIK 6급' } });
+  assert.equal(x.j.teacherStatus, 'pending'); assert.equal(x.j.rejectReason, '');
+  x = await call('POST', '/api/me/withdraw', { cookie: t8.cookie }); assert.equal(x.j.role, 'student'); assert.equal(x.j.teacherStatus, 'none');
+  // 학생은 승인 없이 바로
+  const s9 = await login('ss9', 'ss9@example.com', 'Emi');
+  x = await call('PUT', '/api/me', { cookie: s9.cookie, body: { name: 'えみ', role: 'student' } }); assert.equal(x.j.profileDone, true); assert.equal(x.j.teacherStatus, 'none');
 }
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });

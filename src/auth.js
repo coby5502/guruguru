@@ -91,12 +91,13 @@ function profileForm(u,first){
   return `<form id="pf" class="pform" autocomplete="off">
     <label class="fl"><span>${a.name}</span><input name="name" maxlength="40" required value="${esc(u.name||'')}" placeholder="${a.namePh}"></label>
     <div class="fl"><span>${a.role}</span><div class="roles">
-      <label class="rc" style="--c:var(--mint)"><input type="radio" name="role" value="student" ${role==='student'?'checked':''} required><b>🎒 ${a.student}</b><small>${a.studentS}</small></label>
-      <label class="rc" style="--c:var(--yellow)"><input type="radio" name="role" value="teacher" ${role==='teacher'?'checked':''}><b>🧑‍🏫 ${a.teacher}</b><small>${a.teacherS}</small></label></div></div>
+      <label class="rc" style="--c:var(--mint)"><input type="radio" name="role" value="student" ${role==='student'?'checked':''} required><b>🎒 ${a.student}</b><small>${a.studentS}</small><em class="rcn">✓ ${APX().studentNow}</em></label>
+      <label class="rc" style="--c:var(--yellow)"><input type="radio" name="role" value="teacher" ${role==='teacher'?'checked':''}><b>🧑‍🏫 ${a.teacher}</b><small>${a.teacherS}</small><em class="rcn">⏳ ${APX().teacherFlow}</em></label></div></div>
     <div class="only-s">
       <label class="fl"><span>${a.level}</span><select name="level"><option value=""></option>${Object.entries(a.levels).map(([k,v])=>`<option value="${k}" ${lv===k?'selected':''}>${v}</option>`).join('')}</select></label>
       <label class="fl"><span>${a.goal}</span><input name="goal" maxlength="200" value="${esc(u.goal||'')}" placeholder="${a.goalPh}"></label></div>
     <div class="only-t">
+      ${u.teacherStatus==='approved'||u.admin?'':`<label class="fl apf2"><span>📝 ${APX().career}</span><textarea name="career" rows="4" maxlength="2000" minlength="10" placeholder="${APX().careerPh}">${esc(u.career||'')}</textarea></label>`}
       <label class="fl"><span>${a.bio}</span><input name="bio" maxlength="200" value="${esc(u.bio||'')}" placeholder="${a.bioPh}"></label>
       <div class="fl"><span>${PX().modeQ}</span><div class="seg2">${['online','offline','both'].map(k=>`<label><input type="radio" name="modes" value="${k}" ${(u.modes||'online')===k?'checked':''}><span>${PX()[k]}</span></label>`).join('')}</div></div>
       <label class="fl"><span>${PX().meetUrl}</span><input name="meetUrl" type="url" inputmode="url" maxlength="300" value="${esc(u.meetUrl||'')}" placeholder="https://"></label>
@@ -115,7 +116,7 @@ function vOnboard(){
 }
 function bindProfileForm(after){
   const f=$('#pf');if(!f)return;
-  const sync=()=>{const r=(f.querySelector('[name=role]:checked')||{}).value;f.dataset.role=r||''};
+  const sync=()=>{const r=(f.querySelector('[name=role]:checked')||{}).value;f.dataset.role=r||'';if(f.career)f.career.required=r==='teacher'};
   f.addEventListener('change',sync);sync();
   f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),b=Object.fromEntries(fd.entries());b.ptags=fd.getAll('ptags');if(f.sns_instagram)b.sns={instagram:b.sns_instagram,x:b.sns_x,tiktok:b.sns_tiktok,youtube:b.sns_youtube,web:b.sns_web};const btn=f.querySelector('[type=submit]'),lbl=btn.textContent;
     btn.disabled=true;btn.textContent=A().saving;
@@ -146,7 +147,7 @@ function vMe(){
     <div class="mebtns"><button class="btn block" id="meOut">${a.logout}</button><button class="btn block ghost" id="meDel">${a.del}</button></div>`;
 }
 function bindMe(){
-  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();bindPush();bindMedia();
+  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();bindPush();bindMedia();bindApply();
   bindProfileForm(()=>{editMe=false;render(false)});
   $('#meOut').onclick=logout;
   $('#meDel').onclick=async ev=>{if(Date.now()-delArm>4000){delArm=Date.now();ev.target.textContent=A().delC;return}
@@ -156,6 +157,7 @@ async function logout(){try{await api('POST','/auth/logout')}catch(e){}
   try{window.google&&google.accounts.id.disableAutoSelect()}catch(e){}
   setMe(null);location.hash='#/';render(false)}
 function statusBanner(){
+  return applyCard();
   if(!authed()||ME.role!=='teacher'||ME.admin)return '';
   const a=A(),s=ME.teacherStatus;
   if(s==='pending')return `<div class="card sbanner pend"><span>⏳</span><p><b>${a.pending}</b>${a.pendingS}</p></div>`;
