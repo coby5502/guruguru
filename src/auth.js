@@ -102,7 +102,9 @@ function profileForm(u,first){
       <label class="fl"><span>${PX().meetUrl}</span><input name="meetUrl" type="url" inputmode="url" maxlength="300" value="${esc(u.meetUrl||'')}" placeholder="https://"></label>
       <label class="fl"><span>${PX().intro}</span><textarea name="intro" maxlength="1000" rows="4">${esc(u.intro||'')}</textarea></label>
       <label class="fl"><span>${PX().tags}</span><input name="tags" maxlength="160" value="${esc((u.tags||[]).join(', '))}" placeholder="${PX().tagsPh}"></label>
+      ${snsFields(u.sns)}
       ${u.teacherStatus==='approved'||u.admin?'':`<p class="note tnote">${a.teacherNote}</p>`}</div>
+    ${tagPicker(u.ptags)}
     <div class="fl"><span>${a.lang}</span><div class="seg2"><label><input type="radio" name="lang" value="ja" ${(u.lang||LANG)==='ja'?'checked':''}><span>日本語</span></label><label><input type="radio" name="lang" value="ko" ${(u.lang||LANG)==='ko'?'checked':''}><span lang="ko">한국어</span></label></div></div>
     <button class="btn pink block" type="submit">${first?a.save:a.saveE}</button>
   </form>`;
@@ -115,7 +117,7 @@ function bindProfileForm(after){
   const f=$('#pf');if(!f)return;
   const sync=()=>{const r=(f.querySelector('[name=role]:checked')||{}).value;f.dataset.role=r||''};
   f.addEventListener('change',sync);sync();
-  f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),b=Object.fromEntries(fd.entries()),btn=f.querySelector('[type=submit]'),lbl=btn.textContent;
+  f.onsubmit=async e=>{e.preventDefault();const fd=new FormData(f),b=Object.fromEntries(fd.entries());b.ptags=fd.getAll('ptags');if(f.sns_instagram)b.sns={instagram:b.sns_instagram,x:b.sns_x,tiktok:b.sns_tiktok,youtube:b.sns_youtube,web:b.sns_web};const btn=f.querySelector('[type=submit]'),lbl=btn.textContent;
     btn.disabled=true;btn.textContent=A().saving;
     try{const was=ME&&ME.profileDone;setMe(await api('PUT','/me',b));if(b.lang&&b.lang!==LANG){LANG=b.lang;store.set('lang',LANG);applyLang()}
       toast(A().saved);if(after)after(was);else render(false)}
@@ -137,12 +139,14 @@ function vMe(){
     ${statusBanner()}
     ${editMe?`<section class="card">${profileForm(u,false)}</section>`:`<section class="card mekv">
       ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div><div><span>${PX().modeQ}</span><b>${PX()[u.modes||'online']}</b></div>${u.view==='teacher'?`<div><span>${PX().profile}</span><b><a class="btn sm" href="#/teacher/${u.id}">👀</a></b></div>`:''}`}</section>`}
+    ${!editMe&&(u.ptags||[]).length?`<section class="card mtags"><b>🏷 ${PFX().tags}</b>${tagChips(u.ptags)}${snsLinks(u.sns)}</section>`:''}
+    ${editMe?'':mediaEditor(u)}
     ${pushCard()}
     ${u.admin?`<a class="btn block yellow" href="#/admin">🛡 ${a.admin}</a>`:''}
     <div class="mebtns"><button class="btn block" id="meOut">${a.logout}</button><button class="btn block ghost" id="meDel">${a.del}</button></div>`;
 }
 function bindMe(){
-  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();bindPush();
+  const e=$('#meEdit');if(e)e.onclick=()=>{editMe=true;render(true)};bindAvatar();bindPush();bindMedia();
   bindProfileForm(()=>{editMe=false;render(false)});
   $('#meOut').onclick=logout;
   $('#meDel').onclick=async ev=>{if(Date.now()-delArm>4000){delArm=Date.now();ev.target.textContent=A().delC;return}

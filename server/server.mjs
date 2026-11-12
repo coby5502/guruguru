@@ -100,7 +100,8 @@ CREATE TABLE IF NOT EXISTS notes(
   summary TEXT, good TEXT, homework TEXT, note_at INTEGER,
   hw_text TEXT, hw_image TEXT, hw_at INTEGER, fb_text TEXT, fb_at INTEGER
 );`);
-addCol('users', 'suspended', 'INTEGER'); addCol('matches', 'credits', 'INTEGER');
+addCol('users', 'suspended', 'INTEGER');
+for (const c of ['gallery', 'video', 'sns', 'ptags']) addCol('users', c, 'TEXT'); addCol('matches', 'credits', 'INTEGER');
 db.exec(`
 CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, rating INTEGER NOT NULL, text TEXT, at INTEGER NOT NULL, UNIQUE(teacher_id, student_id));
 CREATE TABLE IF NOT EXISTS blocks(user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, at INTEGER NOT NULL, PRIMARY KEY(user_id, blocked_id));
@@ -159,6 +160,9 @@ const q = {
     (SELECT COUNT(*) FROM users WHERE teacher_status='pending') pending, (SELECT COUNT(*) FROM users WHERE last_login>?1) active7, (SELECT COUNT(*) FROM matches WHERE status='accepted') matches,
     (SELECT COUNT(*) FROM slots WHERE student_id IS NOT NULL AND start>?2) upcoming, (SELECT COUNT(*) FROM slots WHERE student_id IS NOT NULL AND start<=?2) done,
     (SELECT COUNT(*) FROM messages WHERE at>?1) msgs7, (SELECT COUNT(*) FROM reports WHERE resolved IS NULL) reports, (SELECT COUNT(*) FROM tests) tests`),
+  setGallery: db.prepare('UPDATE users SET gallery=?,updated_at=? WHERE id=?'),
+  setVideo: db.prepare('UPDATE users SET video=?,updated_at=? WHERE id=?'),
+  setSns: db.prepare('UPDATE users SET sns=?,ptags=?,updated_at=? WHERE id=?'),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
@@ -233,7 +237,8 @@ const picture = u => u.avatar ? `/api/avatar/${u.avatar}` : (u.picture || '');
 const testOf = id => { const t = q.lastTest.get(id); return t ? { step: t.step, score: t.score, total: t.total, at: t.at } : null; };
 // 상대방에게 보이는 정보(이메일 제외)
 const js = (v, d) => { try { return v ? JSON.parse(v) : d; } catch { return d; } };
-const teachInfo = u => { if (u.role !== 'teacher') return {}; const r = q.revAvg.get(u.id); return { modes: u.modes || 'online', places: js(u.places, []), intro: u.intro || '', tags: (u.tags || '').split(',').filter(Boolean), rating: r.n ? Math.round(r.a * 10) / 10 : null, reviews: r.n }; };
+const pubFile = f => f ? `/api/avatar/${f}` : '';
+const teachInfo = u => { if (u.role !== 'teacher') return { ptags: (u.ptags || '').split(',').filter(Boolean) }; const r = q.revAvg.get(u.id); return { ptags: (u.ptags || '').split(',').filter(Boolean), gallery: js(u.gallery, []).map(pubFile), video: pubFile(u.video), sns: js(u.sns, {}), modes: u.modes || 'online', places: js(u.places, []), intro: u.intro || '', tags: (u.tags || '').split(',').filter(Boolean), rating: r.n ? Math.round(r.a * 10) / 10 : null, reviews: r.n }; };
 const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture: picture(u), role: u.role, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '', test: u.role === 'student' ? testOf(u.id) : null, ...teachInfo(u) }) : { id: 0, name: '—', picture: '' };
 const pub = u => ({
   id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
@@ -404,6 +409,7 @@ function sysMsg(m, actorId, data) {
   emit(actorId, ev); notify(other, ev, p ? { ...p(nameOf(actorId), w), url: '/#/chat/' + m.id, tag: 'm' + m.id } : null);
 }
 const IMG = [['jpg', 'image/jpeg', b => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff], ['png', 'image/png', b => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))], ['webp', 'image/webp', b => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP']];
+const VID = [['mp4', 'video/mp4', b => b.subarray(4, 8).toString() === 'ftyp'], ['mov', 'video/quicktime', b => b.subarray(4, 8).toString() === 'ftyp' || b.subarray(4, 8).toString() === 'moov'], ['webm', 'video/webm', b => b.readUInt32BE(0) === 0x1a45dfa3]];
 const rmAvatar = f => { if (f && /^[\w.-]+$/.test(f)) try { fs.unlinkSync(path.join(AV_DIR, f)); } catch { } };
 const DAY = 86400;
 function cleanPlace(p) {
@@ -458,11 +464,16 @@ async function handle(req, res) {
   }
 
   // 프로필 사진(공개, 파일명에 무작위 값 → 오래 캐시)
-  const av = /^\/api\/avatar\/(\d+-[A-Za-z0-9_-]{8,24}\.(jpg|png|webp))$/.exec(p);
+  const av = /^\/api\/avatar\/(\d+-[A-Za-z0-9_-]{8,24}\.(jpg|png|webp|mp4|webm|mov))$/.exec(p);
   if (av && (m === 'GET' || m === 'HEAD')) {
     const f = path.join(AV_DIR, av[1]);
     let st; try { st = fs.statSync(f); } catch { return send(res, 404, { error: 'not found' }); }
-    res.writeHead(200, { 'Content-Type': IMG.find(x => x[0] === av[2])[1], 'Content-Length': st.size, 'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' });
+    const type = (IMG.find(x => x[0] === av[2]) || VID.find(x => x[0] === av[2]))[1], rg = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
+    if (rg && m === 'GET') { const a = rg[1] ? +rg[1] : 0, b = rg[2] ? Math.min(+rg[2], st.size - 1) : st.size - 1;
+      if (a > b) { res.writeHead(416, { 'Content-Range': `bytes */${st.size}` }); return res.end(); }
+      res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${a}-${b}/${st.size}`, 'Content-Length': b - a + 1, 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=31536000, immutable' });
+      return fs.createReadStream(f, { start: a, end: b }).pipe(res); }
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': st.size, 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=31536000, immutable', 'X-Content-Type-Options': 'nosniff' });
     if (m === 'HEAD') return res.end();
     return fs.createReadStream(f).pipe(res);
   }
@@ -501,6 +512,18 @@ async function handle(req, res) {
       const level = LEVELS.includes(b.level) ? b.level : null;
       const lang = b.lang === 'ko' || b.lang === 'ja' ? b.lang : null;
       q.saveProfile.run(name, role, status, level, str(b.goal, 200), str(b.bio, 200), lang, now(), me.id);
+      {
+        const tg = (Array.isArray(b.ptags) ? b.ptags : String(b.ptags ?? me.ptags ?? '').split(',')).map(x => String(x).trim()).filter(x => /^[a-z0-9_]{1,24}$/.test(x)).slice(0, 20);
+        const sn = b.sns && typeof b.sns === 'object' ? b.sns : js(me.sns, {}), o = {};
+        const h = (v, re) => { v = String(v || '').trim().replace(/^@/, ''); return re.test(v) ? v : ''; };
+        if (role === 'teacher') {
+          o.instagram = h(sn.instagram, /^[A-Za-z0-9._]{1,30}$/); o.x = h(sn.x, /^[A-Za-z0-9_]{1,15}$/); o.tiktok = h(sn.tiktok, /^[A-Za-z0-9._]{1,24}$/);
+          o.youtube = /^https:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\/[^\s<>"']{1,200}$/.test(String(sn.youtube || '')) ? String(sn.youtube) : '';
+          o.web = /^https:\/\/[^\s<>"']{4,200}$/.test(String(sn.web || '')) ? String(sn.web) : '';
+          for (const k of Object.keys(o)) if (!o[k]) delete o[k];
+        }
+        q.setSns.run(JSON.stringify(o), [...new Set(tg)].join(','), now(), me.id);
+      }
       if (role === 'teacher') {
         const mu = str(b.meetUrl, 300), modes = ['online', 'offline', 'both'].includes(b.modes) ? b.modes : (me.modes || 'online');
         const tags = (Array.isArray(b.tags) ? b.tags : String(b.tags || '').split(/[,、，]/)).map(t => str(t, 20)).filter(Boolean).slice(0, 8).join(',');
@@ -508,7 +531,7 @@ async function handle(req, res) {
       }
       return send(res, 200, pub(q.userById.get(me.id)));
     }
-    if (m === 'DELETE') { rmAvatar(me.avatar); q.delUser.run(me.id); setCookie(res, '', 0); return send(res, 200, { ok: true }); }
+    if (m === 'DELETE') { rmAvatar(me.avatar); rmAvatar(me.video); js(me.gallery, []).forEach(rmAvatar); q.delUser.run(me.id); setCookie(res, '', 0); return send(res, 200, { ok: true }); }
     return send(res, 405, { error: 'method' });
   }
 
@@ -527,6 +550,29 @@ async function handle(req, res) {
     fs.writeFileSync(path.join(AV_DIR, name), buf);
     rmAvatar(me.avatar); q.setAvatar.run(name, now(), me.id);
     return send(res, 200, pub(q.userById.get(me.id)));
+  }
+
+  // 선생님 소개 사진(최대 6장) · 소개 영상(1개)
+  if (p === '/api/me/gallery' && m === 'POST') {
+    if (me.role !== 'teacher') return send(res, 403, { error: 'teachers only' });
+    if (limited('gl:' + me.id, 30, 3600)) return send(res, 429, { error: 'rate' });
+    const g = js(me.gallery, []); if (g.length >= 6) return send(res, 409, { error: 'max' });
+    const ct = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase(), buf = await readRaw(req, 2 * 1024 * 1024);
+    const kind = IMG.find(x => x[1] === ct && x[2](buf)); if (!kind) return send(res, 415, { error: 'image' });
+    const name = `${me.id}-${crypto.randomBytes(9).toString('base64url')}.${kind[0]}`; fs.writeFileSync(path.join(AV_DIR, name), buf);
+    g.push(name); q.setGallery.run(JSON.stringify(g), now(), me.id); return send(res, 200, pub(q.userById.get(me.id)));
+  }
+  const gd = /^\/api\/me\/gallery\/(\d+-[A-Za-z0-9_-]{8,24}\.(jpg|png|webp))$/.exec(p);
+  if (gd && m === 'DELETE') { const g = js(me.gallery, []).filter(f => f !== gd[1]); if (g.length !== js(me.gallery, []).length) rmAvatar(gd[1]); q.setGallery.run(JSON.stringify(g), now(), me.id); return send(res, 200, pub(q.userById.get(me.id))); }
+  if (p === '/api/me/video') {
+    if (me.role !== 'teacher') return send(res, 403, { error: 'teachers only' });
+    if (m === 'DELETE') { rmAvatar(me.video); q.setVideo.run(null, now(), me.id); return send(res, 200, pub(q.userById.get(me.id))); }
+    if (m !== 'POST') return send(res, 405, { error: 'method' });
+    if (limited('vd:' + me.id, 10, 3600)) return send(res, 429, { error: 'rate' });
+    const ct = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase(), buf = await readRaw(req, 40 * 1024 * 1024);
+    const kind = VID.find(x => x[1] === ct && x[2](buf)); if (!kind) return send(res, 415, { error: 'video' });
+    const name = `${me.id}-${crypto.randomBytes(9).toString('base64url')}.${kind[0]}`; fs.writeFileSync(path.join(AV_DIR, name), buf);
+    rmAvatar(me.video); q.setVideo.run(name, now(), me.id); return send(res, 200, pub(q.userById.get(me.id)));
   }
 
   // 실력 테스트 결과

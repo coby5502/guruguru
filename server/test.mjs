@@ -344,6 +344,25 @@ assert.equal((await call('GET', '/api/me', { cookie: st2.cookie })).s, 401);
   await call('POST', `/api/admin/users/${t5.j.id}`, { cookie: ad.cookie, body: { action: 'unsuspend' } });
   assert.equal((await call('POST', `/api/admin/users/${ad.j.id}`, { cookie: ad.cookie, body: { action: 'suspend' } })).s, 400);
 }
+
+// ===== 소개 사진·영상·SNS·태그 =====
+{
+  const t6 = await login('tt6', 'tt6@example.com', 'Yoon');
+  let x = await call('PUT', '/api/me', { cookie: t6.cookie, body: { name: '윤선생', role: 'teacher', ptags: ['cheerful', 'kpop', 'BAD TAG', 'kpop'], sns: { instagram: '@yoon.korean', x: 'bad handle!!', youtube: 'https://youtu.be/abc', web: 'javascript:1' } } });
+  assert.deepEqual(x.j.ptags, ['cheerful', 'kpop']); assert.deepEqual(x.j.sns, { instagram: 'yoon.korean', youtube: 'https://youtu.be/abc' });
+  const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(300, 2)]);
+  const up = (p, ct, b) => fetch(base + p, { method: 'POST', headers: { cookie: t6.cookie, origin: 'https://guruguru.app', 'content-type': ct }, body: b });
+  let r = await up('/api/me/gallery', 'image/jpeg', jpg); assert.equal(r.status, 200); let me6 = await r.json(); assert.equal(me6.gallery.length, 1);
+  const mp4 = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from('ftypmp42'), Buffer.alloc(400, 0)]);
+  r = await up('/api/me/video', 'video/mp4', mp4); assert.equal(r.status, 200); me6 = await r.json();
+  { const g = await fetch(base + me6.video, { headers: { range: 'bytes=0-9' } }); assert.equal(g.status, 206); assert.equal(g.headers.get('content-type'), 'video/mp4'); }
+  assert.equal((await up('/api/me/video', 'video/mp4', jpg)).status, 415);
+  x = await call('DELETE', '/api/me/gallery/' + me6.gallery[0].split('/').pop(), { cookie: t6.cookie }); assert.equal(x.j.gallery.length, 0);
+  const s6 = await login('ss6', 'ss6@example.com', 'Aoi');
+  x = await call('PUT', '/api/me', { cookie: s6.cookie, body: { name: 'あおい', role: 'student', ptags: 'kpop,drama', sns: { instagram: 'aoi' } } });
+  assert.deepEqual(x.j.ptags, ['kpop', 'drama']); assert.deepEqual(x.j.sns, undefined);
+  assert.equal((await fetch(base + '/api/me/gallery', { method: 'POST', headers: { cookie: s6.cookie, origin: 'https://guruguru.app', 'content-type': 'image/jpeg' }, body: jpg })).status, 403);
+}
 console.log('api tests: all passed');
 server.close(); jw.close(); fs.rmSync(dir, { recursive: true });
 process.exit(0);
