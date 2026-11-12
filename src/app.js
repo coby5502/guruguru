@@ -133,6 +133,7 @@ const icon={
  words:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="16" rx="2.5"/><path d="M7 9h6M7 13h4"/><path d="M17 8h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9"/></svg>',
  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
  prints:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/></svg>',
+ lessons:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/></svg>',
  guide:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>'
 };
 
@@ -147,6 +148,7 @@ function topbar(mode,l){
   const t=T();
   $('#topbar').innerHTML=mode==='lesson'
     ?`<a href="#/s/${stepOfLesson(l.no)}" class="ibtn" aria-label="${t.backStep}">${icon.back}</a><div class="ttl">${t.no(l.no)} ${esc(V(l).title)}</div>${langBtn()}`
+    :mode==='sub'?`<a href="${l.back}" class="ibtn" aria-label="${t.back}">${icon.back}</a><div class="ttl">${esc(l.title)}</div>${langBtn()}`
     :mode==='step'?`<a href="#/" class="ibtn" aria-label="${t.back}">${icon.back}</a><div class="ttl">${t.stepOf(l)} · ${esc(ST(l).name)}</div>${langBtn()}`
     :`<a href="#/" class="brand"><span class="brand-mark">${mascotSVG(3,'mini')}</span><span class="bt">${t.brand}<small>guruguru</small></span></a>${teachView()?`<span class="mbadge">🧑‍🏫 ${TMx().mode}</span>`:''}<div class="tr">${langBtn()}<button class="ibtn" id="themeBtn" aria-label="${t.theme}">${icon.moon}</button></div>`;
   $('#langBtn').onclick=()=>{LANG=LANG==='ja'?'ko':'ja';store.set('lang',LANG);applyLang();render(true)};
@@ -154,8 +156,9 @@ function topbar(mode,l){
 }
 function tabbar(active){
   const t=T(),tv=teachView();document.body.classList.toggle('hide-tab',!active);
-  const lb=k=>k==='me'?A().me:k==='prints'?TMx().prints:k==='guide'&&tv?TMx().cur:t[k];
-  $('#tabs').innerHTML=[['home','#/'],tv?['prints','#/prints']:['words','#/words'],['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${lb(k)}</span></a>`).join('');
+  const lb=k=>k==='me'?A().me:k==='prints'?TMx().prints:k==='lessons'?S_().tab:k==='guide'&&tv?TMx().cur:t[k];
+  $('#tabs').innerHTML=[['home','#/'],tv?['prints','#/prints']:['words','#/words'],...(lessonsOn()?[['lessons','#/lessons']]:[]),['guide','#/guide'],...(authed()?[['me','#/me']]:[])].map(([k,h])=>`<a href="${h}" class="${k===active||(k==='me'&&active==='admin')?'on':''}" ${k===active?'aria-current="page"':''}>${icon[k]}<span>${lb(k)}</span></a>`).join('');
+  paintBadge();
 }
 function applyLang(){document.documentElement.lang=LANG;document.title=LANG==='ko'?'ぐるぐる guruguru｜한글부터 TOPIK 6급까지':'ぐるぐる guruguru｜ハングルからTOPIK 6級まで'}
 
@@ -218,6 +221,7 @@ function vHome(){
     <div class="prog"><div class="prog-top"><span>${t.stepOf(stepOfLesson(nl.no))} · ${esc(ST(stepOfLesson(nl.no)).name)}</span><span>${stepStat(stepOfLesson(nl.no)).done} / ${t.lessonsN(stepStat(stepOfLesson(nl.no)).total)}</span></div><div class="bar"><i style="width:${stepStat(stepOfLesson(nl.no)).done/stepStat(stepOfLesson(nl.no)).total*100}%"></i></div></div>
     <a href="#/l/${nl.no}" class="btn pink block cta"><span class="play">▶</span><span class="ctat">${all?t.again:cnt?t.cont:t.start}<small>${esc(t.lessonQ(nl.no,nl.title))}</small></span></a>
   </section>`}
+  ${nextLessonCard()}${tv?'':testCard()}
   ${inst?`<div class="card install"><span class="ic">📲</span><p><b>${t.instT}</b>${deferredPrompt?t.instA:t.instI}</p>${deferredPrompt?`<button class="btn sm mint" id="instBtn">${t.instB}</button>`:''}<button class="ibtn sm" id="instX" aria-label="${t.close}">${icon.x}</button></div>`:''}
   <div class="h2"><span>${t.stepsT}</span><small>${t.stepsSub}</small></div>
   <div class="steps">${[0,1,2,3,4,5,6].map(stepCard).join('')}</div>
@@ -473,25 +477,27 @@ function route(){const h=location.hash.replace(/^#\/?/,'').split('/');
   if(h[0]==='print'&&h[1])return {v:'print',no:+h[1],t:h[2]||'text'};
   if(h[0]==='s'&&h[1]!=null&&/^[0-6]$/.test(h[1]))return {v:'step',n:+h[1]};
   if(h[0]==='words')return {v:'words'};if(h[0]==='prints'||(h[0]==='guide'&&h[1]==='prints'&&teachView()))return {v:'prints'};if(h[0]==='guide')return {v:'guide',open:h[1]||''};
+  if(h[0]==='lessons')return {v:'lessons'};if((h[0]==='chat'||h[0]==='book')&&/^\d+$/.test(h[1]||''))return {v:h[0],id:+h[1]};if(h[0]==='test')return {v:'test'};
   if(h[0]==='me')return {v:'me'};if(h[0]==='admin')return {v:'admin'};if(h[0]==='login-error')return {v:'login-error'};return {v:'home'}}
 let last=null;const scrollMem={};
 function render(keep){
-  const r=route();if(authGate(r))return;
+  const r=route();if(authGate(r))return;socialTick();
   const key=r.v==='lesson'?`l${r.no}-${r.tab}`:r.v==='print'?`p${r.sn!=null?'s'+r.sn:r.no}${r.t}`:r.v==='step'?`s${r.n}`:r.v;
   if(last)scrollMem[last]=scrollY;
   if(r.v==='lesson'){
     if(!last||!last.startsWith(`l${r.no}-`))fcState={i:0,flip:false,got:new Set(store.get('got-'+r.no,[]))};
     if(r.tab==='quiz'&&(!qState||qState.no!==r.no||last!==key&&!keep))qState={no:r.no,i:0,score:0,ans:null};
   }
-  document.body.classList.toggle('pmode',r.v==='print');document.body.classList.toggle('tmode',teachView());
+  document.body.classList.toggle('pmode',r.v==='print');document.body.classList.toggle('tmode',teachView());document.body.classList.toggle('chatmode',r.v==='chat');
   document.body.dataset.view=r.v;
-  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='prints'?vPrints():r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
-  if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);else topbar('main');
-  tabbar(r.v==='lesson'||r.v==='print'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
+  const html=r.v==='print'?(r.sn!=null?vPrintStep(r.sn,r.t):vPrint(r.no,r.t)):r.v==='lesson'?vLesson(r.no,r.tab):r.v==='step'?vStep(r.n):r.v==='words'?vWords():r.v==='guide'?vGuide(r.open):r.v==='prints'?vPrints():r.v==='lessons'?vLessons():r.v==='chat'?vChat(r.id):r.v==='book'?vBook(r.id):r.v==='test'?vTest():r.v==='me'?vMe():r.v==='admin'?vAdmin():vHome();
+  if(r.v==='lesson')topbar('lesson',L.find(x=>x.no===r.no));else if(r.v==='step')topbar('step',r.n);
+  else if(r.v==='chat'||r.v==='book')topbar('sub',{back:'#/lessons',title:r.v==='book'?S_().book:S_().chat});else if(r.v==='test')topbar('sub',{back:'#/',title:TT().title});else topbar('main');
+  tabbar(r.v==='lesson'||r.v==='print'||r.v==='chat'||r.v==='test'||r.v==='book'?null:r.v==='step'?'home':r.v==='login-error'?'home':r.v);
   $('#app').innerHTML=r.v==='print'||keep?html:`<div class="view">${html}</div>`;
   fitTables();
   if(r.v==='print'){const pb=$('#pBtn');if(pb)pb.onclick=()=>print();(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>fitPages())}
-  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='admin')bindAdmin();
+  else if(r.v==='lesson')bindLesson(r.no,r.tab);else if(r.v==='words')bindWords();else if(r.v==='home')bindHome();else if(r.v==='me')bindMe();else if(r.v==='lessons')bindLessons();else if(r.v==='chat')bindChat(r.id);else if(r.v==='book')bindBook(r.id);else if(r.v==='test')bindTest();else if(r.v==='admin')bindAdmin();
   if(r.v==='guide'&&r.open==='prints'&&!keep){const d=$('#printsAcc');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({block:'start'}),30)}}
   if(keep){}else if(r.v==='lesson'&&last&&last.startsWith(`l${r.no}-`)){const seg=$('.seg');const y=seg?seg.getBoundingClientRect().top+scrollY-60:0;if(scrollY>y)scrollTo(0,y)}
   else scrollTo(0,scrollMem[key]&&r.v!=='lesson'?scrollMem[key]:0);
