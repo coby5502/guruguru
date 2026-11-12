@@ -183,7 +183,7 @@ function bindBook(id){
   $$('.slb').forEach(b=>b.onclick=()=>{BK.sel=+b.dataset.s;render(true)});
   const sel=BK.slots&&BK.slots.find(s=>s.id===BK.sel);if(sel&&sel.place&&$('#bkMap'))miniMap($('#bkMap'),[sel.place]);
   const g=$('#bkGo');if(g)g.onclick=async()=>{g.disabled=true;try{await api('POST',`/slots/${BK.sel}/book`);toast(S_().bookedT);confetti(innerWidth/2,innerHeight-120,16);SOC.matches=null;location.hash='#/chat/'+id}
-    catch(e){toast(e.status===402?BX().noCredit:S_().taken);loadBook(id)}};
+    catch(e){toast(S_().taken);loadBook(id)}};
 }
 
 /* ---------- 채팅 ---------- */

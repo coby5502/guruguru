@@ -25,7 +25,7 @@ let html = src('template.html')
   .replace('/*__SYLLABUS__*/', () => src('syllabus.js'))
   .replace('/*__PRINT__*/', () => src('print.js'))
   .replace('/*__MASCOT__*/', () => src('kana.js') + '\n' + src('mascot.js'))
-  .replace('/*__APP__*/', () => src('auth.js') + '\n' + src('social.js') + '\n' + src('study.js') + '\n' + app);
+  .replace('/*__APP__*/', () => src('auth.js') + '\n' + src('social.js') + '\n' + src('study.js') + '\n' + src('admin.js') + '\n' + app);
 if (ENV !== 'prod') {
   html = html
     .replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta name="robots" content="noindex,nofollow">')
@@ -38,4 +38,7 @@ const audioFiles = fs.readdirSync(path.join(dist, 'audio')).filter(f => f.endsWi
 const sw = src('sw.js').replace('__VERSION__', `${ENV}-${VERSION}`).replace('__AUDIO_FILES__', JSON.stringify(audioFiles));
 fs.writeFileSync(path.join(dist, 'sw.js'), sw);
 
+// 도메인/admin → 앱의 관리자 콘솔로 이동
+fs.mkdirSync(path.join(dist, 'admin'), { recursive: true });
+fs.writeFileSync(path.join(dist, 'admin', 'index.html'), '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>admin</title><script>location.replace("/#/admin")</script><a href="/#/admin">admin</a>');
 console.log(`built dist/ (${ENV}-${VERSION}) · audio ${audioFiles.length} · html ${(html.length / 1024).toFixed(0)}KB`);

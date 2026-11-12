@@ -135,7 +135,7 @@ let editMe=false,delArm=0;
 function vMe(){
   const a=A(),u=ME;if(!u)return '';
   return `<div class="h2 first"><span>${a.profile}</span>${editMe?'':`<button class="btn sm" id="meEdit">${a.edit}</button>`}</div>
-    <section class="card mecard">${avatarEdit(u)}<div><b class="mn">${esc(u.name)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}</div>${u.customPicture?`<button class="lnk" id="avDel">${S_().photoDel}</button>`:`<small class="avh">📷 ${S_().photo}</small>`}</div></section>
+    <section class="card mecard">${avatarEdit(u)}<div><b class="mn">${esc(u.name)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}${gradeB(u.grade)}</div>${u.customPicture?`<button class="lnk" id="avDel">${S_().photoDel}</button>`:`<small class="avh">📷 ${S_().photo}</small>`}</div></section>
     ${statusBanner()}
     ${editMe?`<section class="card">${profileForm(u,false)}</section>`:`<section class="card mekv">
       ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div><div><span>${PX().modeQ}</span><b>${PX()[u.modes||'online']}</b></div>${u.view==='teacher'?`<div><span>${PX().profile}</span><b><a class="btn sm" href="#/teacher/${u.id}">👀</a></b></div>`:''}`}</section>`}
@@ -162,21 +162,6 @@ function statusBanner(){
   if(s==='rejected')return `<div class="card sbanner rej"><span>ℹ️</span><p><b>${a.rejected}</b>${a.rejectedS}</p></div>`;
   return '';
 }
-let adminUsers=null;
-function vAdmin(){
-  const a=A();
-  if(!adminUsers){loadAdmin();return `<div class="h2 first"><span>${a.admin}</span></div><div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>`}
-  const fmt=t=>t?new Date(t*1000).toLocaleDateString(LANG==='ko'?'ko-KR':'ja-JP'):'—';
-  return `${adminExtra()}<div class="h2"><span>${a.admin}</span><small>${a.users} ${adminUsers.length}</small></div>
-   <div class="ulist">${adminUsers.length?adminUsers.map(u=>`<div class="card urow ${u.teacherStatus==='pending'?'pend':''}">${avatar(u)}<div class="ui"><b>${esc(u.name||'—')}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}</div>
-     ${u.role==='teacher'&&u.bio?`<small class="ub">${esc(u.bio)}</small>`:''}${u.role==='student'&&(u.level||u.goal)?`<small class="ub">${esc(a.levels[u.level]||'')} ${esc(u.goal||'')}</small>`:''}<small class="ub">${a.lastL} ${fmt(u.lastLogin)}</small></div>
-     ${u.admin?'':`<div class="ua">${u.suspended?`<span class="rb st-rejected">${BX().suspended}</span><button class="btn sm" data-act="unsuspend" data-id="${u.id}">${BX().unsuspend}</button>`:`<button class="btn sm ghost" data-act="suspend" data-id="${u.id}">${BX().suspend}</button>`}${u.role==='teacher'&&u.teacherStatus!=='approved'?`<button class="btn sm mint" data-act="approve" data-id="${u.id}">${a.approve}</button>`:''}${u.role==='teacher'&&u.teacherStatus==='pending'?`<button class="btn sm" data-act="reject" data-id="${u.id}">${a.reject}</button>`:''}${u.role==='teacher'&&u.teacherStatus==='approved'?`<button class="btn sm" data-act="student" data-id="${u.id}">${a.toStu}</button>`:''}</div>`}
-   </div>`).join(''):`<p class="empty">${a.none}</p>`}</div>`;
-}
-async function loadAdmin(){try{adminUsers=(await api('GET','/admin/users')).users}catch(e){adminUsers=[];toast(A().err)}if(route().v==='admin')render(true)}
-function bindAdmin(){bindAdm();$$('[data-act]').forEach(b=>b.onclick=async()=>{b.disabled=true;
-  try{const u=await api('POST','/admin/users/'+b.dataset.id,{action:b.dataset.act});adminUsers=adminUsers.map(x=>x.id===u.id?u:x);render(true)}catch(e){b.disabled=false;toast(A().err)}})}
-
 /* ---------- 선생님 홈 ---------- */
 function teacherHero(){
   const a=A(),m=TMx(),t=T(),st=store.get('tlast',0),l0=L.find(x=>x.no===st)||L[0],l=V(l0);
