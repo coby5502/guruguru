@@ -96,7 +96,7 @@ function vLessons(){
   let h=`<div class="h2 first"><span>${o.tab}</span></div>${pushCard()}`+todoBlock();
   if(t){
     h+=`<div class="h2"><span>📨 ${o.reqs}</span>${pend.length?`<span class="tag">${pend.length}</span>`:''}</div>`;
-    h+=pend.length?pend.map(m=>`<div class="card req">${peerHead(m.peer)}${m.last&&m.last.kind!=='sys'?`<p class="ml q">${esc(m.last.body)}</p>`:''}
+    h+=pend.length?pend.map(m=>`<div class="card req">${peerHead(m.peer)}${tagChips(m.peer.ptags,6)}${m.last&&m.last.kind!=='sys'?`<p class="ml q">${esc(m.last.body)}</p>`:''}
       <div class="rbtn"><button class="btn mint" data-act="accept" data-id="${m.id}">${o.accept}</button><button class="btn" data-act="decline" data-id="${m.id}">${o.decline}</button><a class="btn sm" href="#/chat/${m.id}">💬</a></div></div>`).join(''):emptyCard(o.noReqs);
   }
   h+=`<div class="h2"><span>📅 ${o.next}</span>${SOC.schedule.length>1?`<button class="lnk" data-ics="all">📆 ${BX().icsAll}</button>`:''}</div>`+(SOC.schedule.length?SOC.schedule.map(lessonItem).join(''):emptyCard(o.noNext));
@@ -106,11 +106,12 @@ function vLessons(){
   if(t)h+=slotsEditor();
   else{
     if(!ME.test)h+=`<a class="card hint" href="#/test">🧪 ${o.hint}</a>`;
-    const p=PX(),fl=SOC.tf||'all',tl=SOC.teachers.filter(x=>fl==='all'||x.modes===fl||x.modes==='both');
+    const p=PX(),fl=SOC.tf||'all',tl=SOC.teachers.filter(x=>fl==='all'||x.modes===fl||x.modes==='both').sort((a,b)=>commonN(b.ptags)-commonN(a.ptags)||(b.rating||0)-(a.rating||0));
     h+=`<div class="h2"><span>🔍 ${o.find}</span></div><p class="note" style="margin:0 2px 10px">${o.findS}</p>
       <div class="fchips tfil">${[['all',p.all],['online','💻 '+p.online],['offline','📍 '+p.offline]].map(([k,v])=>`<button data-tf="${k}" class="${fl===k?'on':''}">${v}</button>`).join('')}</div>`;
     h+=tl.length?tl.map(x=>`<div class="card tcard">${peerHead(x,x.freeSlots?`<span class="spill s-free">${o.free(x.freeSlots)}</span>`:'')}
-      <div class="mchips">${modesBadges(x.modes)}${(x.places||[]).slice(0,2).map(pl=>`<span class="mchip pl">📍 ${esc(pl.name)}</span>`).join('')}${(x.tags||[]).slice(0,3).map(t=>`<span class="mchip tg">#${esc(t)}</span>`).join('')}</div>
+      ${tagChips(x.ptags,5)}${commonN(x.ptags)?`<span class="cmn">💞 ${PFX().common(commonN(x.ptags))}</span>`:''}${(x.gallery||[]).length?`<div class="gal sm">${x.gallery.slice(0,3).map(u=>`<img src="${esc(u)}" alt="" loading="lazy">`).join('')}</div>`:''}
+      <div class="mchips">${x.video?'<span class="mchip">🎬</span>':''}${modesBadges(x.modes)}${(x.places||[]).slice(0,2).map(pl=>`<span class="mchip pl">📍 ${esc(pl.name)}</span>`).join('')}${(x.tags||[]).slice(0,3).map(t=>`<span class="mchip tg">#${esc(t)}</span>`).join('')}</div>
       <a class="lnk" href="#/teacher/${x.id}">${x.rating!=null?stars(x.rating)+' '+x.rating+' ('+x.reviews+') · ':''}${p.profile} ›</a>
       ${x.match?`<a class="btn block" href="#/chat/${x.match.id}">💬 ${o.chat} · ${o.st[x.match.status]}</a>`
         :`<details class="apply"><summary class="btn pink block">${o.apply}</summary><form class="apf" data-id="${x.id}"><textarea name="message" maxlength="1000" rows="3" placeholder="${esc(o.applyPh)}"></textarea><button class="btn pink block" type="submit">${o.send}</button></form></details>`}</div>`).join(''):emptyCard(o.noTeachers);
