@@ -232,6 +232,7 @@ function vHome(){
   <div class="foot"><div class="jua" lang="ko">한 걸음씩!</div>${t.foot}</div>`;
 }
 function bindHome(){
+  bindApply();
   const w=$('#wod');if(w)w.onclick=()=>say(w.querySelector('.k').textContent,w);
   const ib=$('#instBtn');if(ib)ib.onclick=async()=>{deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;render(true)};
   const ix=$('#instX');if(ix)ix.onclick=()=>{store.set('hideInstall',true);render(true)};
