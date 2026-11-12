@@ -86,7 +86,11 @@ CREATE TABLE IF NOT EXISTS slots(
 CREATE INDEX IF NOT EXISTS slots_t ON slots(teacher_id, start);
 CREATE INDEX IF NOT EXISTS slots_s ON slots(student_id, start);
 `);
-if (!db.prepare('PRAGMA table_info(users)').all().some(c => c.name === 'avatar')) db.exec('ALTER TABLE users ADD COLUMN avatar TEXT');
+db.exec(`CREATE TABLE IF NOT EXISTS progress(user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, data TEXT NOT NULL, updated_at INTEGER NOT NULL);`);
+const addCol = (t, c, d) => { if (!db.prepare(`PRAGMA table_info(${t})`).all().some(x => x.name === c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${d}`); };
+addCol('users', 'avatar', 'TEXT');
+for (const c of ['meet_url', 'modes', 'places', 'intro', 'tags']) addCol('users', c, 'TEXT');
+for (const c of ['mode', 'place', 'url']) addCol('slots', c, 'TEXT');
 const AV_DIR = path.join(path.dirname(CFG.db), 'avatars');
 fs.mkdirSync(AV_DIR, { recursive: true });
 const q = {
@@ -102,6 +106,11 @@ const q = {
   sess: db.prepare('SELECT s.expires_at, u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?'),
   delSess: db.prepare('DELETE FROM sessions WHERE token_hash=?'),
   gcSess: db.prepare('DELETE FROM sessions WHERE expires_at<?'),
+  getProg: db.prepare('SELECT data,updated_at FROM progress WHERE user_id=?'),
+  putProg: db.prepare('INSERT INTO progress(user_id,data,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET data=excluded.data,updated_at=excluded.updated_at'),
+  saveTeach: db.prepare('UPDATE users SET meet_url=?,modes=?,intro=?,tags=?,updated_at=? WHERE id=?'),
+  savePlaces: db.prepare('UPDATE users SET places=?,updated_at=? WHERE id=?'),
+  anyMatch: db.prepare("SELECT * FROM matches WHERE student_id=? AND teacher_id=? AND status IN ('accepted','ended') ORDER BY id DESC LIMIT 1"),
   setAvatar: db.prepare('UPDATE users SET avatar=?,updated_at=? WHERE id=?'),
   insTest: db.prepare('INSERT INTO tests(user_id,step,score,total,at) VALUES(?,?,?,?,?)'),
   lastTest: db.prepare('SELECT step,score,total,at FROM tests WHERE user_id=? ORDER BY at DESC, id DESC LIMIT 1'),
@@ -122,7 +131,7 @@ const q = {
   unreadAll: db.prepare("SELECT COUNT(*) n FROM messages m JOIN matches x ON x.id=m.match_id WHERE (x.student_id=?1 OR x.teacher_id=?1) AND m.sender_id IS NOT ?1 AND m.read_at IS NULL"),
   markRead: db.prepare('UPDATE messages SET read_at=? WHERE match_id=? AND sender_id IS NOT ? AND read_at IS NULL'),
   slot: db.prepare('SELECT * FROM slots WHERE id=?'),
-  insSlot: db.prepare('INSERT INTO slots(teacher_id,start,dur,created_at) VALUES(?,?,?,?)'),
+  insSlot: db.prepare('INSERT INTO slots(teacher_id,start,dur,created_at,mode,place,url) VALUES(?,?,?,?,?,?,?)'),
   overlap: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start<? AND start+dur*60>?'),
   futureCount: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start>?'),
   freeCount: db.prepare('SELECT COUNT(*) n FROM slots WHERE teacher_id=? AND start>? AND student_id IS NULL'),
@@ -175,11 +184,13 @@ const view = u => (isAdmin(u) || (u.role === 'teacher' && u.teacher_status === '
 const picture = u => u.avatar ? `/api/avatar/${u.avatar}` : (u.picture || '');
 const testOf = id => { const t = q.lastTest.get(id); return t ? { step: t.step, score: t.score, total: t.total, at: t.at } : null; };
 // 상대방에게 보이는 정보(이메일 제외)
-const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture: picture(u), role: u.role, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '', test: u.role === 'student' ? testOf(u.id) : null }) : { id: 0, name: '—', picture: '' };
+const js = (v, d) => { try { return v ? JSON.parse(v) : d; } catch { return d; } };
+const teachInfo = u => u.role === 'teacher' ? { modes: u.modes || 'online', places: js(u.places, []), intro: u.intro || '', tags: (u.tags || '').split(',').filter(Boolean) } : {};
+const peer = u => u ? ({ id: u.id, name: u.name || u.google_name || '', picture: picture(u), role: u.role, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '', test: u.role === 'student' ? testOf(u.id) : null, ...teachInfo(u) }) : { id: 0, name: '—', picture: '' };
 const pub = u => ({
   id: u.id, email: u.email, name: u.name || u.google_name || '', picture: picture(u), customPicture: !!u.avatar, test: testOf(u.id),
   role: u.role, teacherStatus: u.teacher_status, level: u.level || '', goal: u.goal || '', bio: u.bio || '', lang: u.lang || '',
-  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u),
+  profileDone: !!(u.role && u.name), view: view(u), admin: isAdmin(u), meetUrl: u.meet_url || '', ...teachInfo(u),
 });
 const adminRow = u => ({ ...pub(u), createdAt: u.created_at, lastLogin: u.last_login });
 
@@ -274,7 +285,9 @@ function matchOut(m, me) {
 }
 function slotOut(s, me) {
   const mine = s.teacher_id === me.id;
+  const party = mine || s.student_id === me.id;
   return { id: s.id, start: s.start, dur: s.dur, booked: !!s.student_id, mine, matchId: s.match_id || null, lessonNo: s.lesson_no || null, note: s.note || '',
+    mode: s.mode || 'online', place: js(s.place, null), url: party && (s.mode || 'online') === 'online' ? (s.url || '') : '',
     with: s.student_id ? peer(q.userById.get(mine ? s.student_id : s.teacher_id)) : null };
 }
 // 시스템 메시지(예약·취소·수락 등)를 대화에 남기고 양쪽에 알림
@@ -288,6 +301,12 @@ function sysMsg(m, actorId, data) {
 const IMG = [['jpg', 'image/jpeg', b => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff], ['png', 'image/png', b => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))], ['webp', 'image/webp', b => b.subarray(0, 4).toString() === 'RIFF' && b.subarray(8, 12).toString() === 'WEBP']];
 const rmAvatar = f => { if (f && /^[\w.-]+$/.test(f)) try { fs.unlinkSync(path.join(AV_DIR, f)); } catch { } };
 const DAY = 86400;
+function cleanPlace(p) {
+  if (!p || typeof p !== 'object') return null;
+  const lat = +p.lat, lng = +p.lng, name = str(p.name, 60), addr = str(p.addr, 200);
+  if (!name || !(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) return null;
+  return { name, addr, lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6 };
+}
 
 /* ---------------- routes ---------------- */
 async function handle(req, res) {
@@ -377,6 +396,11 @@ async function handle(req, res) {
       const level = LEVELS.includes(b.level) ? b.level : null;
       const lang = b.lang === 'ko' || b.lang === 'ja' ? b.lang : null;
       q.saveProfile.run(name, role, status, level, str(b.goal, 200), str(b.bio, 200), lang, now(), me.id);
+      if (role === 'teacher') {
+        const mu = str(b.meetUrl, 300), modes = ['online', 'offline', 'both'].includes(b.modes) ? b.modes : (me.modes || 'online');
+        const tags = (Array.isArray(b.tags) ? b.tags : String(b.tags || '').split(/[,、，]/)).map(t => str(t, 20)).filter(Boolean).slice(0, 8).join(',');
+        q.saveTeach.run(/^https:\/\/[^\s<>"']+$/.test(mu) ? mu : null, modes, str(b.intro ?? me.intro, 1000), b.tags === undefined ? (me.tags || '') : tags, now(), me.id);
+      }
       return send(res, 200, pub(q.userById.get(me.id)));
     }
     if (m === 'DELETE') { rmAvatar(me.avatar); q.delUser.run(me.id); setCookie(res, '', 0); return send(res, 200, { ok: true }); }
@@ -411,6 +435,40 @@ async function handle(req, res) {
   }
 
   if (p === '/api/events' && m === 'GET') return sse(req, res, me);
+
+  // 학습 진도(기기 간 동기화): 클라이언트가 병합한 JSON 을 통째로 저장
+  if (p === '/api/progress') {
+    if (m === 'GET') { const r = q.getProg.get(me.id); return send(res, 200, { data: r ? js(r.data, {}) : {}, updatedAt: r ? r.updated_at : 0 }); }
+    if (m !== 'PUT') return send(res, 405, { error: 'method' });
+    if (limited('pg:' + me.id, 120, 600)) return send(res, 429, { error: 'rate' });
+    const raw = await readBody(req, 400 * 1024);
+    let b; try { b = JSON.parse(raw); } catch { return send(res, 400, { error: 'json' }); }
+    if (!b || typeof b.data !== 'object' || Array.isArray(b.data)) return send(res, 400, { error: 'data' });
+    q.putProg.run(me.id, JSON.stringify(b.data), now());
+    return send(res, 200, { ok: true, updatedAt: now() });
+  }
+  // 선생님: 매칭된 학생의 진도 요약
+  const sp = /^\/api\/students\/(\d+)\/progress$/.exec(p);
+  if (sp && m === 'GET') {
+    const st = q.userById.get(+sp[1]);
+    if (!st || !q.anyMatch.get(st.id, me.id)) return send(res, 403, { error: 'not your student' });
+    const r = q.getProg.get(st.id);
+    return send(res, 200, { student: peer(st), data: r ? js(r.data, {}) : {}, updatedAt: r ? r.updated_at : 0 });
+  }
+  // 선생님: 자주 쓰는 대면 수업 장소
+  if (p === '/api/me/places' && m === 'PUT') {
+    if (!isTeacherUser(me)) return send(res, 403, { error: 'teachers only' });
+    const b = await readJson(req), list = (Array.isArray(b.places) ? b.places : []).map(cleanPlace).filter(Boolean).slice(0, 12);
+    q.savePlaces.run(JSON.stringify(list), now(), me.id);
+    return send(res, 200, pub(q.userById.get(me.id)));
+  }
+  const tp = /^\/api\/teachers\/(\d+)$/.exec(p);
+  if (tp && m === 'GET') {
+    const x = q.userById.get(+tp[1]);
+    if (!x || !isTeacherUser(x)) return send(res, 404, { error: 'not found' });
+    const am = q.activeMatch.get(me.id, x.id), t = now();
+    return send(res, 200, { ...peer(x), freeSlots: q.freeCount.get(x.id, t).n, upcoming: q.freeSlots.all(x.id, t).slice(0, 30).map(s => ({ start: s.start, dur: s.dur, mode: s.mode || 'online', place: js(s.place, null) })), match: am ? { id: am.id, status: am.status } : null });
+  }
 
   if (p === '/api/summary' && m === 'GET') {
     const ms = q.myMatches.all(me.id, me.id);
@@ -489,12 +547,16 @@ async function handle(req, res) {
     if (m !== 'POST') return send(res, 405, { error: 'method' });
     if (!isTeacherUser(me)) return send(res, 403, { error: 'teachers only' });
     const b = await readJson(req), list = Array.isArray(b.slots) ? b.slots.slice(0, 40) : [], t = now();
+    const mode = b.mode === 'offline' ? 'offline' : 'online';
+    const place = mode === 'offline' ? cleanPlace(b.place) : null;
+    if (mode === 'offline' && !place) return send(res, 400, { error: 'place' });
+    const mu = str(b.url, 300), url = mode === 'online' ? (/^https:\/\/[^\s<>"']+$/.test(mu) ? mu : me.meet_url || '') : '';
     let made = 0, skipped = 0;
     for (const x of list) {
       const start = Math.trunc(+x.start), dur = Math.trunc(+x.dur);
       if (!(start > t && start < t + 120 * DAY && dur >= 20 && dur <= 180 && start % 60 === 0)) { skipped++; continue; }
       if (q.overlap.get(me.id, start + dur * 60, start).n || q.futureCount.get(me.id, t).n >= 300) { skipped++; continue; }
-      q.insSlot.run(me.id, start, dur, t); made++;
+      q.insSlot.run(me.id, start, dur, t, mode, place ? JSON.stringify(place) : null, url || (mode === 'online' ? `https://meet.jit.si/guruguru-${crypto.randomBytes(8).toString('hex')}` : null)); made++;
     }
     return send(res, made ? 201 : 400, { made, skipped, slots: q.teacherSlots.all(me.id, t).map(s => slotOut(s, me)) });
   }

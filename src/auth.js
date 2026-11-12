@@ -98,6 +98,10 @@ function profileForm(u,first){
       <label class="fl"><span>${a.goal}</span><input name="goal" maxlength="200" value="${esc(u.goal||'')}" placeholder="${a.goalPh}"></label></div>
     <div class="only-t">
       <label class="fl"><span>${a.bio}</span><input name="bio" maxlength="200" value="${esc(u.bio||'')}" placeholder="${a.bioPh}"></label>
+      <div class="fl"><span>${PX().modeQ}</span><div class="seg2">${['online','offline','both'].map(k=>`<label><input type="radio" name="modes" value="${k}" ${(u.modes||'online')===k?'checked':''}><span>${PX()[k]}</span></label>`).join('')}</div></div>
+      <label class="fl"><span>${PX().meetUrl}</span><input name="meetUrl" type="url" inputmode="url" maxlength="300" value="${esc(u.meetUrl||'')}" placeholder="https://"></label>
+      <label class="fl"><span>${PX().intro}</span><textarea name="intro" maxlength="1000" rows="4">${esc(u.intro||'')}</textarea></label>
+      <label class="fl"><span>${PX().tags}</span><input name="tags" maxlength="160" value="${esc((u.tags||[]).join(', '))}" placeholder="${PX().tagsPh}"></label>
       ${u.teacherStatus==='approved'||u.admin?'':`<p class="note tnote">${a.teacherNote}</p>`}</div>
     <div class="fl"><span>${a.lang}</span><div class="seg2"><label><input type="radio" name="lang" value="ja" ${(u.lang||LANG)==='ja'?'checked':''}><span>日本語</span></label><label><input type="radio" name="lang" value="ko" ${(u.lang||LANG)==='ko'?'checked':''}><span lang="ko">한국어</span></label></div></div>
     <button class="btn pink block" type="submit">${first?a.save:a.saveE}</button>
@@ -132,7 +136,7 @@ function vMe(){
     <section class="card mecard">${avatarEdit(u)}<div><b class="mn">${esc(u.name)}</b><small>${esc(u.email)}</small><div class="rbs">${roleBadges(u)}</div>${u.customPicture?`<button class="lnk" id="avDel">${S_().photoDel}</button>`:`<small class="avh">📷 ${S_().photo}</small>`}</div></section>
     ${statusBanner()}
     ${editMe?`<section class="card">${profileForm(u,false)}</section>`:`<section class="card mekv">
-      ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div>`}</section>`}
+      ${u.role==='student'?`<div><span>${a.level}</span><b>${esc(a.levels[u.level]||'—')}</b></div><div><span>${a.goal}</span><b>${esc(u.goal||'—')}</b></div><div><span>${TT().title}</span><b>${u.test?`STEP ${u.test.step} (${u.test.score}/${u.test.total})`:'—'} <a class="btn sm" href="#/test">🧪</a></b></div>`:`<div><span>${a.bio}</span><b>${esc(u.bio||'—')}</b></div><div><span>${PX().modeQ}</span><b>${PX()[u.modes||'online']}</b></div>${u.view==='teacher'?`<div><span>${PX().profile}</span><b><a class="btn sm" href="#/teacher/${u.id}">👀</a></b></div>`:''}`}</section>`}
     ${u.admin?`<a class="btn block yellow" href="#/admin">🛡 ${a.admin}</a>`:''}
     <div class="mebtns"><button class="btn block" id="meOut">${a.logout}</button><button class="btn block ghost" id="meDel">${a.del}</button></div>`;
 }
@@ -184,7 +188,7 @@ function authGate(r){
   if(AUTH==='boot'){topbar('main');tabbar(null);$('#app').innerHTML=`<div class="auth"><div class="auth-m">${mascotSVG(3,'big')}</div></div>`;return true}
   if(AUTH==='out'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vLogin(r.v==='login-error')}</div>`;mountGoogle($('#gbtn'));return true}
   if(AUTH==='profile'){document.body.dataset.view='login';topbar('main');tabbar(null);$('#app').innerHTML=`<div class="view">${vOnboard()}</div>`;bindProfileForm(()=>{location.hash='#/';render(false)});return true}
-  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')||((r.v==='lessons'||r.v==='chat'||r.v==='book')&&!lessonsOn())){location.replace('#/');return true}
+  if((r.v==='print'&&r.t==='guide'&&!canTeach())||(r.v==='admin'&&!(ME&&ME.admin))||((r.v==='me'||r.v==='admin')&&AUTH==='off')||((r.v==='lessons'||r.v==='chat'||r.v==='book'||r.v==='student'||r.v==='teacher')&&!lessonsOn())){location.replace('#/');return true}
   return false;
 }
 /* 앱으로 돌아올 때 역할 변경(승인 등)을 반영 */

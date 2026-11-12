@@ -57,7 +57,8 @@ function onEvent(d){
 }
 setInterval(()=>{if(document.visibilityState!=='visible'||!lessonsOn())return;if(!esOk)loadSummary();const r=route();if(r.v==='chat'&&!esOk)chatPull()},15000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lessonsOn()){loadSummary();const r=route();if(r.v==='chat')chatPull();if(r.v==='lessons')loadHub(true)}});
-function socialTick(){if(lessonsOn()){sseStart();if(!socialTick.done){socialTick.done=1;loadSummary()}}else{sseStop();socialTick.done=0}}
+function socialTick(){hookStore();if(authed()&&AUTH==='in'&&!socialTick.pg){socialTick.pg=1;progSync()}if(!authed())socialTick.pg=0;
+  if(lessonsOn()){sseStart();if(!socialTick.done){socialTick.done=1;loadSummary()}}else{sseStop();socialTick.done=0}}
 
 /* ---------- 데이터 ---------- */
 async function loadHub(silent){
@@ -74,8 +75,10 @@ const testLine=t=>t?`<span class="tline">🧪 ${esc(S_().testOf(t))}</span>`:'';
 function peerHead(p,extra=''){const a=A();return `<div class="ph2">${avatar(p)}<div class="pi"><b>${esc(p.name)}</b>${p.role==='student'?`<small>${esc([a.levels[p.level]||'',p.goal].filter(Boolean).join(' · '))}</small>${testLine(p.test)}`:`<small>${esc(p.bio||'')}</small>`}</div>${extra}</div>`}
 function lessonItem(s){const o=S_(),t=isTeacherMe(),soon=s.start-Date.now()/1000<36*3600;
   return `<div class="card lsn ${soon?'soon':''}" data-id="${s.id}">
-    <div class="lw"><b>${fDay(s.start)}</b><span>${fTime(s.start)} · ${s.dur}${o.min}</span></div>
-    ${peerHead(s.with,s.matchId?`<a class="btn sm" href="#/chat/${s.matchId}">💬</a>`:'')}
+    <div class="lw"><b>${fDay(s.start)}</b><span>${fTime(s.start)} · ${s.dur}${o.min}</span>${modeChip(s)}</div>
+    ${s.mode==='offline'&&s.place?`<a class="plrow" href="${gmap(s.place)}" target="_blank" rel="noopener"><b>📍 ${esc(s.place.name)}</b><small>${esc(s.place.addr||'')} · ${PX().map} ↗</small></a>`
+      :s.url?`<a class="btn ${soon?'pink':''} block" href="${esc(s.url)}" target="_blank" rel="noopener">💻 ${PX().enter}</a>`:''}
+    ${peerHead(s.with,`${t&&s.with?`<a class="btn sm" href="#/student/${s.with.id}" aria-label="${S2().sp}">📊</a>`:''}${s.matchId?`<a class="btn sm" href="#/chat/${s.matchId}">💬</a>`:''}`)}
     ${t?`<form class="lno" data-id="${s.id}"><label>${o.lessonNo}<input name="no" type="number" min="1" max="290" inputmode="numeric" value="${s.lessonNo||''}" placeholder="${o.noPh}"></label><button class="btn sm" type="submit">${o.save}</button></form>`
        :s.lessonNo?`<a class="btn sm mint block" href="#/l/${s.lessonNo}">📖 ${o.prep(s.lessonNo)}</a>`:''}
     <button class="lnk danger" data-cancel="${s.id}">${o.cancel}</button></div>`}
@@ -88,7 +91,7 @@ function vLessons(){
   if(!SOC.busy&&Date.now()-(SOC.at||0)>3000)setTimeout(()=>loadHub(true),0);
   const t=isTeacherMe(),ms=SOC.matches,act=ms.filter(m=>m.status==='accepted'),pend=ms.filter(m=>m.status==='pending'),old=ms.filter(m=>!['accepted','pending'].includes(m.status));
   const mrow=m=>`<a class="card mrow" href="#/chat/${m.id}">${peerHead(m.peer)}<div class="mr">${stPill(m.status)}${m.unread?`<b class="ub2">${m.unread}</b>`:''}</div>
-    ${m.last?`<p class="ml">${esc(m.last.kind==='sys'?sysText(m.last.body):m.last.body)}</p>`:''}${m.next?`<p class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</p>`:''}</a>`;
+    ${m.last&&m.last.kind!=='sys'?`<p class="ml">${esc(m.last.body)}</p>`:''}${m.next?`<p class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</p>`:''}</a>`;
   let h=`<div class="h2 first"><span>${o.tab}</span></div>`;
   if(t){
     h+=`<div class="h2"><span>📨 ${o.reqs}</span>${pend.length?`<span class="tag">${pend.length}</span>`:''}</div>`;
@@ -98,12 +101,16 @@ function vLessons(){
   h+=`<div class="h2"><span>📅 ${o.next}</span></div>`+(SOC.schedule.length?SOC.schedule.map(lessonItem).join(''):emptyCard(o.noNext));
   h+=`<div class="h2"><span>${t?'🎒 '+o.myS:'🧑‍🏫 '+o.myT}</span></div>`;
   const mine=t?act:[...act,...pend];
-  h+=mine.length?mine.map(m=>mrow(m)+(!t&&m.status==='accepted'?`<a class="btn block sky bk" href="#/book/${m.id}">📅 ${o.book}</a>`:'')).join(''):emptyCard(t?(LANG==='ko'?'아직 매칭된 학생이 없어요':'まだマッチングした生徒はいません'):o.noMine);
+  h+=mine.length?mine.map(m=>mrow(m)+(!t&&m.status==='accepted'?`<a class="btn block sky bk" href="#/book/${m.id}">📅 ${o.book}</a>`:t?`<a class="btn block bk" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:'')).join(''):emptyCard(t?(LANG==='ko'?'아직 매칭된 학생이 없어요':'まだマッチングした生徒はいません'):o.noMine);
   if(t)h+=slotsEditor();
   else{
     if(!ME.test)h+=`<a class="card hint" href="#/test">🧪 ${o.hint}</a>`;
-    h+=`<div class="h2"><span>🔍 ${o.find}</span></div><p class="note" style="margin:0 2px 10px">${o.findS}</p>`;
-    h+=SOC.teachers.length?SOC.teachers.map(x=>`<div class="card tcard">${peerHead(x,x.freeSlots?`<span class="spill s-free">${o.free(x.freeSlots)}</span>`:'')}
+    const p=PX(),fl=SOC.tf||'all',tl=SOC.teachers.filter(x=>fl==='all'||x.modes===fl||x.modes==='both');
+    h+=`<div class="h2"><span>🔍 ${o.find}</span></div><p class="note" style="margin:0 2px 10px">${o.findS}</p>
+      <div class="fchips tfil">${[['all',p.all],['online','💻 '+p.online],['offline','📍 '+p.offline]].map(([k,v])=>`<button data-tf="${k}" class="${fl===k?'on':''}">${v}</button>`).join('')}</div>`;
+    h+=tl.length?tl.map(x=>`<div class="card tcard">${peerHead(x,x.freeSlots?`<span class="spill s-free">${o.free(x.freeSlots)}</span>`:'')}
+      <div class="mchips">${modesBadges(x.modes)}${(x.places||[]).slice(0,2).map(pl=>`<span class="mchip pl">📍 ${esc(pl.name)}</span>`).join('')}${(x.tags||[]).slice(0,3).map(t=>`<span class="mchip tg">#${esc(t)}</span>`).join('')}</div>
+      <a class="lnk" href="#/teacher/${x.id}">${p.profile} ›</a>
       ${x.match?`<a class="btn block" href="#/chat/${x.match.id}">💬 ${o.chat} · ${o.st[x.match.status]}</a>`
         :`<details class="apply"><summary class="btn pink block">${o.apply}</summary><form class="apf" data-id="${x.id}"><textarea name="message" maxlength="1000" rows="3" placeholder="${esc(o.applyPh)}"></textarea><button class="btn pink block" type="submit">${o.send}</button></form></details>`}</div>`).join(''):emptyCard(o.noTeachers);
   }
@@ -113,13 +120,16 @@ function vLessons(){
 function slotsEditor(){
   const o=S_(),d=new Date(Date.now()+864e5),ds=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const free=(SOC.slots||[]).filter(s=>!s.booked),by={};free.forEach(s=>{const k=fDay(s.start);(by[k]=by[k]||[]).push(s)});
+  const p=PX(),pls=(ME&&ME.places)||[],md=SOC.mode||((ME&&ME.modes)==='offline'?'offline':'online');
   return `<div class="h2" id="slots"><span>🕒 ${o.slotsT}</span></div><p class="note" style="margin:0 2px 10px">${o.slotsS}</p>
-  <form class="card slf" id="slf"><label><span>${o.date}</span><input type="date" name="date" value="${ds}" min="${new Date().toISOString().slice(0,10)}" required></label>
+  <form class="card slf" id="slf"><div class="mseg"><span>${p.modeQ}</span><div class="seg2">${['online','offline'].map(k=>`<label><input type="radio" name="mode" value="${k}" ${md===k?'checked':''}><span>${k==='online'?'💻 '+p.online:'📍 '+p.offline}</span></label>`).join('')}</div></div>
+    ${md==='offline'?`<div class="plpick"><span>${p.places}</span><div class="plc">${pls.map((pl,i)=>`<label class="plchip"><input type="radio" name="pi" value="${i}" ${i===(SOC.pi||0)?'checked':''}><span>📍 ${esc(pl.name)}</span><button type="button" data-pdel="${i}" aria-label="${p.del}">×</button></label>`).join('')}<button type="button" class="btn sm" id="plAdd">${p.addPlace}</button></div>${pls.length?`<div class="mapbox sm" id="slMap"></div>`:''}</div>`
+      :`<label class="wide"><span>${p.url}</span><input name="url" type="url" inputmode="url" placeholder="${esc(ME&&ME.meetUrl?ME.meetUrl:p.urlPh)}"></label>`}<label><span>${o.date}</span><input type="date" name="date" value="${ds}" min="${new Date().toISOString().slice(0,10)}" required></label>
     <label><span>${o.time}</span><input type="time" name="time" value="19:00" step="300" required></label>
     <label><span>${o.dur}</span><select name="dur">${[30,45,50,60,90].map(n=>`<option value="${n}" ${n===60?'selected':''}>${n}${o.min}</option>`).join('')}</select></label>
     <label><span>${o.repeat}</span><select name="rep"><option value="1">${o.once}</option>${[2,4,8,12].map(n=>`<option value="${n}">${o.weeks(n)}</option>`).join('')}</select></label>
     <button class="btn sky block" type="submit">＋ ${o.add}</button></form>
-  ${free.length?`<div class="card sll">${Object.entries(by).map(([k,ls])=>`<div class="sld"><b>${k}</b><div>${ls.map(s=>`<span class="slc">${fTime(s.start)}<small>${s.dur}${o.min}</small><button data-del="${s.id}" aria-label="${o.del}">×</button></span>`).join('')}</div></div>`).join('')}</div>`:emptyCard(o.noSlots)}`;
+  ${free.length?`<div class="card sll">${Object.entries(by).map(([k,ls])=>`<div class="sld"><b>${k}</b><div>${ls.map(s=>`<span class="slc ${s.mode}">${fTime(s.start)}<small>${s.dur}${o.min} ${s.mode==='offline'&&s.place?'📍'+esc(s.place.name):'💻'}</small><button data-del="${s.id}" aria-label="${o.del}">×</button></span>`).join('')}</div></div>`).join('')}</div>`:emptyCard(o.noSlots)}`;
 }
 const arm={};
 function armed(key,el,msg){if(arm[key]&&Date.now()-arm[key]<4000){delete arm[key];return true}arm[key]=Date.now();el.textContent=msg;return false}
@@ -133,10 +143,20 @@ function bindLessons(){
   app.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=async()=>{if(!armed('c'+b.dataset.cancel,b,o.cancelC))return;try{await api('POST',`/slots/${b.dataset.cancel}/cancel`);loadHub()}catch(e){toast(A().err)}});
   app.querySelectorAll('.lno').forEach(f=>f.onsubmit=async e=>{e.preventDefault();try{await api('PUT','/slots/'+f.dataset.id,{lessonNo:+f.no.value||null});toast(A().saved);loadHub()}catch(err){toast(A().err)}});
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{try{await api('DELETE','/slots/'+b.dataset.del);loadHub()}catch(e){toast(A().err)}});
-  const f=$('#slf');if(f)f.onsubmit=async e=>{e.preventDefault();const [y,mo,d]=f.date.value.split('-').map(Number),[hh,mi]=f.time.value.split(':').map(Number),dur=+f.dur.value,rep=+f.rep.value,slots=[];
+  app.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{SOC.tf=b.dataset.tf;render(true)});
+  const f=$('#slf');
+  if(f){f.querySelectorAll('[name=mode]').forEach(r=>r.onchange=()=>{SOC.mode=r.value;render(true)});
+    f.querySelectorAll('[name=pi]').forEach(r=>r.onchange=()=>{SOC.pi=+r.value});
+    const savePl=async list=>{try{setMe(await api('PUT','/me/places',{places:list}));render(true)}catch(e){toast(A().err)}};
+    const ad=$('#plAdd');if(ad)ad.onclick=async()=>{const pl=await pickPlace();if(pl){const list=[...(ME.places||[]),pl];SOC.pi=list.length-1;await savePl(list);toast(PX().saved)}};
+    f.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=e=>{e.preventDefault();const list=[...(ME.places||[])];list.splice(+b.dataset.pdel,1);SOC.pi=0;savePl(list)});
+    if($('#slMap'))miniMap($('#slMap'),ME.places||[]);}
+  if(f)f.onsubmit=async e=>{e.preventDefault();const [y,mo,d]=f.date.value.split('-').map(Number),[hh,mi]=f.time.value.split(':').map(Number),dur=+f.dur.value,rep=+f.rep.value,slots=[];
     for(let i=0;i<rep;i++){const dt=new Date(y,mo-1,d+7*i,hh,mi,0,0);slots.push({start:Math.floor(dt.getTime()/1000),dur})}
     const btn=f.querySelector('button');btn.disabled=true;
-    try{const r=await api('POST','/slots',{slots});SOC.slots=r.slots;toast(o.added(r.made)+(r.skipped?' · '+o.overlap:''));render(true)}
+    const md=(f.querySelector('[name=mode]:checked')||{}).value||'online',pl=md==='offline'?(ME.places||[])[(f.querySelector('[name=pi]:checked')||{}).value|0]:null;
+    if(md==='offline'&&!pl){toast(PX().noPlace);btn.disabled=false;return}
+    try{const r=await api('POST','/slots',{slots,mode:md,place:pl,url:f.url?f.url.value.trim():''});SOC.slots=r.slots;toast(o.added(r.made)+(r.skipped?' · '+o.overlap:''));render(true)}
     catch(err){btn.disabled=false;toast(err.status===400?o.overlap:A().err)}};
 }
 
@@ -151,12 +171,14 @@ function vBook(id){
   if(!BK.slots)return '<div class="card"><div class="dl-bar"><i style="width:40%"></i></div></div>';
   const by={};BK.slots.forEach(s=>{const k=fDay(s.start);(by[k]=by[k]||[]).push(s)});const sel=BK.slots.find(s=>s.id===BK.sel);
   return `<div class="card bkh">${peerHead(BK.m.peer)}</div><div class="h2"><span>${o.pickT}</span></div>
-    ${BK.slots.length?Object.entries(by).map(([k,ls])=>`<div class="card bkd"><b>${k}</b><div class="bks">${ls.map(s=>`<button class="slb ${s.id===BK.sel?'on':''}" data-s="${s.id}">${fTime(s.start)}<small>${s.dur}${o.min}</small></button>`).join('')}</div></div>`).join('')
+    ${BK.slots.length?Object.entries(by).map(([k,ls])=>`<div class="card bkd"><b>${k}</b><div class="bks">${ls.map(s=>`<button class="slb ${s.mode} ${s.id===BK.sel?'on':''}" data-s="${s.id}">${fTime(s.start)}<small>${s.dur}${o.min}</small><em>${s.mode==='offline'&&s.place?'📍 '+esc(s.place.name):'💻 '+PX().online}</em></button>`).join('')}</div></div>`).join('')
       :`<div class="card empty2">${o.pickNone}<a class="btn sm" href="#/chat/${id}">💬 ${o.chat}</a></div>`}
+    ${sel&&sel.mode==='offline'&&sel.place?`<div class="card tmap"><div class="mapbox" id="bkMap"></div><a class="plrow" href="${gmap(sel.place)}" target="_blank" rel="noopener"><b>📍 ${esc(sel.place.name)}</b><small>${esc(sel.place.addr||'')}</small></a></div>`:''}
     ${sel?`<div class="lbar"><div class="in"><button class="btn pink" id="bkGo">${esc(o.confirm(fWhen(sel.start,sel.dur)))}</button></div></div>`:''}`;
 }
 function bindBook(id){
   $$('.slb').forEach(b=>b.onclick=()=>{BK.sel=+b.dataset.s;render(true)});
+  const sel=BK.slots&&BK.slots.find(s=>s.id===BK.sel);if(sel&&sel.place&&$('#bkMap'))miniMap($('#bkMap'),[sel.place]);
   const g=$('#bkGo');if(g)g.onclick=async()=>{g.disabled=true;try{await api('POST',`/slots/${BK.sel}/book`);toast(S_().bookedT);confetti(innerWidth/2,innerHeight-120,16);SOC.matches=null;location.hash='#/chat/'+id}
     catch(e){toast(S_().taken);loadBook(id)}};
 }
@@ -175,7 +197,7 @@ function vChat(id){
 function chatHead(){
   const o=S_(),m=CH.m,t=m.side==='teacher';
   $('#chead').innerHTML=`<div class="card chc">${peerHead(m.peer,stPill(m.status))}
-    ${m.status==='accepted'?`<div class="cact">${t?`<a class="btn sm sky" href="#/lessons">🕒 ${o.openSlots}</a>`:`<a class="btn sm sky" href="#/book/${m.id}">📅 ${o.book}</a>`}${m.next?`<span class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</span>`:''}<button class="lnk danger" id="chEnd">${o.end}</button></div>`:''}
+    ${m.status==='accepted'?`<div class="cact">${t?`<a class="btn sm sky" href="#/lessons">🕒 ${o.openSlots}</a><a class="btn sm" href="#/student/${m.peer.id}">📊 ${S2().sp}</a>`:`<a class="btn sm sky" href="#/book/${m.id}">📅 ${o.book}</a>`}${m.next?`<span class="mn2">📅 ${esc(fWhen(m.next.start,m.next.dur))}</span>`:''}<button class="lnk danger" id="chEnd">${o.end}</button></div>`:''}
     ${m.status==='pending'&&t?`<div class="cact"><b class="rq">📨 ${o.reqBanner}</b><button class="btn sm mint" data-ca="accept">${o.accept}</button><button class="btn sm" data-ca="decline">${o.decline}</button></div>`:''}
     ${m.status==='pending'&&!t?`<div class="cact"><span class="mn2">⏳ ${o.waitT}</span><button class="lnk danger" data-ca="cancel">${o.cancelReq}</button></div>`:''}</div>`;
   $$('#chead [data-ca]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api('POST','/matches/'+m.id,{action:b.dataset.ca});SOC.matches=null;chatPull(true)}catch(e){toast(A().err);b.disabled=false}});
